@@ -30,6 +30,7 @@ This single file holds everything needed to build BluSlate: the rules Claude Cod
 | A profile menu at the top right; the logo always goes to Home; founders can delete a startup | §6.0, B3 |
 | An admin back end (`/admin`): aggregate statistics, audit log, and the AI model registry where models are added and assigned to pillars; API keys stay in env | §5.8, §5.11, §6.0, §11.2, Part A |
 | Twin workspace tables (Draft, StaleMark), each pillar's first question, and other schema additions | §5.1, §8.3 |
+| Home opens with a hook question, a hero image and the seven steps as a clickable loop; brand illustration style is chalk drawings on blue slates | §6.0, §6.2, §6.5 |
 
 `BluSlate_PM_Review.pdf` still shows v2.3 (old pillar names, four-step onboarding); Part B below is current.
 
@@ -48,7 +49,7 @@ BluSlate is a standalone web app where founders take any idea (or a running busi
 
 - The full specification is **Part C** of `docs/BLUSLATE_SPEC.md`. Part B of the same file is the plain-language overview, and `docs/BluSlate_PM_Review.pdf` is that overview as a designed PDF. Read the sections named in the task before planning. Section numbers (e.g. §4.2) refer to Part C.
 - Each pillar also has its own `pillars/<NN-id>/SPEC.md`. Once a pillar has been deep-defined and approved, its SPEC.md is the detailed source of truth for that pillar; the main spec stays the source for shared rules.
-- The PM's instructions win over the spec. When they differ, implement the instruction, record it in `docs/decisions/`, and update `docs/BLUSLATE_SPEC.md` (and this file, which mirrors its Part A) in the same piece of work.
+- The PM's instructions win over the spec. When they differ, implement the instruction, record it in `docs/decisions/`, and update `docs/BLUSLATE_SPEC.md` (and this file, which mirrors its Part A) in the same piece of work, then run `pnpm docs:readme` so the copy of the spec embedded in `README.md` matches.
 - If the code and the spec disagree, or the spec itself is ambiguous, stop and ask. Never change the spec silently.
 - At the end of every step, append to `docs/PROGRESS.md`: date, step, what was built, tests added, open issues.
 
@@ -1152,7 +1153,7 @@ The draft is kept in the browser while the founder types. Without a session, the
 
 #### 6.2 City view (inside the app)
 
-A 2D city map with seven hubs (not a 3D world), each showing status and its next best action, plus a Founder Pack tile. The city metaphor is for navigation only; it must load fast and never block work.
+A 2D city map with seven hubs (not a 3D world), each showing status and its next best action, plus a Founder Pack tile. On wide screens the hubs sit on a road; on phones they form a vertical route. Each hub is the pillar's slate drawing (§6.5) and opens its pillar. The city metaphor is for navigation only; it must load fast and never block work.
 
 #### 6.3 Standard pillar workspace
 
@@ -1184,7 +1185,19 @@ A 2D city map with seven hubs (not a 3D world), each showing status and its next
 | `--actual` (green) | ACTUAL badge and real-evidence markers |
 | `--danger` (red) | Runway and cash alerts |
 
-Light and dark themes; one sans-serif type family; 4-point spacing scale; charts use one neutral colour plus a single accent unless a category colour is needed.
+Light and dark themes; one sans-serif type family (Inter); 4-point spacing scale; charts use one neutral colour plus a single accent unless a category colour is needed.
+
+**Brand and illustration style.**
+
+- **Logo:** the BluSlate rocket logo, in a light and a dark version. The rocket tile alone is the app icon.
+- **Illustrations:** chalk-style line drawings on **blue slates**.
+  - Each pillar has its own drawing: light bulb, two people with a speech bubble, pie chart with magnifier, phone with gear, truck with parcel, megaphone, rising chart. The Founder Pack's is a document.
+  - The drawings use `Slate` and `SlateDrawing` from `packages/ui`, with a shared chalk filter.
+  - The hero image is a blue slate board with the journey sketched in chalk and the handwritten question "Will it work?".
+- **Home page:**
+  - It opens with a hook question ("Got a business idea? Will it work?") and one short line, with as little text as possible.
+  - The seven steps are shown as a clickable loop: choosing a slate shows its short brief, and Launch & Growth loops back to Problem Discovery.
+- **Layout rule:** no page may scroll sideways on a phone.
 
 #### 6.6 UX rules
 

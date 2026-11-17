@@ -257,3 +257,12 @@ One entry per step (CLAUDE.md, "Source of truth").
 - **Schema additions:** in a new §8.3 (Draft, StaleMark, Auth.js tables, guests, the model registry, the admin audit log), with each pillar's first question.
 - **`CLAUDE.md`** was regenerated from Part A, so the two stay identical.
 - **Still out of date:** `BluSlate_PM_Review.pdf` still shows v2.3, as noted in the spec header.
+
+---
+
+## 17 November 2026 — README as the handover file ✅
+
+- **`README.md` Part 1 is a handover for new Claude sessions:** a start prompt, the rules, what's built, how to run it, commands, environment, a repo map, decisions, open issues, gotchas and what's next.
+- **Part 2 embeds the full spec (v2.4)** word for word. `pnpm docs:readme` refreshes it, and `tests/architecture/readme-spec.test.ts` fails if it falls behind.
+- **Spec additions:** brand and illustration style (slates and chalk), the Home design, the city layout, and the "no sideways scroll" rule (§6.2, §6.5).
+- **Part A and CLAUDE.md:** after a spec change, run `pnpm docs:readme`.

@@ -24,7 +24,8 @@
     "typecheck": "pnpm -r --parallel typecheck",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "docs:readme": "node scripts/sync-readme.mjs"
   },
   "devDependencies": {
     "@eslint/js": "9.39.5",

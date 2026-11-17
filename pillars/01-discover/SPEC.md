@@ -18,11 +18,11 @@
 - **Reads:** Startup.
 - **Workspace:** Problem canvas → Opportunity board → Assumption map.
 - **Steps:**
-    1. Capture the idea (text or voice), or choose "Help me discover".
-    2. Reframe it as a problem statement: who, pain, frequency, current workaround, cost of the pain.
-    3. Compare 2–5 opportunity options on severity, frequency, urgency, workaround strength and feasibility.
-    4. Generate falsifiable hypotheses across desirability, viability and feasibility; rank by risk × uncertainty.
-    5. Produce a short next-research plan for Customer Discovery and Market Research.
+  1. Capture the idea (text or voice), or choose "Help me discover".
+  2. Reframe it as a problem statement: who, pain, frequency, current workaround, cost of the pain.
+  3. Compare 2–5 opportunity options on severity, frequency, urgency, workaround strength and feasibility.
+  4. Generate falsifiable hypotheses across desirability, viability and feasibility; rank by risk × uncertainty.
+  5. Produce a short next-research plan for Customer Discovery and Market Research.
 - **Writes:** Problem, Opportunity[], Hypothesis[] (plus Assumption entries).
 - **Calculations:** opportunity score = weighted sum of criteria (weights editable); hypothesis priority = risk × uncertainty.
 - **Methods and tools:** Design Thinking, Jobs to Be Done, Lean Canvas, assumption mapping · Google Trends, Miro/FigJam, a founder observation log.
@@ -34,12 +34,12 @@
 
 #### A.1 Problem Discovery
 
-| Task | Trigger | Tier | Tools | Output | Guard |
-| --- | --- | --- | --- | --- | --- |
-| `discover.reframeProblem` | Idea submitted | Standard | — | Problem draft: who, pain, frequency, workaround, cost of pain, why now | No solution words in the problem statement |
-| `discover.exploreSpaces` | "Help me discover" | Standard | Web search (5) | 3–5 problem spaces with trend signals and sources | Every trend claim has a source |
-| `discover.rateOpportunities` | 2+ options exist | Standard | — | Proposed criterion ratings with reasons | Ratings labelled ASSUMED; the total is computed by the calculator |
-| `discover.hypotheses` | Problem approved | Standard | — | Hypotheses: statement, kind, test method, risk, uncertainty | Each hypothesis is falsifiable |
-| `discover.challenge` | Publish preview | Fast | — | Counterexamples, alternatives, "no competition" flags | Shown as Reality Check, never blocking |
+| Task                         | Trigger            | Tier     | Tools          | Output                                                                 | Guard                                                             |
+| ---------------------------- | ------------------ | -------- | -------------- | ---------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| `discover.reframeProblem`    | Idea submitted     | Standard | —              | Problem draft: who, pain, frequency, workaround, cost of pain, why now | No solution words in the problem statement                        |
+| `discover.exploreSpaces`     | "Help me discover" | Standard | Web search (5) | 3–5 problem spaces with trend signals and sources                      | Every trend claim has a source                                    |
+| `discover.rateOpportunities` | 2+ options exist   | Standard | —              | Proposed criterion ratings with reasons                                | Ratings labelled ASSUMED; the total is computed by the calculator |
+| `discover.hypotheses`        | Problem approved   | Standard | —              | Hypotheses: statement, kind, test method, risk, uncertainty            | Each hypothesis is falsifiable                                    |
+| `discover.challenge`         | Publish preview    | Fast     | —              | Counterexamples, alternatives, "no competition" flags                  | Shown as Reality Check, never blocking                            |
 
 **Evals:** problem statements contain no solution; at least 3 falsifiable hypotheses; no statistic without a source.
