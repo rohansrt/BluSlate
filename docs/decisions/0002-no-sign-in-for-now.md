@@ -8,7 +8,7 @@
 
 - **Onboarding is three steps.** Step 3's button, "Open my city", creates the startup straight away. There is no email step.
 - **Guest workspace.** The first startup creates a guest `User` (`isGuest = true`, no email) and an Auth.js **database session** in this browser, using the standard Auth.js session cookie. `auth()` then treats the visitor like any signed-in user, so tenant isolation (G8, G11) and every page work unchanged.
-- **Header.** There is no "Sign in" link. Guests don't see "Sign out", because they have no email to get back in with.
+- **Header.** *(Superseded by decision 0004: Sign in and Sign up are now at the top right, with Continue as guest and a profile menu.)* There is no "Sign in" link. Guests don't see "Sign out", because they have no email to get back in with.
 - **Private pages.** A visitor with no workspace is sent back to Home instead of `/signin`.
 - **Guest notice.** My startups and the city tell guests that their startups live in this browser only.
 - **Kept for later.** Email magic-link sign-in still works at `/signin`, and the end-to-end tests cover it. Setting `NEXT_PUBLIC_REQUIRE_SIGN_IN=true` brings back the four-step onboarding.
@@ -21,6 +21,6 @@
 
 ## Follow-ups
 
-- **Upgrading a guest.** When sign-in returns, a guest should be able to add an email and keep their startups. That needs account linking: move the startups to the email account on first sign-in from the same browser.
+- **Upgrading a guest.** *Done in decision 0004.* When sign-in returns, a guest should be able to add an email and keep their startups. That needs account linking: move the startups to the email account on first sign-in from the same browser.
 - **Abuse protection.** `POST /api/startups` without a session creates a guest. Add rate limiting before public launch.
 - **Clean-up.** Guest workspaces that stay inactive need a retention rule, and the Privacy Policy needs to state it.
