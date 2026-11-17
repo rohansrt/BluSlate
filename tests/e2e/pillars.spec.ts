@@ -4,31 +4,46 @@ import { expectNoSidewaysScroll, onboardAsRiya } from "./helpers";
 const PILLARS = [
   {
     id: "discover",
-    name: "Discover",
+    name: "Problem Discovery",
     question: "What problem is worth solving?",
     writes: "Problem",
   },
   {
     id: "customers",
-    name: "Customers",
+    name: "Customer Discovery",
     question: "Who has the problem, and what is the evidence?",
     writes: "Persona",
   },
   {
     id: "market",
-    name: "Market",
+    name: "Market Research",
     question: "How big, reachable and contested is it?",
     writes: "MarketSize",
   },
-  { id: "build", name: "Build", question: "What exactly should exist?", writes: "Offering" },
-  { id: "setup", name: "Set Up", question: "How will it be delivered?", writes: "Enabler" },
+  {
+    id: "build",
+    name: "Product Design",
+    question: "What exactly should exist?",
+    writes: "Offering",
+  },
+  {
+    id: "setup",
+    name: "Operations Setup",
+    question: "How will it be delivered?",
+    writes: "Enabler",
+  },
   {
     id: "gtm",
-    name: "Go to Market",
+    name: "Go-to-Market Plan",
     question: "Who buys first, at what price, through which channels?",
     writes: "PricePlan",
   },
-  { id: "run-grow", name: "Run & Grow", question: "What happens over time?", writes: "Scenario" },
+  {
+    id: "run-grow",
+    name: "Launch & Growth",
+    question: "What happens over time?",
+    writes: "Scenario",
+  },
 ];
 
 test.describe("Pillar skeletons (S2 exit gate)", () => {
@@ -59,14 +74,14 @@ test.describe("Pillar skeletons (S2 exit gate)", () => {
     await onboardAsRiya(page);
     await page.goto(`${page.url()}/discover`);
     const rail = page.getByRole("navigation", { name: "City hubs" });
-    await expect(rail.getByRole("link", { name: /1 Discover/ })).toHaveAttribute(
+    await expect(rail.getByRole("link", { name: /1 Problem Discovery/ })).toHaveAttribute(
       "aria-current",
       "page",
     );
-    await rail.getByRole("link", { name: /3 Market/ }).click();
+    await rail.getByRole("link", { name: /3 Market Research/ }).click();
     await expect(page).toHaveURL(/\/market$/);
     await expect(page.getByTestId("pillar-placeholder-market")).toBeVisible();
-    await expect(rail.getByRole("link", { name: /3 Market/ })).toHaveAttribute(
+    await expect(rail.getByRole("link", { name: /3 Market Research/ })).toHaveAttribute(
       "aria-current",
       "page",
     );

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Plus } from "lucide-react";
 import { Button, Input } from "@bluslate/ui";
+import { DeleteStartupButton } from "@/components/delete-startup-button";
 import { GuestNotice } from "@/components/guest-notice";
 import { StartupCard } from "@/components/startup-card";
 import { requireUser } from "@/lib/require-user";
@@ -14,8 +15,13 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export default async function MyStartupsPage() {
+export default async function MyStartupsPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | undefined>>;
+}) {
   const user = await requireUser("/startups");
+  const { deleted } = await searchParams;
   const startups = await listStartupsForUser(user.id);
 
   return (
@@ -36,6 +42,12 @@ export default async function MyStartupsPage() {
         </Button>
       </div>
 
+      {deleted && (
+        <p role="status" className="mt-6 rounded-xl bg-actual-soft px-4 py-3 text-sm text-actual">
+          Deleted. That startup and everything in it is gone.
+        </p>
+      )}
+
       {user.isGuest && (
         <div className="mt-6">
           <GuestNotice />
@@ -46,28 +58,31 @@ export default async function MyStartupsPage() {
         {startups.map((s) => (
           <li key={s.id} className="flex flex-col gap-2">
             <StartupCard startup={s} />
-            <details className="group rounded-xl px-1 text-sm">
-              <summary className="cursor-pointer list-none text-muted-foreground hover:text-foreground">
-                Rename
-              </summary>
-              <form action={renameStartup} className="mt-2 flex gap-2">
-                <input type="hidden" name="id" value={s.id} />
-                <label htmlFor={`rename-${s.id}`} className="sr-only">
-                  New name for {s.name}
-                </label>
-                <Input
-                  id={`rename-${s.id}`}
-                  name="name"
-                  defaultValue={s.name}
-                  maxLength={LIMITS.startupName}
-                  required
-                  className="h-9"
-                />
-                <Button type="submit" size="sm" variant="outline">
-                  Save
-                </Button>
-              </form>
-            </details>
+            <div className="flex flex-wrap items-start gap-2">
+              <details className="group flex-1 rounded-xl px-1 pt-1.5 text-sm">
+                <summary className="cursor-pointer list-none text-muted-foreground hover:text-foreground">
+                  Rename
+                </summary>
+                <form action={renameStartup} className="mt-2 flex gap-2">
+                  <input type="hidden" name="id" value={s.id} />
+                  <label htmlFor={`rename-${s.id}`} className="sr-only">
+                    New name for {s.name}
+                  </label>
+                  <Input
+                    id={`rename-${s.id}`}
+                    name="name"
+                    defaultValue={s.name}
+                    maxLength={LIMITS.startupName}
+                    required
+                    className="h-9"
+                  />
+                  <Button type="submit" size="sm" variant="outline">
+                    Save
+                  </Button>
+                </form>
+              </details>
+              <DeleteStartupButton id={s.id} name={s.name} />
+            </div>
           </li>
         ))}
         <li>

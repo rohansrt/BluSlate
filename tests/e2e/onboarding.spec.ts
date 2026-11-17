@@ -1,5 +1,11 @@
 import { expect, test } from "@playwright/test";
-import { expectNoSidewaysScroll, magicLinkFor, onboardAsRiya, uniqueEmail } from "./helpers";
+import {
+  PILLAR_NAMES,
+  expectNoSidewaysScroll,
+  magicLinkFor,
+  onboardAsRiya,
+  uniqueEmail,
+} from "./helpers";
 
 test.describe("Home onboarding (S1 exit gate, without sign-in)", () => {
   test("a new founder completes onboarding and lands in an empty city", async ({ page }) => {
@@ -7,7 +13,10 @@ test.describe("Home onboarding (S1 exit gate, without sign-in)", () => {
     await expect(page.getByRole("heading", { level: 1 })).toHaveText(
       "Got a business idea?Will it work?",
     );
-    await expect(page.getByRole("link", { name: "Sign in" })).toHaveCount(0);
+    // Signed out: sign in and sign up sit at the top right.
+    const header = page.getByRole("banner");
+    await expect(header.getByRole("link", { name: "Sign in" })).toBeVisible();
+    await expect(header.getByRole("link", { name: "Sign up" })).toBeVisible();
 
     await onboardAsRiya(page);
     await expect(page.getByTestId("city-title")).toHaveText("Riya's idea");
@@ -18,27 +27,21 @@ test.describe("Home onboarding (S1 exit gate, without sign-in)", () => {
     // getByRole skips the hidden layout (map on desktop, route list on mobile).
     const hubs = page.getByRole("list", { name: "City hubs" });
     await expect(hubs).toHaveCount(1);
-    for (const name of [
-      "Discover",
-      "Customers",
-      "Market",
-      "Build",
-      "Set Up",
-      "Go to Market",
-      "Run & Grow",
-    ]) {
+    for (const name of PILLAR_NAMES) {
       await expect(hubs.getByText(name, { exact: true })).toBeVisible();
     }
     await expect(hubs.getByText("Not started")).toHaveCount(6);
     await expect(hubs.getByText("Start here")).toHaveCount(1);
     await expectNoSidewaysScroll(page);
 
-    // Coming back to Home shows "Welcome back" and the startup. Guests can't sign out.
-    await page.goto("/");
-    await expect(page.getByRole("heading", { name: "Welcome back, Riya" })).toBeVisible();
-    await expect(page.getByRole("link", { name: /Riya's idea/ })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Start another" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Sign out" })).toHaveCount(0);
+    // The logo goes to Home, which still opens with the hook, plus a "continue" card.
+    await page.getByRole("link", { name: "BluSlate home" }).click();
+    await expect(page).toHaveURL(/\/$/);
+    await expect(page.getByRole("heading", { level: 1 })).toContainText("Will it work?");
+    const cont = page.getByTestId("continue-card");
+    await expect(cont.getByRole("heading", { name: "Welcome back, Riya" })).toBeVisible();
+    await expect(cont.getByRole("link", { name: /Riya's idea/ })).toBeVisible();
+    await expect(cont.getByRole("link", { name: "Start another" })).toBeVisible();
   });
 
   test("private pages send visitors without a workspace back to Home", async ({ page }) => {

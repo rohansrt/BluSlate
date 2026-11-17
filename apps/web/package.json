@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit -p ."
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "1.8.0",
     "@auth/prisma-adapter": "2.11.3",
     "@bluslate/ai": "workspace:*",
     "@bluslate/contracts": "workspace:*",

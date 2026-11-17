@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { ImageResponse } from "next/og";
+import { PILLARS } from "@/lib/pillars";
 import { site } from "@/lib/site";
 
 export const alt = `${site.name}: ${site.tagline}`;
@@ -11,15 +12,7 @@ export const contentType = "image/png";
 export default async function OpenGraphImage() {
   const logo = await readFile(path.join(process.cwd(), "public/brand/logo-light.png"));
   const logoSrc = `data:image/png;base64,${logo.toString("base64")}`;
-  const steps = [
-    "Discover",
-    "Customers",
-    "Market",
-    "Build",
-    "Set Up",
-    "Go to Market",
-    "Run & Grow",
-  ];
+  const steps = PILLARS.map((p) => p.name);
 
   return new ImageResponse(
     <div

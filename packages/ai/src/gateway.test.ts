@@ -309,3 +309,28 @@ describe("pricing and number checks", () => {
     expect(inventedNumbers("Cash is 1,20,000", { cash: 120000 })).toEqual([]);
   });
 });
+
+describe("AI gateway: model registry resolver", () => {
+  it("uses the model the registry picks for the task, at the admin's prices", async () => {
+    const { client, parse } = fakeClient({ model: "claude-custom-1" });
+    const { log, calls } = memoryLog();
+    const resolve = vi.fn(async () => ({
+      client,
+      model: "claude-custom-1",
+      price: { input: 1, output: 2, cacheRead: 0.1, cacheWrite: 1.25, fallbacks: false },
+    }));
+    const ai = createAiGateway({ resolve, env: {}, log, tasks: [explainTask] });
+    await ai.run("core.explain", input, ctx);
+    expect(resolve).toHaveBeenCalledWith(explainTask, ctx);
+    expect((parse.mock.calls[0] as unknown as [{ model: string }])[0].model).toBe(
+      "claude-custom-1",
+    );
+    expect(calls[0]?.costUsd).toBeCloseTo((1000 * 1 + 200 * 2 + 3000 * 0.1) / 1e6, 9);
+  });
+
+  it("is unavailable when no model is assigned", async () => {
+    const { log } = memoryLog();
+    const ai = createAiGateway({ resolve: async () => null, env: {}, log, tasks: [explainTask] });
+    await expect(ai.run("core.explain", input, ctx)).rejects.toBeInstanceOf(AiUnavailableError);
+  });
+});

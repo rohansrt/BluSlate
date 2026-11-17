@@ -10,19 +10,19 @@ test.describe("Public pages", () => {
     const steps = page.getByRole("tablist", { name: "The seven steps" });
     await expect(steps.getByRole("tab")).toHaveCount(7);
     const brief = page.getByTestId("step-brief");
-    await expect(steps.getByRole("tab", { name: "Step 1: Discover" })).toHaveAttribute(
+    await expect(steps.getByRole("tab", { name: "Step 1: Problem Discovery" })).toHaveAttribute(
       "aria-selected",
       "true",
     );
     await expect(brief).toContainText("What problem is worth solving?");
 
-    await steps.getByRole("tab", { name: "Step 6: Go to Market" }).click();
+    await steps.getByRole("tab", { name: "Step 6: Go-to-Market Plan" }).click();
     await expect(brief).toContainText("Who buys first, at what price, through which channels?");
     await expect(brief).toContainText("You get: A launch plan and sales funnel");
 
     // Keyboard: the arrow keys move around the loop, and Run & Grow wraps to Discover.
     await page.keyboard.press("ArrowRight");
-    await expect(steps.getByRole("tab", { name: "Step 7: Run & Grow" })).toBeFocused();
+    await expect(steps.getByRole("tab", { name: "Step 7: Launch & Growth" })).toBeFocused();
     await page.keyboard.press("ArrowRight");
     await expect(brief).toContainText("What problem is worth solving?");
   });

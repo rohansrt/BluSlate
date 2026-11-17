@@ -14,6 +14,7 @@ env:
   DATABASE_URL: postgresql://bluslate:bluslate@localhost:5432/bluslate
   AUTH_SECRET: ci-only-not-a-real-secret-0123456789abcdef
   NEXT_PUBLIC_SITE_URL: http://localhost:3000
+  ADMIN_EMAILS: admin@example.test
 
 jobs:
   checks:

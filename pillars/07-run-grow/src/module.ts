@@ -44,3 +44,5 @@ export const runGrowModule: PillarModule<RunGrowInput, RunGrowOutput> = {
 };
 
 export { runGrowStarter } from "./starter";
+
+export { PLANNED_AI_TASKS } from "./ai-tasks";

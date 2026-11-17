@@ -31,3 +31,5 @@ export const buildModule: PillarModule<BuildInput, BuildOutput> = {
 };
 
 export { buildStarter } from "./starter";
+
+export { PLANNED_AI_TASKS } from "./ai-tasks";

@@ -14,5 +14,7 @@ export {
   type AiGateway,
   type AiResult,
   type GatewayOptions,
+  type ModelResolver,
+  type ResolvedModel,
 } from "./gateway";
 export { explainTask, CORE_TASKS } from "./tasks/core";

@@ -2,6 +2,17 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { expect, type Page } from "@playwright/test";
 
+/** The seven pillar names, in order. */
+export const PILLAR_NAMES = [
+  "Problem Discovery",
+  "Customer Discovery",
+  "Market Research",
+  "Product Design",
+  "Operations Setup",
+  "Go-to-Market Plan",
+  "Launch & Growth",
+];
+
 /** Where the dev mailer writes magic links (see apps/web/lib/mail.ts). */
 const OUTBOX = path.resolve(import.meta.dirname, "../../.dev-mail");
 
@@ -72,4 +83,13 @@ export async function expectNoSidewaysScroll(page: Page) {
     client: document.documentElement.clientWidth,
   }));
   expect(scroll, "page should not scroll sideways").toBeLessThanOrEqual(client);
+}
+
+/** Sign in through an email link from the dev outbox, ending wherever the link redirects. */
+export async function signInByEmail(page: Page, email: string, from = "/signin") {
+  await page.goto(from);
+  await page.getByLabel("Email").fill(email);
+  await page.getByRole("button", { name: /Email me a sign-(in|up) link/ }).click();
+  await expect(page).toHaveURL(/\/signin\/check-email/, { timeout: 20_000 });
+  await page.goto(await magicLinkFor(email));
 }

@@ -21,6 +21,7 @@ export interface PillarInfo {
   /** Workspace package name, e.g. "@bluslate/pillar-discover". */
   packageName: string;
   number: number;
+  /** Display name. Renamed for clarity on 17 Nov 2026 (docs/decisions/0004); ids are unchanged. */
   name: string;
   question: string;
   /** What the founder takes away (Part B §B4). */
@@ -33,7 +34,7 @@ export const PILLARS: readonly PillarInfo[] = [
     folder: "01-discover",
     packageName: "@bluslate/pillar-discover",
     number: 1,
-    name: "Discover",
+    name: "Problem Discovery",
     question: "What problem is worth solving?",
     deliverable: "A one-page problem brief",
   },
@@ -42,7 +43,7 @@ export const PILLARS: readonly PillarInfo[] = [
     folder: "02-customers",
     packageName: "@bluslate/pillar-customers",
     number: 2,
-    name: "Customers",
+    name: "Customer Discovery",
     question: "Who has the problem, and what is the evidence?",
     deliverable: "Customer needs, ranked, with evidence",
   },
@@ -51,7 +52,7 @@ export const PILLARS: readonly PillarInfo[] = [
     folder: "03-market",
     packageName: "@bluslate/pillar-market",
     number: 3,
-    name: "Market",
+    name: "Market Research",
     question: "How big, reachable and contested is it?",
     deliverable: "Market size and a competitor map",
   },
@@ -60,7 +61,7 @@ export const PILLARS: readonly PillarInfo[] = [
     folder: "04-build",
     packageName: "@bluslate/pillar-build",
     number: 4,
-    name: "Build",
+    name: "Product Design",
     question: "What exactly should exist?",
     deliverable: "A prioritised first version and business model",
   },
@@ -69,7 +70,7 @@ export const PILLARS: readonly PillarInfo[] = [
     folder: "05-setup",
     packageName: "@bluslate/pillar-setup",
     number: 5,
-    name: "Set Up",
+    name: "Operations Setup",
     question: "How will it be delivered?",
     deliverable: "An operating plan and cost base",
   },
@@ -78,7 +79,7 @@ export const PILLARS: readonly PillarInfo[] = [
     folder: "06-gtm",
     packageName: "@bluslate/pillar-gtm",
     number: 6,
-    name: "Go to Market",
+    name: "Go-to-Market Plan",
     question: "Who buys first, at what price, through which channels?",
     deliverable: "A launch plan and sales funnel",
   },
@@ -87,7 +88,7 @@ export const PILLARS: readonly PillarInfo[] = [
     folder: "07-run-grow",
     packageName: "@bluslate/pillar-run-grow",
     number: 7,
-    name: "Run & Grow",
+    name: "Launch & Growth",
     question: "What happens over time?",
     deliverable: "A live control room and what-if scenarios",
   },

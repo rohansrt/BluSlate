@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Badge, type BadgeProps } from "@bluslate/ui";
+import { PILLARS } from "@/lib/pillars";
 import { site } from "@/lib/site";
 
 export const metadata: Metadata = {
@@ -23,31 +24,7 @@ const SECTIONS = [
   ["contact", "Contact"],
 ] as const;
 
-const PILLAR_ROWS = [
-  [
-    "Discover",
-    "What problem is worth solving?",
-    "A one-page problem brief and the riskiest assumptions to test",
-  ],
-  [
-    "Customers",
-    "Who has the problem, and what's the proof?",
-    "Customer needs, ranked, with evidence",
-  ],
-  [
-    "Market",
-    "How big is it, and who else is there?",
-    "A market size with its formula, and a competitor map",
-  ],
-  ["Build", "What exactly should we make?", "A prioritised first version (MVP) and business model"],
-  ["Set Up", "How will we deliver it?", "An operating plan and cost base"],
-  [
-    "Go to Market",
-    "Who buys first, at what price, through which channels?",
-    "A launch plan and sales funnel",
-  ],
-  ["Run & Grow", "What happens over time?", "A live control room and what-if scenarios"],
-] as const;
+const PILLAR_ROWS = PILLARS.map((p) => [p.name, p.question, p.deliverable] as const);
 
 const LABELS: { badge: string; variant: BadgeProps["variant"]; example: string; use: string }[] = [
   {

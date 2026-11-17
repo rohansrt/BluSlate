@@ -207,3 +207,41 @@ One entry per step (CLAUDE.md, "Source of truth").
 - Run & Grow's Scenario exists as both an entity and a table (decision 0003 §4, for P7).
 - The Evidence and Publish tabs are placeholders until the pillars need them. The Publish panel already works inline.
 - The TimeStrip component is built, but it only appears once a scenario exists (P7).
+
+---
+
+## 17 November 2026 — Accounts, admin dashboard, AI model registry (PM request) ✅
+
+**Built** (see `docs/decisions/0004-accounts-admin-and-model-registry.md`)
+
+- **Top right:**
+  - "Sign in" and "Sign up" for visitors, with "Continue as guest" on the sign-in page.
+  - A profile menu for everyone signed in: My startups, Profile, Admin (for admins), Sign out or End guest session.
+  - A new `/profile` page with name editing.
+- **The logo always goes to Home.** Home keeps the hook, and signed-in founders see a "continue" card.
+- **Guests who sign up keep their startups:** a signed cookie, merged on verified sign-in in the same browser.
+- **Delete a startup** (owner, with confirmation) from My startups or the city. Everything stored for it is removed; AI cost logs are kept without the startup link.
+- **Admin back end** (`ADMIN_EMAILS` + email sign-in at `/admin/login`):
+  - **Overview:** aggregate statistics only.
+  - **AI models:** an empty state, model cards (connection status, prices, usage, test, turn on or off, remove) and the pillar × tier assignment table.
+  - **Add a model:** a five-step workflow with a free connection test.
+  - **Audit log:** every admin action.
+- **AI gateway:** now takes a `ModelResolver`. The app resolves from the admin registry: the pillar's assignment, then the default. Keys are read from env by name and only `*_API_KEY` names are allowed; the admin's prices are used for cost.
+- **Clearer pillar names:** Problem Discovery, Customer Discovery, Market Research, Product Design, Operations Setup, Go-to-Market Plan, Launch & Growth.
+
+**Tests**
+
+- **Unit:** resolver tests (registry pick, admin prices, unavailable when nothing is assigned).
+- **End-to-end:**
+  - continue as guest;
+  - the profile menu;
+  - a guest sign-up that keeps their startups;
+  - deleting a startup;
+  - admin pages refusing non-admins;
+  - an admin adding a model and assigning it, with the action in the audit log;
+  - the logo going to Home.
+
+**Open issues**
+
+- Proposed CLAUDE.md and spec edits for the model registry and pillar names wait for PM approval (decision 0004).
+- AI stays off until a model is added *and* `ANTHROPIC_API_KEY` is set.

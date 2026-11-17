@@ -103,7 +103,7 @@ describe("onboarding: just one tool", () => {
     expect(parsed.success).toBe(true);
     if (!parsed.success) return;
     expect(toStartupCreate(parsed.data)).toMatchObject({
-      name: "Sam's Market workspace",
+      name: "Sam's Market Research workspace",
       stage: "unspecified",
       geography: "United Kingdom",
       currency: "GBP",

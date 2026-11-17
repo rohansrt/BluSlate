@@ -29,7 +29,7 @@ export async function POST(request: Request, { params }: Params) {
     const result = await ai.run<ExplainItems>(
       "core.explain",
       { pillar: ctx.pillar, question: ctx.starter.question, answerSoFar },
-      aiContextFor(id),
+      aiContextFor(id, ctx.pillar),
     );
     return NextResponse.json({ kind: "guide", ...result.items, label: result.label });
   } catch (err) {

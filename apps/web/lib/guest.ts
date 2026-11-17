@@ -31,7 +31,7 @@ export interface GuestSession {
 
 export async function createGuest(
   tx: Prisma.TransactionClient,
-  firstName: string,
+  firstName: string | null,
 ): Promise<GuestSession> {
   const user = await tx.user.create({
     data: { name: firstName, isGuest: true },

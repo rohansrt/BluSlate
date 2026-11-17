@@ -391,3 +391,53 @@ model StaleMark {
 
   @@index([startupId])
 }
+
+// ─── Admin: AI model registry and audit (docs/decisions/0004) ────────────────
+
+/// A model an admin has added. Credentials are never stored: `credentialEnv`
+/// names the environment variable that holds the API key.
+model AiModel {
+  id               String              @id @default(cuid())
+  displayName      String
+  provider         String // anthropic
+  modelId          String // e.g. claude-sonnet-5-5
+  credentialEnv    String // e.g. ANTHROPIC_API_KEY
+  inputPerMTok     Float
+  outputPerMTok    Float
+  cacheReadPerMTok Float
+  enabled          Boolean             @default(true)
+  notes            String?
+  lastTestedAt     DateTime?
+  lastTestOk       Boolean?
+  lastTestMessage  String?
+  createdBy        String
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+  assignments      AiModelAssignment[]
+
+  @@unique([provider, modelId])
+}
+
+/// Which model a scope uses for a tier. scope = "default" or a pillar id.
+model AiModelAssignment {
+  id        String   @id @default(cuid())
+  scope     String
+  tier      String // top | standard | fast
+  modelId   String
+  model     AiModel  @relation(fields: [modelId], references: [id], onDelete: Cascade)
+  updatedBy String
+  updatedAt DateTime @updatedAt
+
+  @@unique([scope, tier])
+}
+
+/// Every admin action, for audited access (§5.8).
+model AdminAudit {
+  id         String   @id @default(cuid())
+  actorEmail String
+  action     String
+  detail     Json?
+  createdAt  DateTime @default(now())
+
+  @@index([createdAt])
+}

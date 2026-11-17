@@ -5,7 +5,13 @@ import { Loader2, Mail } from "lucide-react";
 import { Button, Input, Label } from "@bluslate/ui";
 import { sendSignInLink, type SignInState } from "@/lib/auth-actions";
 
-export function SignInForm({ redirectTo }: { redirectTo: string }) {
+export function SignInForm({
+  redirectTo,
+  submitLabel,
+}: {
+  redirectTo: string;
+  submitLabel?: string;
+}) {
   const [state, action, pending] = useActionState<SignInState, FormData>(sendSignInLink, {});
   return (
     <form action={action} className="space-y-5">
@@ -30,7 +36,7 @@ export function SignInForm({ redirectTo }: { redirectTo: string }) {
       </div>
       <Button type="submit" className="w-full" disabled={pending}>
         {pending ? <Loader2 className="animate-spin" aria-hidden /> : <Mail aria-hidden />}
-        Email me a sign-in link
+        {submitLabel ?? "Email me a sign-in link"}
       </Button>
     </form>
   );

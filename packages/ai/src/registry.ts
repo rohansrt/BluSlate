@@ -28,6 +28,7 @@ const per = (input: number, output: number, cacheRead: number, fallbacks: boolea
 });
 
 export const MODELS: Record<string, ModelInfo> = {
+  "claude-fable-5-2": per(8, 40, 0.2, true),
   "claude-opus-5-5": per(4, 20, 0.2, true),
   "claude-sonnet-5-5": per(2, 10, 0.1, true),
   "claude-haiku-5-5": {
@@ -72,8 +73,8 @@ export interface TokenUsage {
   cacheWriteTokens: number;
 }
 
-export function costUsd(model: string, u: TokenUsage): number {
-  const m = modelInfo(model);
+export function costUsd(model: string, u: TokenUsage, price?: ModelInfo): number {
+  const m = price ?? modelInfo(model);
   const promptTokens = u.inputTokens + u.cacheReadTokens + u.cacheWriteTokens;
   const long = m.longPrompt && promptTokens > m.longPrompt.over ? m.longPrompt : null;
   const input = long?.input ?? m.input;
@@ -87,3 +88,41 @@ export function costUsd(model: string, u: TokenUsage): number {
     1_000_000;
   return Math.round(usd * 1e6) / 1e6;
 }
+
+/** Models offered in the admin "Add a model" picker, with a suggested tier. */
+export const MODEL_CATALOG: {
+  provider: "anthropic";
+  modelId: string;
+  displayName: string;
+  suggestedTier: Tier;
+  summary: string;
+}[] = [
+  {
+    provider: "anthropic",
+    modelId: "claude-haiku-5-5",
+    displayName: "Claude Haiku 5.5",
+    suggestedTier: "fast",
+    summary: "Fast and low-cost: tagging, short explanations, Guide me.",
+  },
+  {
+    provider: "anthropic",
+    modelId: "claude-sonnet-5-5",
+    displayName: "Claude Sonnet 5.5",
+    suggestedTier: "standard",
+    summary: "The everyday workhorse: research, customer characters, coaching.",
+  },
+  {
+    provider: "anthropic",
+    modelId: "claude-opus-5-5",
+    displayName: "Claude Opus 5.5",
+    suggestedTier: "top",
+    summary: "Most capable Opus: long documents like the pitch and report.",
+  },
+  {
+    provider: "anthropic",
+    modelId: "claude-fable-5-2",
+    displayName: "Claude Fable 5.2",
+    suggestedTier: "top",
+    summary: "Anthropic's most capable model, priced above Opus.",
+  },
+];

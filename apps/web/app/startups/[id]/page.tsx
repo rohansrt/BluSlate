@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, MapPin, Quote } from "lucide-react";
 import { Badge, Card } from "@bluslate/ui";
+import { DeleteStartupButton } from "@/components/delete-startup-button";
 import { GuestNotice } from "@/components/guest-notice";
 import { JourneyMap } from "@/components/journey/journey-map";
 import { onboardingSchema } from "@/lib/onboarding";
@@ -68,7 +69,12 @@ export default async function CityPage({ params }: { params: Promise<{ id: strin
             <span>Currency {startup.currency}</span>
           </p>
         </div>
-        <Badge variant="neutral">{ENTRY_PATH_LABEL[startup.entryPath]}</Badge>
+        <div className="flex items-center gap-2">
+          <Badge variant="neutral">{ENTRY_PATH_LABEL[startup.entryPath]}</Badge>
+          {startup.members[0]?.role === "owner" && (
+            <DeleteStartupButton id={startup.id} name={startup.name} />
+          )}
+        </div>
       </div>
 
       {user.isGuest && (

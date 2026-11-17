@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Clock, Plus, ShieldCheck, Tags } from "lucide-react";
+import { Clock, ShieldCheck, Tags } from "lucide-react";
 import { auth } from "@/auth";
 import { HeroArt } from "@/components/home/hero-art";
 import { StepsCycle } from "@/components/home/steps-cycle";
 import { OnboardingCard } from "@/components/onboarding/onboarding-card";
-import { StartupCard } from "@/components/startup-card";
+import { ContinueCard } from "@/components/home/continue-card";
 import { site, absoluteUrl } from "@/lib/site";
 import { listStartupsForUser } from "@/lib/startups";
 
@@ -31,55 +31,35 @@ export default async function HomePage() {
   return (
     <>
       <JsonLd />
-      {user && startups.length > 0 ? (
-        <section className="mx-auto max-w-6xl px-4 pb-8 pt-10 sm:px-6 sm:pt-14">
-          <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
-            Welcome back{user.name ? `, ${user.name}` : ""}
-          </h1>
-          <ul className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {startups.map((s) => (
-              <li key={s.id}>
-                <StartupCard startup={s} />
-              </li>
-            ))}
-            <li>
-              <Link
-                href="/startups/new"
-                className="flex h-full min-h-36 flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-primary/50 bg-founder-soft/50 p-6 text-center font-semibold text-primary transition-colors hover:bg-founder-soft"
-              >
-                <Plus className="size-6" aria-hidden />
-                Start another
-              </Link>
-            </li>
-          </ul>
-        </section>
-      ) : (
-        <section className="relative overflow-hidden">
-          <div
-            aria-hidden
-            className="absolute inset-x-0 top-0 -z-10 h-[38rem] bg-[radial-gradient(70%_60%_at_20%_0%,var(--founder-soft),transparent_70%)]"
-          />
-          <div className="mx-auto grid max-w-6xl items-center gap-10 px-4 pb-14 pt-10 sm:px-6 sm:pt-14 lg:grid-cols-[1.15fr_1fr] lg:gap-14">
-            <div>
-              <h1 className="text-4xl font-extrabold leading-[1.06] tracking-tight sm:text-5xl lg:text-[3.15rem]">
-                Got a business idea?
-                <span className="block text-primary">Will it work?</span>
-              </h1>
-              <p className="mt-5 max-w-md text-lg leading-8 text-muted-foreground">
-                Test it step by step, before you spend real money.
-              </p>
-              <div className="mt-10">
-                <HeroArt />
-              </div>
+      <section className="relative overflow-hidden">
+        <div
+          aria-hidden
+          className="absolute inset-x-0 top-0 -z-10 h-[38rem] bg-[radial-gradient(70%_60%_at_20%_0%,var(--founder-soft),transparent_70%)]"
+        />
+        <div className="mx-auto grid max-w-6xl items-center gap-10 px-4 pb-14 pt-10 sm:px-6 sm:pt-14 lg:grid-cols-[1.15fr_1fr] lg:gap-14">
+          <div>
+            <h1 className="text-4xl font-extrabold leading-[1.06] tracking-tight sm:text-5xl lg:text-[3.15rem]">
+              Got a business idea?
+              <span className="block text-primary">Will it work?</span>
+            </h1>
+            <p className="mt-5 max-w-md text-lg leading-8 text-muted-foreground">
+              Test it step by step, before you spend real money.
+            </p>
+            <div className="mt-10">
+              <HeroArt />
             </div>
+          </div>
+          {user && startups.length > 0 ? (
+            <ContinueCard name={user.name ?? null} startups={startups} />
+          ) : (
             <OnboardingCard
               signedIn={Boolean(user)}
               knownName={user?.name}
               className="lg:self-center"
             />
-          </div>
-        </section>
-      )}
+          )}
+        </div>
+      </section>
 
       <section aria-labelledby="steps-heading" className="border-t border-border/70 bg-card/40">
         <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6">

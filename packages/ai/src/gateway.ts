@@ -1,7 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { betaZodOutputFormat } from "@anthropic-ai/sdk/helpers/beta/zod";
 import type { z } from "zod";
-import type { EntityType, EvidenceLabel } from "@bluslate/contracts";
+import type { EntityType, EvidenceLabel, PillarId } from "@bluslate/contracts";
 import { inventedNumbers } from "./checks";
 import { Envelope } from "./envelope";
 import {
@@ -12,7 +12,14 @@ import {
   AiUnavailableError,
 } from "./errors";
 import { BASE_SYSTEM } from "./prompts";
-import { costUsd, modelForTier, modelInfo, type ModelEnv, type TokenUsage } from "./registry";
+import {
+  MODELS,
+  costUsd,
+  modelForTier,
+  type ModelEnv,
+  type ModelInfo,
+  type TokenUsage,
+} from "./registry";
 import type { AiTask } from "./task";
 
 /**
@@ -49,6 +56,8 @@ export interface AiCallLog {
 /** Context for one call. Only this startup's data is ever included (G11). */
 export interface AiContext {
   startupId: string;
+  /** The pillar the founder is working in, so shared ("core") tasks use that pillar's model. */
+  pillar?: PillarId;
   /** A plain-text summary of approved Twin entities of the given types, for this startup only. */
   contextSummary?: (types: readonly EntityType[]) => Promise<string>;
   /** Of the given source ids, the ones that exist with a retrieval date (G2). */
@@ -68,9 +77,28 @@ export interface AiResult<T> {
   costUsd: number;
 }
 
+/** The model (and client) a task should use, chosen by the app's model registry. */
+export interface ResolvedModel {
+  client: Anthropic;
+  model: string;
+  /** Prices the admin entered; falls back to the built-in table. */
+  price?: ModelInfo;
+}
+
+/**
+ * Picks the model for a task. Return null (or throw AiUnavailableError with a
+ * reason) when nothing is configured; callers then fall back to manual input.
+ */
+export type ModelResolver = (task: AiTask, ctx: AiContext) => Promise<ResolvedModel | null>;
+
 export interface GatewayOptions {
+  /**
+   * Choose the model per task (the admin model registry). When set, `client`
+   * and the AI_MODEL_* env tiers are not used.
+   */
+  resolve?: ModelResolver;
   /** null means "no API key configured": every call fails with AiUnavailableError. */
-  client: Anthropic | null;
+  client?: Anthropic | null;
   env: ModelEnv & { AI_DAILY_COST_CAP_USD?: string };
   log: AiCallLog;
   tasks: readonly AiTask[];
@@ -108,14 +136,25 @@ export function createAiGateway(options: GatewayOptions) {
     return task;
   }
 
-  async function guard(ctx: AiContext): Promise<Anthropic> {
-    if (!options.client) throw new AiUnavailableError();
+  async function guard(task: AiTask, ctx: AiContext): Promise<ResolvedModel> {
+    let resolved: ResolvedModel | null;
+    if (options.resolve) {
+      resolved = await options.resolve(task, ctx);
+    } else {
+      resolved = options.client
+        ? { client: options.client, model: modelForTier(task.tier, options.env) }
+        : null;
+    }
+    if (!resolved) throw new AiUnavailableError();
     if (Number.isFinite(cap) && cap > 0) {
       const spent = await options.log.spentSince(ctx.startupId, startOfUtcDay(now()));
       if (spent >= cap) throw new AiCostCapError(cap);
     }
-    return options.client;
+    return resolved;
   }
+
+  const priceOf = (resolved: ResolvedModel, servedBy: string) =>
+    servedBy === resolved.model && resolved.price ? resolved.price : undefined;
 
   async function systemFor(task: AiTask, ctx: AiContext) {
     const summary =
@@ -134,7 +173,8 @@ export function createAiGateway(options: GatewayOptions) {
   }
 
   function fallbackParams(model: string) {
-    return modelInfo(model).fallbacks
+    // Only for models known to support server-side fallbacks.
+    return MODELS[model]?.fallbacks
       ? { betas: [FALLBACK_BETA], fallbacks: "default" as const }
       : {};
   }
@@ -145,8 +185,8 @@ export function createAiGateway(options: GatewayOptions) {
       const task = taskFor(taskId);
       const input = task.input.safeParse(rawInput);
       if (!input.success) throw new AiError(`Bad input for ${taskId}.`, "bad_input");
-      const client = await guard(ctx);
-      const model = modelForTier(task.tier, options.env);
+      const resolved = await guard(task, ctx);
+      const { client, model } = resolved;
       const envelope = Envelope(task.output);
       const started = Date.now();
       const base = { startupId: ctx.startupId, task: task.id, promptVersion: task.promptVersion };
@@ -196,7 +236,7 @@ export function createAiGateway(options: GatewayOptions) {
 
       const servedBy = response.model ?? model;
       const usage = usageOf(response.usage);
-      const cost = costUsd(servedBy, usage);
+      const cost = costUsd(servedBy, usage, priceOf(resolved, servedBy));
       const record = (outcome: AiCallRecord["outcome"]) =>
         options.log.record({
           ...base,
@@ -262,8 +302,8 @@ export function createAiGateway(options: GatewayOptions) {
       ctx: AiContext,
     ): AsyncGenerator<string, void, undefined> {
       const task = taskFor(taskId);
-      const client = await guard(ctx);
-      const model = modelForTier(task.tier, options.env);
+      const resolved = await guard(task, ctx);
+      const { client, model } = resolved;
       const started = Date.now();
       const stream = client.beta.messages.stream({
         model,
@@ -287,7 +327,7 @@ export function createAiGateway(options: GatewayOptions) {
         model: servedBy,
         promptVersion: task.promptVersion,
         ...usage,
-        costUsd: costUsd(servedBy, usage),
+        costUsd: costUsd(servedBy, usage, priceOf(resolved, servedBy)),
         latencyMs: Date.now() - started,
         outcome: final.stop_reason === "refusal" ? "refusal" : "ok",
       });
@@ -297,7 +337,7 @@ export function createAiGateway(options: GatewayOptions) {
 
     /** Whether a model is configured at all (the UI shows the manual path otherwise). */
     available(): boolean {
-      return options.client !== null;
+      return Boolean(options.resolve) || Boolean(options.client);
     },
   };
 }
