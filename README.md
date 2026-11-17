@@ -72,9 +72,14 @@ In development no email is sent. Sign-in links are printed in the `pnpm dev` ter
 
 **Admin:** open http://localhost:3000/admin/login and sign in with **email and password**.
 
-- **Email:** must be listed in `ADMIN_EMAILS` (locally `founder@yoppi.in`).
-- **Password:** checked against `ADMIN_PASSWORD_HASH`. The password is never stored in the repo; ask the PM for it.
+| Admin login (local development) | |
+| --- | --- |
+| Email | `founder@yoppi.in` |
+| Password | `admin9897` |
+
+- **How it's checked:** the email must be listed in `ADMIN_EMAILS`. The password is checked against `ADMIN_PASSWORD_HASH` in `apps/web/.env.local`.
 - **Changing the password:** run `pnpm admin:password "new password"` and put the printed hash in `apps/web/.env.local`.
+- ⚠️ **This is a development password.** Set a different, strong one for production.
 
 ### Commands
 
