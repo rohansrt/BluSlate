@@ -34,3 +34,5 @@ export const marketModule: PillarModule<MarketInput, MarketOutput> = {
   },
   onUpstreamChanged: () => [],
 };
+
+export { marketStarter } from "./starter";

@@ -8,7 +8,7 @@ import {
   PillarNotBuiltError,
   SHARED_ENTITY_TYPES,
 } from "@bluslate/contracts";
-import { marketModule } from "../src/module";
+import { marketModule, marketStarter } from "../src/module";
 import { PLANNED_AI_TASKS } from "../src/ai-tasks";
 
 const known = new Set<string>([...SHARED_ENTITY_TYPES, ...ALL_PILLAR_ENTITY_TYPES]);
@@ -52,6 +52,11 @@ describe("pillar market: skeleton smoke test", () => {
         { userId: "u", approvedAt: "2026-11-17" },
       ),
     ).rejects.toBeInstanceOf(PillarNotBuiltError);
+  });
+
+  it("asks a first question whose answer is an entity it owns", () => {
+    expect(marketModule.writes).toContain(marketStarter.entityType);
+    expect(marketStarter.question.length).toBeGreaterThan(10);
   });
 
   it("lists its Appendix A.3 AI tasks", () => {

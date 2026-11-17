@@ -38,3 +38,5 @@ export const gtmModule: PillarModule<GtmInput, GtmOutput> = {
   },
   onUpstreamChanged: () => [],
 };
+
+export { gtmStarter } from "./starter";

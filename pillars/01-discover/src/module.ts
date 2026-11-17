@@ -34,3 +34,5 @@ export const discoverModule: PillarModule<DiscoverInput, DiscoverOutput> = {
   },
   onUpstreamChanged: () => [],
 };
+
+export { discoverStarter } from "./starter";

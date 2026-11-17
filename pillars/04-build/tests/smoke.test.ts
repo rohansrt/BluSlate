@@ -8,7 +8,7 @@ import {
   PillarNotBuiltError,
   SHARED_ENTITY_TYPES,
 } from "@bluslate/contracts";
-import { buildModule } from "../src/module";
+import { buildModule, buildStarter } from "../src/module";
 import { PLANNED_AI_TASKS } from "../src/ai-tasks";
 
 const known = new Set<string>([...SHARED_ENTITY_TYPES, ...ALL_PILLAR_ENTITY_TYPES]);
@@ -52,6 +52,11 @@ describe("pillar build: skeleton smoke test", () => {
         { userId: "u", approvedAt: "2026-11-17" },
       ),
     ).rejects.toBeInstanceOf(PillarNotBuiltError);
+  });
+
+  it("asks a first question whose answer is an entity it owns", () => {
+    expect(buildModule.writes).toContain(buildStarter.entityType);
+    expect(buildStarter.question.length).toBeGreaterThan(10);
   });
 
   it("lists its Appendix A.4 AI tasks", () => {

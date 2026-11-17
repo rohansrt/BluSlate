@@ -1,10 +1,15 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import type { PillarStatus } from "@bluslate/twin";
 import { PillarShell } from "@/components/pillar-shell/pillar-shell";
+import { PillarWorkspace } from "@/components/pillar-shell/pillar-workspace";
+import { PILLAR_STARTERS } from "@/lib/pillar-modules";
 import { PILLAR_SCREENS } from "@/lib/pillar-screens";
-import { isPillarId, pillarInfo } from "@/lib/pillars";
+import { PILLAR_IDS, isPillarId, pillarInfo, type PillarId } from "@/lib/pillars";
 import { requireUser } from "@/lib/require-user";
+import { getStarterState } from "@/lib/starter-state";
 import { getStartupForUser } from "@/lib/startups";
+import { twin } from "@/lib/twin";
 
 type Params = { id: string; pillar: string };
 
@@ -24,10 +29,31 @@ export default async function PillarPage({ params }: { params: Promise<Params> }
   const startup = await getStartupForUser(id, user.id);
   if (!startup) notFound();
 
+  const [state, statuses] = await Promise.all([
+    getStarterState(startup.id, pillar),
+    twin.statuses(startup.id),
+  ]);
+  const hubStatuses = Object.fromEntries(
+    PILLAR_IDS.map((p) => [p, statuses.pillars[p].status]),
+  ) as Record<PillarId, PillarStatus>;
+  const info = pillarInfo(pillar);
   const Screen = PILLAR_SCREENS[pillar];
+
   return (
-    <PillarShell startup={{ id: startup.id, name: startup.name }} active={pillarInfo(pillar)}>
-      <Screen />
+    <PillarShell
+      startup={{ id: startup.id, name: startup.name }}
+      active={info}
+      statuses={hubStatuses}
+    >
+      <PillarWorkspace
+        startupId={startup.id}
+        pillar={pillar}
+        pillarName={info.name}
+        starter={PILLAR_STARTERS[pillar]}
+        state={state}
+      >
+        <Screen />
+      </PillarWorkspace>
     </PillarShell>
   );
 }

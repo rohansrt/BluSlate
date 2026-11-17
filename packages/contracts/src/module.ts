@@ -6,7 +6,7 @@
  * the Business Twin; changing them there is expected.
  */
 import type { z } from "zod";
-import type { EntityType, PillarEntityType } from "./entities";
+import type { EntityType, PillarEntityType } from "./entity-types";
 import type { PillarId } from "./pillars";
 
 /** What a pillar may know about the startup it runs for. Filled in by S3. */

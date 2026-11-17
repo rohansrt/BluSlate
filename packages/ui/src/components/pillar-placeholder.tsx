@@ -1,5 +1,5 @@
 import * as React from "react";
-import { BookOpen, Compass, PenLine, Search } from "lucide-react";
+import { BookOpen } from "lucide-react";
 import type { EntityType, PillarId } from "@bluslate/contracts";
 import { Badge } from "./badge";
 import { Card } from "./card";
@@ -14,12 +14,6 @@ export interface PillarPlaceholderProps {
   reads: readonly EntityType[];
   writes: readonly EntityType[];
 }
-
-const MODES = [
-  { icon: PenLine, label: "I'll decide", hint: "Type, pick or upload it yourself" },
-  { icon: Compass, label: "Guide me", hint: "A short explanation and a few questions" },
-  { icon: Search, label: "Research & suggest", hint: "Two to four options, with sources" },
-];
 
 /**
  * The skeleton screen every pillar shows until its Build step (S2): the
@@ -56,18 +50,9 @@ export function PillarPlaceholder({
           <Badge variant="review">Coming soon</Badge>
         </div>
         <p className="mt-2 text-sm text-muted-foreground">
-          The full {name} workspace arrives after it has been defined and signed off. Every question
-          here will offer three ways to answer:
+          The full {name} workspace arrives after it has been defined and signed off. Until then,
+          answer the first question above.
         </p>
-        <ul className="mt-4 grid gap-2 sm:grid-cols-3">
-          {MODES.map(({ icon: Icon, label, hint }) => (
-            <li key={label} className="rounded-xl border border-border bg-muted/50 p-3">
-              <Icon className="size-4 text-primary" aria-hidden />
-              <p className="mt-1.5 text-sm font-semibold">{label}</p>
-              <p className="text-xs text-muted-foreground">{hint}</p>
-            </li>
-          ))}
-        </ul>
       </Card>
 
       <div className="grid gap-4 md:grid-cols-2">

@@ -38,6 +38,12 @@ enum Actor {
 }
 
 // How the founder arrived (§2.1). Addition to §8.1.
+enum ScenarioMode {
+  SANDBOX
+  ACTUALS_SANDBOX
+  WHAT_IF
+}
+
 enum EntryPath {
   NEW_IDEA
   EXISTING
@@ -105,7 +111,7 @@ model VerificationToken {
 // ─── Business Twin core (§8.1) ───────────────────────────────────────────────
 
 model Startup {
-  id           String     @id @default(cuid())
+  id           String    @id @default(cuid())
   name         String
   stage        String
   businessType String?
@@ -116,11 +122,12 @@ model Startup {
   // entities: Discover turns the idea into a Problem in its own step.
   entryPath    EntryPath
   onboarding   Json
-  createdAt    DateTime   @default(now())
+  createdAt    DateTime  @default(now())
 
-  owner    User     @relation(fields: [ownerId], references: [id])
-  members  Member[]
-  entities Entity[]
+  owner     User       @relation(fields: [ownerId], references: [id])
+  members   Member[]
+  entities  Entity[]
+  scenarios Scenario[]
 
   @@index([ownerId])
 }
@@ -153,9 +160,11 @@ model Entity {
   createdBy     Actor
   createdAt     DateTime      @default(now())
   startup       Startup       @relation(fields: [startupId], references: [id], onDelete: Cascade)
+  sources       SourceLink[]
 
   @@unique([logicalId, version])
   @@index([startupId, type, status])
+  @@index([startupId, logicalId])
 }
 
 model Dependency {
@@ -163,6 +172,7 @@ model Dependency {
   toLogicalId   String // downstream entity that used it
 
   @@id([fromLogicalId, toLogicalId])
+  @@index([fromLogicalId])
 }
 
 model DecisionEvent {
@@ -176,6 +186,208 @@ model DecisionEvent {
   rationale       String?
   effectiveAt     DateTime? // simulated time
   createdAt       DateTime  @default(now())
+
+  @@index([startupId])
+}
+
+model Proposal {
+  id              String   @id @default(cuid())
+  startupId       String
+  fromPillar      String
+  targetPillar    String
+  entityType      String
+  targetLogicalId String? // the entity to change, or null to propose a new one
+  payload         Json
+  reason          String
+  status          String // pending | accepted | rejected
+  createdAt       DateTime @default(now())
+
+  @@index([startupId, targetPillar, status])
+}
+
+model Source {
+  id               String       @id @default(cuid())
+  url              String
+  title            String
+  publisher        String?
+  publishedAt      DateTime?
+  retrievedAt      DateTime
+  geography        String?
+  metricDefinition String?
+  licence          String?
+  links            SourceLink[]
+}
+
+model SourceLink {
+  id       String @id @default(cuid())
+  entityId String
+  sourceId String
+  claim    String
+  entity   Entity @relation(fields: [entityId], references: [id], onDelete: Cascade)
+  source   Source @relation(fields: [sourceId], references: [id])
+}
+
+model Assumption {
+  id              String        @id @default(cuid())
+  startupId       String
+  entityLogicalId String
+  field           String
+  value           Json
+  label           EvidenceLabel
+  confidence      String // low | medium | high
+  sensitivity     Float?
+  status          String // untested | tested | invalidated
+  aiSuggested     Boolean       @default(false)
+  createdAt       DateTime      @default(now())
+
+  @@index([startupId])
+}
+
+model Persona {
+  id               String @id @default(cuid())
+  startupId        String
+  segmentLogicalId String
+  visible          Json // safe to send to the client
+  hidden           Json // NEVER sent to the client (G6)
+  seed             Int
+  promptVersion    String
+
+  @@index([startupId])
+}
+
+model Thread {
+  id        String    @id @default(cuid())
+  startupId String
+  kind      String // interview | negotiation | rail | consultant
+  personaId String?
+  synthetic Boolean
+  messages  Message[]
+
+  @@index([startupId])
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  threadId  String
+  role      String // user | assistant
+  content   String
+  meta      Json? // coach score, revealed hidden facts, tags
+  createdAt DateTime @default(now())
+  thread    Thread   @relation(fields: [threadId], references: [id], onDelete: Cascade)
+}
+
+model Scenario {
+  id            String       @id @default(cuid())
+  startupId     String
+  parentId      String?
+  name          String
+  mode          ScenarioMode
+  seed          Int
+  kernelVersion String
+  startDate     DateTime
+  horizonMonths Int
+  difficulty    String // optimistic | realistic | harsh
+  clock         DateTime // current simulated time
+  snapshotId    String // Twin versions it runs on
+  startup       Startup      @relation(fields: [startupId], references: [id], onDelete: Cascade)
+}
+
+model Period {
+  id         String  @id @default(cuid())
+  scenarioId String
+  index      Int
+  isActual   Boolean
+  metrics    Json // KPIs incl. P10/P50/P90 where computed
+  ledger     Json // double-entry lines for the period
+
+  @@unique([scenarioId, index])
+}
+
+model LeverChange {
+  id          String   @id @default(cuid())
+  scenarioId  String
+  lever       String
+  oldValue    Json
+  newValue    Json
+  decidedAt   DateTime // simulated time
+  effectiveAt DateTime // simulated time, after lead time
+}
+
+model MarketEvent {
+  id         String   @id @default(cuid())
+  scenarioId String
+  at         DateTime // simulated time
+  kind       String
+  cause      String // founder | competitor | enabler | market | seasonality
+  payload    Json
+}
+
+model Snapshot {
+  id         String   @id @default(cuid())
+  startupId  String
+  versionMap Json // logicalId -> version
+  createdAt  DateTime @default(now())
+}
+
+model Report {
+  id         String   @id @default(cuid())
+  snapshotId String
+  scenarioId String?
+  type       String // pitch | workbook | analysis | bmc | funding
+  fileKey    String
+  createdAt  DateTime @default(now())
+}
+
+model AiCall {
+  id               String   @id @default(cuid())
+  startupId        String?
+  task             String
+  model            String
+  promptVersion    String
+  inputTokens      Int
+  outputTokens     Int
+  cacheReadTokens  Int      @default(0)
+  cacheWriteTokens Int      @default(0)
+  costUsd          Float
+  latencyMs        Int
+  outcome          String   @default("ok") // ok | refusal | invalid | error
+  createdAt        DateTime @default(now())
+
+  @@index([startupId, createdAt])
+}
+
+// ─── Additions for the Twin workspace (docs/decisions/0003) ──────────────────
+
+/// Unpublished work. A mutable workspace: only publishing turns a draft into
+/// an Entity version, so history itself stays append-only.
+model Draft {
+  id            String        @id @default(cuid())
+  startupId     String
+  pillar        String
+  type          String
+  logicalId     String? // the entity being edited, or null for a new one
+  data          Json
+  evidenceLabel EvidenceLabel
+  createdBy     Actor
+  reviewState   EntityStatus // DRAFT or NEEDS_REVIEW
+  basedOn       String[]
+  rationale     String?
+  schemaVersion String
+  updatedAt     DateTime      @updatedAt
+
+  @@index([startupId, pillar])
+}
+
+/// "May be outdated": an upstream entity changed after `version` was approved.
+/// Append-only; publishing a newer version of the entity clears it.
+model StaleMark {
+  id                String   @id @default(cuid())
+  startupId         String
+  logicalId         String
+  version           Int
+  causedByLogicalId String
+  reason            String
+  createdAt         DateTime @default(now())
 
   @@index([startupId])
 }

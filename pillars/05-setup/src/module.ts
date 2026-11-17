@@ -29,3 +29,5 @@ export const setupModule: PillarModule<SetupInput, SetupOutput> = {
   },
   onUpstreamChanged: () => [],
 };
+
+export { setupStarter } from "./starter";

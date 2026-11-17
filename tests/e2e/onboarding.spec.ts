@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { magicLinkFor, onboardAsRiya, uniqueEmail } from "./helpers";
+import { expectNoSidewaysScroll, magicLinkFor, onboardAsRiya, uniqueEmail } from "./helpers";
 
 test.describe("Home onboarding (S1 exit gate, without sign-in)", () => {
   test("a new founder completes onboarding and lands in an empty city", async ({ page }) => {
@@ -31,6 +31,7 @@ test.describe("Home onboarding (S1 exit gate, without sign-in)", () => {
     }
     await expect(hubs.getByText("Not started")).toHaveCount(6);
     await expect(hubs.getByText("Start here")).toHaveCount(1);
+    await expectNoSidewaysScroll(page);
 
     // Coming back to Home shows "Welcome back" and the startup. Guests can't sign out.
     await page.goto("/");

@@ -9,6 +9,7 @@ import { onboardingSchema } from "@/lib/onboarding";
 import { PILLAR_IDS, type PillarId } from "@/lib/pillars";
 import { requireUser } from "@/lib/require-user";
 import { ENTRY_PATH_LABEL, getStartupForUser } from "@/lib/startups";
+import { twin } from "@/lib/twin";
 
 export const metadata: Metadata = {
   title: "Your city",
@@ -42,6 +43,8 @@ export default async function CityPage({ params }: { params: Promise<{ id: strin
   if (!startup) notFound();
 
   const statement = founderStatement(startup.onboarding);
+  const { pillars } = await twin.statuses(startup.id);
+  const statuses = Object.fromEntries(PILLAR_IDS.map((p) => [p, pillars[p].status]));
   const highlight = highlightFrom(startup.onboarding);
 
   return (
@@ -95,7 +98,7 @@ export default async function CityPage({ params }: { params: Promise<{ id: strin
             Seven hubs, one for each step. Open any of them, in any order.
           </p>
         </div>
-        <JourneyMap mode="city" startupId={startup.id} highlight={highlight} />
+        <JourneyMap mode="city" startupId={startup.id} highlight={highlight} statuses={statuses} />
       </section>
     </div>
   );

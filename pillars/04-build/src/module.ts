@@ -29,3 +29,5 @@ export const buildModule: PillarModule<BuildInput, BuildOutput> = {
   },
   onUpstreamChanged: () => [],
 };
+
+export { buildStarter } from "./starter";

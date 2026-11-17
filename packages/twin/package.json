@@ -8,5 +8,9 @@
   },
   "scripts": {
     "typecheck": "tsc --noEmit -p ."
+  },
+  "dependencies": {
+    "@bluslate/contracts": "workspace:*",
+    "zod": "4.6.7"
   }
 }

@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { ArrowRight, Sparkles } from "lucide-react";
 import { Badge, FounderPackIcon, PillarTile, cn } from "@bluslate/ui";
+import type { PillarStatus } from "@bluslate/twin";
+import { PILLAR_STATUS_INFO } from "@/lib/pillar-status";
 import { PILLARS, type PillarId, type PillarInfo } from "@/lib/pillars";
 
 /**
@@ -21,6 +23,8 @@ interface JourneyMapProps {
   startupId?: string;
   /** City mode: the hub to suggest first. */
   highlight?: PillarId | null;
+  /** City mode: each hub's status from the Twin. */
+  statuses?: Partial<Record<PillarId, PillarStatus>>;
 }
 
 // Hub positions along the road, as percentages of the map (x, y).
@@ -53,7 +57,10 @@ function hubHref(mode: JourneyMode, startupId: string | undefined, id: PillarId)
   return mode === "city" && startupId ? `/startups/${startupId}/${id}` : undefined;
 }
 
-export function JourneyMap({ mode, startupId, highlight = null }: JourneyMapProps) {
+export function JourneyMap({ mode, startupId, highlight = null, statuses = {} }: JourneyMapProps) {
+  const statusOf = (id: PillarId): PillarStatus => statuses[id] ?? "not_started";
+  // "Start here" only while the suggested hub hasn't been started.
+  const suggest = (id: PillarId) => highlight === id && statusOf(id) === "not_started";
   return (
     <div>
       <div className="relative hidden aspect-[1000/420] overflow-hidden rounded-3xl border border-border bg-gradient-to-b from-founder-soft/70 via-card to-card lg:block">
@@ -97,7 +104,8 @@ export function JourneyMap({ mode, startupId, highlight = null }: JourneyMapProp
                   pillar={p}
                   mode={mode}
                   href={hubHref(mode, startupId, p.id)}
-                  suggested={highlight === p.id}
+                  suggested={suggest(p.id)}
+                  status={statusOf(p.id)}
                 />
               </li>
             );
@@ -122,7 +130,8 @@ export function JourneyMap({ mode, startupId, highlight = null }: JourneyMapProp
               pillar={p}
               mode={mode}
               href={hubHref(mode, startupId, p.id)}
-              suggested={highlight === p.id}
+              suggested={suggest(p.id)}
+              status={statusOf(p.id)}
             />
           </li>
         ))}
@@ -142,11 +151,13 @@ function MapHub({
   mode,
   href,
   suggested,
+  status,
 }: {
   pillar: PillarInfo;
   mode: JourneyMode;
   href?: string;
   suggested: boolean;
+  status: PillarStatus;
 }) {
   const body = (
     <>
@@ -161,7 +172,7 @@ function MapHub({
           suggested && "ring-4 ring-primary/25",
         )}
       />
-      {mode === "city" && <StatusBadge suggested={suggested} />}
+      {mode === "city" && <StatusBadge suggested={suggested} status={status} />}
     </>
   );
   const cls = "group flex flex-col items-center gap-1.5";
@@ -184,11 +195,13 @@ function RouteHub({
   mode,
   href,
   suggested,
+  status,
 }: {
   pillar: PillarInfo;
   mode: JourneyMode;
   href?: string;
   suggested: boolean;
+  status: PillarStatus;
 }) {
   const body = (
     <>
@@ -207,7 +220,7 @@ function RouteHub({
             <p className="mt-1 text-xs font-medium text-primary">You get: {pillar.deliverable}</p>
           )}
         </div>
-        {mode === "city" && <StatusBadge suggested={suggested} />}
+        {mode === "city" && <StatusBadge suggested={suggested} status={status} />}
       </div>
     </>
   );
@@ -226,14 +239,18 @@ function RouteHub({
   );
 }
 
-function StatusBadge({ suggested }: { suggested: boolean }) {
-  return suggested ? (
-    <Badge variant="founder" className="gap-1 whitespace-nowrap">
-      <Sparkles className="size-3" aria-hidden /> Start here
-    </Badge>
-  ) : (
-    <Badge variant="neutral" className="whitespace-nowrap">
-      Not started
+function StatusBadge({ suggested, status }: { suggested: boolean; status: PillarStatus }) {
+  if (suggested) {
+    return (
+      <Badge variant="founder" className="gap-1 whitespace-nowrap">
+        <Sparkles className="size-3" aria-hidden /> Start here
+      </Badge>
+    );
+  }
+  const info = PILLAR_STATUS_INFO[status];
+  return (
+    <Badge variant={info.badge} className="whitespace-nowrap" data-status={status}>
+      {info.label}
     </Badge>
   );
 }

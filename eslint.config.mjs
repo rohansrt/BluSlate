@@ -66,6 +66,25 @@ export default tseslint.config(
     },
   },
 
+  // G5: the AI gateway can never publish, so it can't import the Twin.
+  {
+    files: ["packages/ai/**/*.{ts,tsx}"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              group: ["@bluslate/twin", "@bluslate/twin/**", "@bluslate/pillar-*", "**/pillars/**"],
+              message:
+                "The AI gateway must not touch the Twin or pillars: AI output is a draft the app saves.",
+            },
+          ],
+        },
+      ],
+    },
+  },
+
   // Plain Node scripts.
   {
     files: ["**/*.mjs", "scripts/**"],

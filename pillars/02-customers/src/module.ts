@@ -34,3 +34,5 @@ export const customersModule: PillarModule<CustomersInput, CustomersOutput> = {
   },
   onUpstreamChanged: () => [],
 };
+
+export { customersStarter } from "./starter";

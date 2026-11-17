@@ -153,3 +153,57 @@ One entry per step (CLAUDE.md, "Source of truth").
 - **Slate drawings:** `Slate`, `SlateDrawing` and `ChalkDefs` in packages/ui. Pillar tiles in the city and on pillar pages use the same drawings.
 
 **Tests:** a new end-to-end test covers the loop: seven tabs, the brief changing on click, and keyboard wrap-around (26 end-to-end tests in total).
+
+---
+
+## 17 November 2026 — S3 Shared core ✅
+
+**Built**
+
+- **`packages/contracts`:**
+  - Zod schemas for every §8.2 entity (`entities/<pillar>.ts`, `ENTITY_SCHEMAS`). Every field is optional, so pillars tolerate unknowns.
+  - The `PillarStarter` type for each pillar's first question.
+- **`packages/twin`, the Business Twin** (pure logic behind a `TwinStore` port):
+  - drafts, with publishing that needs a FounderApproval (G5);
+  - append-only versions with a DecisionEvent each, inside one atomic transaction;
+  - the single-writer rule, and schema validation;
+  - dependencies, and entity-level "May be outdated" marks;
+  - computed entity and hub statuses, snapshots, proposals (accepting one publishes through the owning pillar), and the assumptions register.
+- **Database:**
+  - the remaining §8.1 tables (Proposal, Source, SourceLink, Assumption, Persona, Thread, Message, Scenario, Period, LeverChange, MarketEvent, Snapshot, Report, AiCall);
+  - two new tables, `Draft` and `StaleMark` (decision 0003);
+  - migration `s3_shared_core`.
+- **`packages/ai`, the AI gateway:**
+  - `ai.run(taskId, input, ctx)` and `ai.stream(...)`, with tiers taken from env;
+  - structured output via `client.beta.messages.parse` and `betaZodOutputFormat`;
+  - refusal fallbacks (`"default"`) where the model supports them;
+  - prompt caching, post-parse bounds, source-id and invented-number checks, and labels assigned by the gateway;
+  - AiCall logging with cost per call, a per-startup daily cost cap, SDK retries, and typed errors that fall back to the manual path;
+  - the generic `core.explain` task for "Guide me".
+- **`packages/ui`:** EvidenceBadge, InputModeSwitch, DecisionCard, SuggestionCard, EnablerCard, ReviewBanner, PublishPanel (with impact preview), AiRailPanel and TimeStrip.
+- **App:**
+  - Each pillar page asks its first question with the three input modes. "I'll decide" saves a draft, the Publish panel shows the change, its label and what it affects, and approval publishes.
+  - "Guide me" goes through the gateway and falls back when AI isn't connected.
+  - The city and the hub rail show live statuses: Approved, Draft, Needs a look, Not started.
+  - API routes from §7.4: drafts, preview, publish, analyze, twin, proposals. All are membership-checked and return 404 across startups.
+- **Lint:** `packages/ai` can't import the Twin or pillars (G5), with a test.
+
+**Tests: 132 unit tests and 34 end-to-end tests.**
+
+- **Unit:**
+  - Twin: single writer, approval, append-only history, rollback, ripple, statuses, proposals, assumptions, snapshots;
+  - gateway, against a fake client: tiers, caching, fallbacks, labels, bounds, sources, invented numbers, refusal, cost cap, streaming, pricing;
+  - UI rendering, the pillar first questions, and import boundaries.
+- **End-to-end, desktop and mobile:**
+  - the S3 gate: a manual value published in all seven pillars, with the city showing "Approved" ×7;
+  - versioning and drafts;
+  - "Guide me" falling back without a key;
+  - API refusing writes without a session or across startups;
+  - no sideways scroll on phones.
+
+**Open issues**
+
+- No `ANTHROPIC_API_KEY` is set yet, so "Guide me" only shows the fallback. Add the app's key to `apps/web/.env.local` to try it (it costs a fraction of a cent per call on Haiku 5.5).
+- Run & Grow's Scenario exists as both an entity and a table (decision 0003 §4, for P7).
+- The Evidence and Publish tabs are placeholders until the pillars need them. The Publish panel already works inline.
+- The TimeStrip component is built, but it only appears once a scenario exists (P7).

@@ -42,3 +42,5 @@ export const runGrowModule: PillarModule<RunGrowInput, RunGrowOutput> = {
   },
   onUpstreamChanged: () => [],
 };
+
+export { runGrowStarter } from "./starter";

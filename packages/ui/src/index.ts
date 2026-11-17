@@ -13,3 +13,9 @@ export {
   SlateDrawingStrokes,
   type SlateDrawingName,
 } from "./components/slate-drawings";
+export { EvidenceBadge, EVIDENCE_LABEL_INFO } from "./components/evidence-badge";
+export { InputModeSwitch, INPUT_MODES, type InputMode } from "./components/input-mode-switch";
+export { DecisionCard, SuggestionCard, EnablerCard, ReviewBanner } from "./components/cards";
+export { PublishPanel, type PublishChange } from "./components/publish-panel";
+export { TimeStrip, type TimeStripFigure } from "./components/time-strip";
+export { AiRailPanel, type AiRailState } from "./components/ai-rail-panel";

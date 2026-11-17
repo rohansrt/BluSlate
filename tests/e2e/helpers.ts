@@ -64,3 +64,12 @@ export async function onboardAsRiya(page: Page) {
   // First visits compile on demand in dev, so allow time.
   await expect(page).toHaveURL(/\/startups\/[a-z0-9]+$/, { timeout: 20_000 });
 }
+
+/** Fails if the page is wider than the screen (a sideways scroll on phones). */
+export async function expectNoSidewaysScroll(page: Page) {
+  const { scroll, client } = await page.evaluate(() => ({
+    scroll: document.documentElement.scrollWidth,
+    client: document.documentElement.clientWidth,
+  }));
+  expect(scroll, "page should not scroll sideways").toBeLessThanOrEqual(client);
+}

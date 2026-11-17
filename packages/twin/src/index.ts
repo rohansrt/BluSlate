@@ -1,2 +1,16 @@
-// Business Twin: publish, versions, dependencies, staleness, snapshots, proposals (§5.1, §5.5). Built in S3.
-export {};
+export * from "./types";
+export * from "./errors";
+export * from "./status";
+export * from "./store";
+export { InMemoryTwinStore } from "./memory-store";
+export {
+  createTwin,
+  typesOwnedBy,
+  type Twin,
+  type SaveDraftInput,
+  type AffectedEntity,
+  type TwinImpactPreview,
+  type TwinPublishResult,
+  type TwinStatuses,
+  type TwinOptions,
+} from "./twin";

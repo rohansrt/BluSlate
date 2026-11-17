@@ -1,10 +1,12 @@
 import { expect, test } from "@playwright/test";
+import { expectNoSidewaysScroll } from "./helpers";
 
 test.describe("Public pages", () => {
   test("Home opens with the hook and the seven steps as a clickable loop", async ({ page }) => {
     await page.goto("/");
     await expect(page.getByRole("heading", { level: 1 })).toContainText("Will it work?");
 
+    await expectNoSidewaysScroll(page);
     const steps = page.getByRole("tablist", { name: "The seven steps" });
     await expect(steps.getByRole("tab")).toHaveCount(7);
     const brief = page.getByTestId("step-brief");

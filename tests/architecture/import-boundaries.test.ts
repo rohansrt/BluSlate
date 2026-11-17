@@ -69,4 +69,12 @@ describe("import boundaries", () => {
     );
     expect(errors).toHaveLength(0);
   });
+
+  it("stops the AI gateway importing the Twin, so AI can never publish (G5)", async () => {
+    const errors = await restrictedImportErrors(
+      'import { createTwin } from "@bluslate/twin";\nexport const x = createTwin;\n',
+      "packages/ai/src/sample.ts",
+    );
+    expect(errors).toHaveLength(1);
+  });
 });

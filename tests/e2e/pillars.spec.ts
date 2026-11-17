@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { onboardAsRiya } from "./helpers";
+import { expectNoSidewaysScroll, onboardAsRiya } from "./helpers";
 
 const PILLARS = [
   {
@@ -51,6 +51,7 @@ test.describe("Pillar skeletons (S2 exit gate)", () => {
       ).toBeVisible();
       await expect(screen.getByRole("list", { name: `${p.name} reads` })).toBeVisible();
       await expect(page.getByRole("tab", { name: "Work", selected: true })).toBeVisible();
+      await expectNoSidewaysScroll(page);
     }
   });
 
