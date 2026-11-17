@@ -266,3 +266,17 @@ One entry per step (CLAUDE.md, "Source of truth").
 - **Part 2 embeds the full spec (v2.4)** word for word. `pnpm docs:readme` refreshes it, and `tests/architecture/readme-spec.test.ts` fails if it falls behind.
 - **Spec additions:** brand and illustration style (slates and chalk), the Home design, the city layout, and the "no sideways scroll" rule (§6.2, §6.5).
 - **Part A and CLAUDE.md:** after a spec change, run `pnpm docs:readme`.
+
+---
+
+## 17 November 2026 — Admin sign-in with email and password ✅
+
+- **Sign-in:** `/admin/login` now takes email and password (decision 0005). Only `ADMIN_EMAILS` can sign in, against the scrypt hash in `ADMIN_PASSWORD_HASH`.
+- **Failures:** wrong details give one generic message, and five failures per IP in 15 minutes block further attempts.
+- **Audit:** every login is in the audit log.
+- **Setup:** `pnpm admin:password` prints a hash. The PM's admin (`founder@yoppi.in`) is set in `.env.local`, which is gitignored; no password is in the repo.
+- **Tests:**
+  - unit tests for hashing;
+  - end-to-end tests for wrong-password and non-admin refusals, and for an admin signing in and plugging in a model;
+  - CI uses a test-only admin.
+- **Fix:** hashes use `:` separators, because Next.js expands `$NAME` in `.env` values.

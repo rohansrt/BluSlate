@@ -15,6 +15,10 @@ env:
   AUTH_SECRET: ci-only-not-a-real-secret-0123456789abcdef
   NEXT_PUBLIC_SITE_URL: http://localhost:3000
   ADMIN_EMAILS: admin@example.test
+  # Test-only admin password ("e2e-admin-pass"); the real one lives only in each environment.
+  ADMIN_PASSWORD_HASH: "scrypt:E2K_oBRsvRZguQwzKrNEaQ:zb0WczSt1aLjGnONASbIVTji0bW__dG_Zvs8ta5ctLA"
+  E2E_ADMIN_EMAIL: admin@example.test
+  E2E_ADMIN_PASSWORD: e2e-admin-pass
 
 jobs:
   checks:

@@ -28,7 +28,7 @@ This single file holds everything needed to build BluSlate: the rules Claude Cod
 | Pillars renamed for clarity: Problem Discovery, Customer Discovery, Market Research, Product Design, Operations Setup, Go-to-Market Plan, Launch & Growth (ids and folders unchanged) | Everywhere |
 | No sign-in required for now: onboarding is three steps and creates a private guest workspace; Sign in / Sign up / Continue as guest at the top right; guests who sign up keep their startups | §1.4, §6.0, B3 |
 | A profile menu at the top right; the logo always goes to Home; founders can delete a startup | §6.0, B3 |
-| An admin back end (`/admin`): aggregate statistics, audit log, and the AI model registry where models are added and assigned to pillars; API keys stay in env | §5.8, §5.11, §6.0, §11.2, Part A |
+| An admin back end (`/admin`): aggregate statistics, audit log, and the AI model registry where models are added and assigned to pillars; API keys stay in env. Admins sign in with email and password | §5.8, §5.11, §6.0, §11.2, Part A |
 | Twin workspace tables (Draft, StaleMark), each pillar's first question, and other schema additions | §5.1, §8.3 |
 | Home opens with a hook question, a hero image and the seven steps as a clickable loop; brand illustration style is chalk drawings on blue slates | §6.0, §6.2, §6.5 |
 
@@ -144,6 +144,7 @@ AUTH_SECRET=
 ANTHROPIC_API_KEY=            # the app's own key; never commit it. Models are added in /admin/models
 AI_DAILY_COST_CAP_USD=        # optional per-startup daily AI spend cap (USD)
 ADMIN_EMAILS=                 # comma-separated emails allowed into /admin
+ADMIN_PASSWORD_HASH=          # admin sign-in password, as a hash: pnpm admin:password "..."
 NEXT_PUBLIC_REQUIRE_SIGN_IN=  # "true" brings back email sign-in as onboarding step 4
 NEXT_PUBLIC_SITE_URL=
 AUTH_RESEND_KEY=              # production sign-in email
@@ -1053,7 +1054,7 @@ A pure, deterministic-core TypeScript package (`packages/sim-kernel`) computes e
 | Enabler / partner (real or simulated) | Provide resources, quotes or services | Commit the founder to costs or contracts |
 | AI agents | Research, draft, recommend, simulate, explain | Publish to the Twin, contact anyone, spend, or make binding commitments |
 | Consultant / mentor | Review explicitly shared snapshots, comment, recommend | Access unshared data or claim ownership |
-| Platform admin (an email in `ADMIN_EMAILS`, signed in at `/admin/login`) | See aggregate statistics, manage the AI model registry, review the audit log; every admin action is logged | See or reuse founders' ideas and answers; store API keys |
+| Platform admin (an email in `ADMIN_EMAILS`, signed in at `/admin/login` with email and password) | See aggregate statistics, manage the AI model registry, review the audit log; every admin action is logged | See or reuse founders' ideas and answers; store API keys |
 
 **Visual code (used on every screen and report):** founder decision = solid blue card "Your decision" · AI suggestion = dashed grey card "Suggested" until accepted · enabler = orange card tagged "Real provider" or "Synthetic quote" · needs review / may be outdated = amber banner · synthetic content = purple SYNTHETIC badge.
 
@@ -1108,7 +1109,7 @@ Each registry is versioned on its own, so a method, tool list, model or formula 
 | Launch & Growth | `/startups/[id]/run-grow` | The control room |
 | Founder Pack | `/startups/[id]/pack` | Reports, Funding Scout, consultant |
 | Legal | `/privacy`, `/terms`, `/cookies` | Policies |
-| Admin | `/admin`, `/admin/models`, `/admin/models/new`, `/admin/audit`, `/admin/login` | Aggregate statistics; the AI model registry (empty state, add-a-model workflow, pillar × tier assignments); audit log |
+| Admin | `/admin`, `/admin/models`, `/admin/models/new`, `/admin/audit`, `/admin/login` | Aggregate statistics; the AI model registry (empty state, add-a-model workflow, pillar × tier assignments); audit log. Admins sign in with **email and password**: the email must be in `ADMIN_EMAILS`, and the password is checked against `ADMIN_PASSWORD_HASH` (scrypt; the password itself is never stored). A wrong email or password gives the same message, and repeated failures are throttled |
 
 **Home onboarding — three short steps on one card:**
 

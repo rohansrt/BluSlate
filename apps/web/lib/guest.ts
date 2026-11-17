@@ -37,10 +37,21 @@ export async function createGuest(
     data: { name: firstName, isGuest: true },
     select: { id: true },
   });
+  return createSessionFor(tx, user.id);
+}
+
+/**
+ * Start an Auth.js database session for a user (guests, and the admin
+ * password sign-in). auth() then reads it like any other session.
+ */
+export async function createSessionFor(
+  tx: Prisma.TransactionClient,
+  userId: string,
+): Promise<GuestSession> {
   const sessionToken = randomBytes(32).toString("hex");
   const expires = new Date(Date.now() + SESSION_DAYS * 24 * 60 * 60 * 1000);
-  await tx.session.create({ data: { sessionToken, userId: user.id, expires } });
-  return { userId: user.id, sessionToken, expires };
+  await tx.session.create({ data: { sessionToken, userId, expires } });
+  return { userId, sessionToken, expires };
 }
 
 export function setGuestCookie(response: NextResponse, guest: GuestSession, secure: boolean): void {

@@ -101,6 +101,7 @@ AUTH_SECRET=
 ANTHROPIC_API_KEY=            # the app's own key; never commit it. Models are added in /admin/models
 AI_DAILY_COST_CAP_USD=        # optional per-startup daily AI spend cap (USD)
 ADMIN_EMAILS=                 # comma-separated emails allowed into /admin
+ADMIN_PASSWORD_HASH=          # admin sign-in password, as a hash: pnpm admin:password "..."
 NEXT_PUBLIC_REQUIRE_SIGN_IN=  # "true" brings back email sign-in as onboarding step 4
 NEXT_PUBLIC_SITE_URL=
 AUTH_RESEND_KEY=              # production sign-in email

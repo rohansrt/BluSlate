@@ -1,6 +1,13 @@
 import { expect, test } from "@playwright/test";
 import { onboardAsRiya, signInByEmail, uniqueEmail } from "./helpers";
 
+/**
+ * Admin sign-in uses a password, which is never stored in the repo. CI sets a
+ * test-only pair; locally, run with E2E_ADMIN_EMAIL and E2E_ADMIN_PASSWORD.
+ */
+const ADMIN_EMAIL = process.env.E2E_ADMIN_EMAIL ?? "admin@example.test";
+const ADMIN_PASSWORD = process.env.E2E_ADMIN_PASSWORD;
+
 test.describe("Accounts", () => {
   test("visitors can continue as a guest from the sign-in page", async ({ page }) => {
     await page.goto("/");
@@ -55,15 +62,33 @@ test.describe("Admin", () => {
     await page.goto("/admin");
     await expect(page).toHaveURL(/\/admin\/login$/);
 
-    await signInByEmail(page, uniqueEmail(`not-admin-${testInfo.project.name}`), "/admin/login");
+    // Wrong password, and a non-admin email: the same message, no session.
+    await page.getByLabel("Email").fill(ADMIN_EMAIL);
+    await page.getByLabel("Password").fill("not-the-password");
+    await page.getByRole("button", { name: "Sign in" }).click();
+    await expect(page.getByText("Wrong email or password.")).toBeVisible();
+    await page.getByLabel("Email").fill("someone@example.test");
+    await page.getByLabel("Password").fill(ADMIN_PASSWORD ?? "x");
+    await page.getByRole("button", { name: "Sign in" }).click();
+    await expect(page.getByText("Wrong email or password.")).toBeVisible();
+
+    // A signed-in founder who isn't an admin sees "No admin access".
+    await signInByEmail(page, uniqueEmail(`not-admin-${testInfo.project.name}`), "/signin");
     await page.goto("/admin");
     await expect(page.getByTestId("no-admin-access")).toBeVisible();
   });
 
   test("an admin sees statistics and can plug in a model", async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== "desktop", "Shared model state: run once.");
+    test.skip(
+      !ADMIN_PASSWORD,
+      "Set E2E_ADMIN_PASSWORD (and E2E_ADMIN_EMAIL) to run the admin tests.",
+    );
     test.setTimeout(90_000);
-    await signInByEmail(page, "admin@example.test", "/admin/login");
+    await page.goto("/admin/login");
+    await page.getByLabel("Email").fill(ADMIN_EMAIL);
+    await page.getByLabel("Password").fill(ADMIN_PASSWORD!);
+    await page.getByRole("button", { name: "Sign in" }).click();
     await expect(page).toHaveURL(/\/admin$/, { timeout: 20_000 });
     await expect(page.getByTestId("admin-stats")).toContainText("Startups");
     await expect(page.getByRole("button", { name: /Account menu/ })).toBeVisible();

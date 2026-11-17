@@ -25,7 +25,8 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "postinstall": "prisma generate",
-    "docs:readme": "node scripts/sync-readme.mjs"
+    "docs:readme": "node scripts/sync-readme.mjs",
+    "admin:password": "node scripts/hash-password.mjs"
   },
   "devDependencies": {
     "@eslint/js": "9.39.5",

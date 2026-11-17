@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { ShieldCheck } from "lucide-react";
 import { Card } from "@bluslate/ui";
-import { SignInForm } from "@/components/auth/sign-in-form";
+import { AdminLoginForm } from "@/components/admin/admin-login-form";
 import { currentAdmin } from "@/lib/admin";
 
 export const metadata: Metadata = {
@@ -10,6 +10,7 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
+/** Admin sign-in with email and password (decision 0005). */
 export default async function AdminLoginPage() {
   if (await currentAdmin()) redirect("/admin");
   return (
@@ -18,11 +19,10 @@ export default async function AdminLoginPage() {
         <ShieldCheck className="size-8 text-primary" aria-hidden />
         <h1 className="mt-4 text-2xl font-bold tracking-tight">Admin sign in</h1>
         <p className="mt-2 text-muted-foreground">
-          We&apos;ll email you a sign-in link. Only addresses on the admin list can open the
-          dashboard.
+          For the BluSlate team. Only admin accounts can sign in here.
         </p>
         <div className="mt-6">
-          <SignInForm redirectTo="/admin" />
+          <AdminLoginForm />
         </div>
       </Card>
     </div>
