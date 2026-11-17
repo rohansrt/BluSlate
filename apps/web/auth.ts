@@ -29,6 +29,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   callbacks: {
     session({ session, user }) {
       session.user.id = user.id;
+      session.user.isGuest = Boolean((user as { isGuest?: boolean }).isGuest);
       return session;
     },
   },

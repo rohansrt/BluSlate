@@ -3,10 +3,13 @@ import { auth } from "@/auth";
 import { signOutAction } from "@/lib/auth-actions";
 import { Button } from "@bluslate/ui";
 import { Logo } from "@/components/logo";
+import { site } from "@/lib/site";
 
 export async function SiteHeader() {
   const session = await auth();
   const signedIn = Boolean(session?.user);
+  // Guests have no email to sign back in with, so signing out would lose their startups.
+  const isGuest = Boolean(session?.user?.isGuest);
 
   return (
     <header className="sticky top-0 z-40 border-b border-border/70 bg-background/85 backdrop-blur">
@@ -27,16 +30,20 @@ export async function SiteHeader() {
               <Button asChild variant="ghost" size="sm">
                 <Link href="/startups">My startups</Link>
               </Button>
-              <form action={signOutAction}>
-                <Button type="submit" variant="outline" size="sm">
-                  Sign out
-                </Button>
-              </form>
+              {!isGuest && (
+                <form action={signOutAction}>
+                  <Button type="submit" variant="outline" size="sm">
+                    Sign out
+                  </Button>
+                </form>
+              )}
             </>
           ) : (
-            <Button asChild variant="outline" size="sm">
-              <Link href="/signin">Sign in</Link>
-            </Button>
+            site.signInRequired && (
+              <Button asChild variant="outline" size="sm">
+                <Link href="/signin">Sign in</Link>
+              </Button>
+            )
           )}
         </nav>
       </div>

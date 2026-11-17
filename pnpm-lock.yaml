@@ -214,6 +214,30 @@ importers:
       '@auth/prisma-adapter':
         specifier: 2.11.3
         version: 2.11.3(@prisma/client@7.10.1(prisma@7.10.1(@types/node@22.20.5)(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(typescript@6.0.3))(typescript@6.0.3))
+      '@bluslate/contracts':
+        specifier: workspace:*
+        version: link:../../packages/contracts
+      '@bluslate/pillar-build':
+        specifier: workspace:*
+        version: link:../../pillars/04-build
+      '@bluslate/pillar-customers':
+        specifier: workspace:*
+        version: link:../../pillars/02-customers
+      '@bluslate/pillar-discover':
+        specifier: workspace:*
+        version: link:../../pillars/01-discover
+      '@bluslate/pillar-gtm':
+        specifier: workspace:*
+        version: link:../../pillars/06-gtm
+      '@bluslate/pillar-market':
+        specifier: workspace:*
+        version: link:../../pillars/03-market
+      '@bluslate/pillar-run-grow':
+        specifier: workspace:*
+        version: link:../../pillars/07-run-grow
+      '@bluslate/pillar-setup':
+        specifier: workspace:*
+        version: link:../../pillars/05-setup
       '@bluslate/ui':
         specifier: workspace:*
         version: link:../../packages/ui
@@ -266,7 +290,11 @@ importers:
 
   packages/ai: {}
 
-  packages/contracts: {}
+  packages/contracts:
+    dependencies:
+      zod:
+        specifier: 4.6.7
+        version: 4.6.7
 
   packages/reports: {}
 
@@ -276,18 +304,157 @@ importers:
 
   packages/ui:
     dependencies:
+      '@bluslate/contracts':
+        specifier: workspace:*
+        version: link:../contracts
       class-variance-authority:
         specifier: 0.7.1
         version: 0.7.1
       clsx:
         specifier: 2.1.1
         version: 2.1.1
+      lucide-react:
+        specifier: 1.71.0
+        version: 1.71.0(@types/react@19.3.0)(react@19.3.1)
       radix-ui:
         specifier: 1.8.1
         version: 1.8.1(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       tailwind-merge:
         specifier: 3.7.0
         version: 3.7.0
+    devDependencies:
+      '@types/react':
+        specifier: 19.3.0
+        version: 19.3.0
+      react:
+        specifier: 19.3.1
+        version: 19.3.1
+
+  pillars/01-discover:
+    dependencies:
+      '@bluslate/contracts':
+        specifier: workspace:*
+        version: link:../../packages/contracts
+      '@bluslate/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
+      zod:
+        specifier: 4.6.7
+        version: 4.6.7
+    devDependencies:
+      '@types/react':
+        specifier: 19.3.0
+        version: 19.3.0
+      react:
+        specifier: 19.3.1
+        version: 19.3.1
+
+  pillars/02-customers:
+    dependencies:
+      '@bluslate/contracts':
+        specifier: workspace:*
+        version: link:../../packages/contracts
+      '@bluslate/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
+      zod:
+        specifier: 4.6.7
+        version: 4.6.7
+    devDependencies:
+      '@types/react':
+        specifier: 19.3.0
+        version: 19.3.0
+      react:
+        specifier: 19.3.1
+        version: 19.3.1
+
+  pillars/03-market:
+    dependencies:
+      '@bluslate/contracts':
+        specifier: workspace:*
+        version: link:../../packages/contracts
+      '@bluslate/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
+      zod:
+        specifier: 4.6.7
+        version: 4.6.7
+    devDependencies:
+      '@types/react':
+        specifier: 19.3.0
+        version: 19.3.0
+      react:
+        specifier: 19.3.1
+        version: 19.3.1
+
+  pillars/04-build:
+    dependencies:
+      '@bluslate/contracts':
+        specifier: workspace:*
+        version: link:../../packages/contracts
+      '@bluslate/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
+      zod:
+        specifier: 4.6.7
+        version: 4.6.7
+    devDependencies:
+      '@types/react':
+        specifier: 19.3.0
+        version: 19.3.0
+      react:
+        specifier: 19.3.1
+        version: 19.3.1
+
+  pillars/05-setup:
+    dependencies:
+      '@bluslate/contracts':
+        specifier: workspace:*
+        version: link:../../packages/contracts
+      '@bluslate/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
+      zod:
+        specifier: 4.6.7
+        version: 4.6.7
+    devDependencies:
+      '@types/react':
+        specifier: 19.3.0
+        version: 19.3.0
+      react:
+        specifier: 19.3.1
+        version: 19.3.1
+
+  pillars/06-gtm:
+    dependencies:
+      '@bluslate/contracts':
+        specifier: workspace:*
+        version: link:../../packages/contracts
+      '@bluslate/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
+      zod:
+        specifier: 4.6.7
+        version: 4.6.7
+    devDependencies:
+      '@types/react':
+        specifier: 19.3.0
+        version: 19.3.0
+      react:
+        specifier: 19.3.1
+        version: 19.3.1
+
+  pillars/07-run-grow:
+    dependencies:
+      '@bluslate/contracts':
+        specifier: workspace:*
+        version: link:../../packages/contracts
+      '@bluslate/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
+      zod:
+        specifier: 4.6.7
+        version: 4.6.7
     devDependencies:
       '@types/react':
         specifier: 19.3.0

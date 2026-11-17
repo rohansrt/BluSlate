@@ -3,7 +3,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, MapPin, Quote } from "lucide-react";
 import { Badge, Card } from "@bluslate/ui";
-import { CityMap } from "@/components/city/city-map";
+import { GuestNotice } from "@/components/guest-notice";
+import { JourneyMap } from "@/components/journey/journey-map";
 import { onboardingSchema } from "@/lib/onboarding";
 import { PILLAR_IDS, type PillarId } from "@/lib/pillars";
 import { requireUser } from "@/lib/require-user";
@@ -67,6 +68,12 @@ export default async function CityPage({ params }: { params: Promise<{ id: strin
         <Badge variant="neutral">{ENTRY_PATH_LABEL[startup.entryPath]}</Badge>
       </div>
 
+      {user.isGuest && (
+        <div className="mt-6">
+          <GuestNotice />
+        </div>
+      )}
+
       {statement && (
         <Card className="mt-6 border-founder/50 p-5">
           <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-founder">
@@ -85,10 +92,10 @@ export default async function CityPage({ params }: { params: Promise<{ id: strin
             Your city
           </h2>
           <p className="text-sm text-muted-foreground">
-            Seven hubs, one for each step. The hubs open in the next release.
+            Seven hubs, one for each step. Open any of them, in any order.
           </p>
         </div>
-        <CityMap highlight={highlight} />
+        <JourneyMap mode="city" startupId={startup.id} highlight={highlight} />
       </section>
     </div>
   );

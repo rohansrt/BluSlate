@@ -1,8 +1,9 @@
 @import "tailwindcss";
 @import "@bluslate/ui/styles.css";
 
-/* Scan the shared UI kit for class names. */
+/* Scan the shared UI kit and the pillar screens for class names. */
 @source "../../../packages/ui/src";
+@source "../../../pillars";
 
 @theme {
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;

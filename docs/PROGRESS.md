@@ -65,3 +65,70 @@ One entry per step (CLAUDE.md, "Source of truth").
 - City hubs don't open yet (S2).
 - `apps/web/lib/pillars.ts` is temporary navigation metadata until packages/contracts (S2/S3).
 - Deployment (Vercel and Neon) hasn't been set up yet.
+
+---
+
+## 17 November 2026 — S1 follow-up: no sign-in for now, seven-step visuals ✅
+
+**Built**
+
+- **No sign-in (PM request).** Onboarding is three steps, and "Open my city" creates a private guest workspace in the browser (see `docs/decisions/0002-no-sign-in-for-now.md`).
+  - Email sign-in is kept behind `NEXT_PUBLIC_REQUIRE_SIGN_IN=true`.
+  - Migration `guest_users`: `User.email` is optional, and `User.isGuest` was added.
+  - Privacy and Cookies wording updated, and guests see a notice that their startups live in this browser.
+- **Seven steps with icons and visuals.**
+  - One icon per pillar (`PillarIcon` and `PillarTile` in packages/ui).
+  - Home has an icon strip in the hero, and a road-map journey with icon hubs, labels and a Founder Pack tile.
+  - Under the map, cards show each step's question and "You get" deliverable. On phones these become a vertical route.
+  - The city uses the same `JourneyMap` (status badges, "Start here"), and the onboarding tool picker shows the icons too.
+- Pillar metadata (ids, names, questions, deliverables, folders, package names) moved into `packages/contracts` as the single source of truth.
+
+**Tests:** the end-to-end tests cover the three-step guest flow, a second browser being refused another browser's startup, private pages sending visitors back to Home, and the `/signin` magic link still working.
+
+---
+
+## 17 November 2026 — S2 Pillar skeletons ✅
+
+**Built**
+
+- **`packages/contracts`:**
+  - pillar metadata and the §3 entity catalogue (`PILLAR_ENTITY_TYPES`, `SHARED_ENTITY_TYPES`, `ENTITY_OWNER`);
+  - evidence labels and statuses;
+  - the §5.2 `PillarModule` interface, with placeholder supporting types that S3 fills in, and `PillarNotBuiltError`.
+- **Seven pillar packages**, `pillars/01-discover` … `pillars/07-run-grow` (`@bluslate/pillar-<id>`), each with the same skeleton:
+  - `SPEC.md`: a verbatim copy of §4.n and Appendix A.n, marked "Draft — to be deep-defined";
+  - `src/module.ts`: a `PillarModule` stub with the correct id, and reads (§3.1) and writes (§3). Analysis and publish throw `PillarNotBuiltError`;
+  - `src/schema.ts`: typed placeholders;
+  - `src/calculators.ts`: the planned calculators;
+  - `src/ai-tasks.ts`: the planned Appendix A task ids (52 in all);
+  - `ui/index.tsx`: a placeholder screen showing the pillar's question, deliverable, reads and writes, and the three input modes;
+  - `tests/smoke.test.ts`.
+- **Pillar route `/startups/[id]/[pillar]`** with the standard layout (§6.1, §6.3):
+  - a hub rail (a horizontal strip on phones);
+  - Work · Evidence · Publish tabs, with Work active and the others "Coming soon";
+  - an AI rail placeholder.
+  City hubs link to their pillars, and unknown pillars return 404.
+- **App wiring.** `apps/web/lib/pillar-modules.ts` and `pillar-screens.tsx` are the only places pillars meet.
+- **Import boundaries (ESLint `no-restricted-imports`):**
+  - pillars can't import another pillar's package or UI entry, or reach into its folder by path;
+  - shared packages can't depend on pillars.
+
+**Tests:** 74 unit tests and 24 end-to-end tests.
+
+- Unit:
+  - contracts (single writer, pillar metadata);
+  - seven pillar smoke tests (id, reads, writes, standalone, stubs refuse to run, SPEC.md draft marker);
+  - the registry (all seven registered, writes disjoint and complete);
+  - import-boundary tests that run the real ESLint config;
+  - the onboarding tests.
+- End-to-end, desktop and mobile:
+  - every pillar placeholder opens from the city;
+  - the hub rail moves between pillars and marks the current one;
+  - an unknown pillar is a 404.
+
+**Open issues**
+
+- The proposed §6.0 spec edit for no sign-in is in decision 0002 and waits for PM approval.
+- The supporting types in `packages/contracts/src/module.ts` are placeholders that S3 defines properly.
+- Hub statuses are all "Not started" until the Twin exists (S3).
+- Guests: account upgrade, rate limiting and retention (decision 0002).

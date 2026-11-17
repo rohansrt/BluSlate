@@ -39,7 +39,9 @@ const sections: LegalSection[] = [
         <h3>Information you give us</h3>
         <ul>
           <li>
-            <strong>Account details:</strong> your email address and the first name you tell us.
+            <strong>Account details:</strong> the first name you tell us, and your email address if
+            you choose to sign in by email. You can use BluSlate without an email address: your
+            startups are then linked to a private session in your browser.
           </li>
           <li>
             <strong>Your startup content:</strong> your idea, onboarding answers, decisions, notes,
@@ -75,7 +77,10 @@ const sections: LegalSection[] = [
     body: (
       <>
         <ul>
-          <li>to create and secure your account and sign you in by email link;</li>
+          <li>
+            to create your workspace, keep it private to you, and sign you in by email link if you
+            use it;
+          </li>
           <li>to save your startups and show them only to you and the people you invite;</li>
           <li>
             to run the features you ask for, including research, explanations, simulated customers

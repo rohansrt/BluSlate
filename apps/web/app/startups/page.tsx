@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Plus } from "lucide-react";
 import { Button, Input } from "@bluslate/ui";
+import { GuestNotice } from "@/components/guest-notice";
 import { StartupCard } from "@/components/startup-card";
 import { requireUser } from "@/lib/require-user";
 import { renameStartup } from "@/lib/startup-actions";
@@ -34,6 +35,12 @@ export default async function MyStartupsPage() {
           </Link>
         </Button>
       </div>
+
+      {user.isGuest && (
+        <div className="mt-6">
+          <GuestNotice />
+        </div>
+      )}
 
       <ul className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {startups.map((s) => (

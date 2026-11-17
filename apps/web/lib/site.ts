@@ -8,6 +8,12 @@ export const site = {
   contactEmail: "founder@yoppi.in",
   ecosystem: { name: "YOPPI", url: "https://yoppi.in" },
   legalUpdated: "17 November 2026",
+  /**
+   * Email sign-in is switched off for now (docs/decisions/0002): onboarding
+   * creates a private guest workspace in this browser instead. Set
+   * NEXT_PUBLIC_REQUIRE_SIGN_IN=true to bring back step 4, "Save your startup".
+   */
+  signInRequired: process.env.NEXT_PUBLIC_REQUIRE_SIGN_IN === "true",
 } as const;
 
 export function absoluteUrl(path = "/"): string {

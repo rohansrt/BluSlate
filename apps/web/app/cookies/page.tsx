@@ -15,7 +15,8 @@ const ITEMS = [
   {
     name: "authjs.session-token",
     kind: "Cookie (essential)",
-    purpose: "Keeps you signed in.",
+    purpose:
+      "Keeps you signed in, or connects this browser to your startups if you use BluSlate without an account.",
     duration: "30 days, renewed while you use BluSlate",
   },
   {
@@ -104,8 +105,9 @@ const sections: LegalSection[] = [
     body: (
       <p>
         You can block or delete cookies in your browser settings. If you block essential cookies you
-        won&apos;t be able to sign in, and if you clear local storage before signing in, your
-        onboarding answers will be lost.
+        won&apos;t be able to use BluSlate. If you use BluSlate without an account and clear this
+        site&apos;s cookies, you will lose access to your startups. Clearing local storage before
+        you open your city loses your onboarding answers.
       </p>
     ),
   },

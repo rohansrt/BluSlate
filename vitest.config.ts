@@ -11,6 +11,7 @@ export default defineConfig({
       "packages/**/*.test.ts",
       "pillars/**/*.test.ts",
       "worker/**/*.test.ts",
+      "tests/architecture/**/*.test.ts",
     ],
     exclude: ["**/node_modules/**", "tests/e2e/**", "**/.next/**"],
     environment: "node",

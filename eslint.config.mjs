@@ -25,7 +25,8 @@ export default tseslint.config(
     settings: { next: { rootDir: "apps/web" } },
   },
 
-  // Architecture rule 4: pillars never import each other (enforced per pillar from S2).
+  // Architecture rule 4: pillars never import each other. They meet only through
+  // Twin entities and Proposals. Shared packages never depend on pillars either.
   {
     files: ["pillars/**/*.{ts,tsx}"],
     rules: {
@@ -34,12 +35,30 @@ export default tseslint.config(
         {
           patterns: [
             {
-              group: ["@bluslate/pillar-*"],
-              message: "Pillars never import each other. Read Twin entities instead.",
+              group: ["@bluslate/pillar-*", "@bluslate/pillar-*/**"],
+              message:
+                "Pillars never import each other. Read Twin entities or send a Proposal instead.",
             },
             {
-              group: ["**/pillars/**", "../0*"],
-              message: "Pillars never import each other. Read Twin entities instead.",
+              group: ["**/pillars/**", "**/0[1-7]-*", "**/0[1-7]-*/**"],
+              message:
+                "Pillars never import each other. Read Twin entities or send a Proposal instead.",
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    files: ["packages/**/*.{ts,tsx}"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              group: ["@bluslate/pillar-*", "@bluslate/pillar-*/**", "**/pillars/**"],
+              message: "Shared packages must not depend on pillars.",
             },
           ],
         },

@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, Clock, Plus, ShieldCheck, Tags } from "lucide-react";
-import { Badge, Card } from "@bluslate/ui";
+import { Clock, Plus, ShieldCheck, Tags } from "lucide-react";
+import { Badge, Card, FounderPackIcon, PillarTile } from "@bluslate/ui";
 import { auth } from "@/auth";
+import { JourneyMap } from "@/components/journey/journey-map";
 import { OnboardingCard } from "@/components/onboarding/onboarding-card";
 import { StartupCard } from "@/components/startup-card";
 import { PILLARS } from "@/lib/pillars";
@@ -76,19 +77,23 @@ export default async function HomePage() {
               real founder does, runs your business in a simulated market month by month, and hands
               you a Founder Pack.
             </p>
-            <ol className="mt-8 hidden flex-wrap gap-2 sm:flex" aria-label="The seven steps">
-              {PILLARS.map((p) => (
-                <li
-                  key={p.id}
-                  className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 text-sm font-medium shadow-sm"
-                >
-                  <span className="grid size-5 place-items-center rounded-full bg-primary text-[11px] font-bold text-primary-foreground">
-                    {p.number}
-                  </span>
-                  {p.name}
-                </li>
-              ))}
-            </ol>
+            <div className="relative mt-10 hidden sm:block">
+              <span
+                aria-hidden
+                className="absolute left-[7%] right-[7%] top-[18px] h-1 rounded-full bg-gradient-to-r from-primary/50 via-primary/30 to-primary/10"
+              />
+              <ol
+                className="relative grid grid-cols-7 gap-1"
+                aria-label="The seven steps at a glance"
+              >
+                {PILLARS.map((p) => (
+                  <li key={p.id} className="flex flex-col items-center gap-2 text-center">
+                    <PillarTile id={p.id} size="sm" />
+                    <span className="text-xs font-medium leading-tight">{p.name}</span>
+                  </li>
+                ))}
+              </ol>
+            </div>
           </div>
           <OnboardingCard signedIn={Boolean(user)} knownName={user?.name} />
         </section>
@@ -103,28 +108,40 @@ export default async function HomePage() {
             Each step answers one question and works on its own. Do them in order, skip around, or
             come back and change any decision later.
           </p>
-          <ol className="mt-8 grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <div className="mt-8">
+            <JourneyMap mode="home" />
+          </div>
+          {/* Wide screens: the details under the map (narrow screens show them in the route). */}
+          <ol
+            className="mt-6 hidden gap-3 lg:grid lg:grid-cols-4"
+            aria-label="What each step gives you"
+          >
             {PILLARS.map((p) => (
               <li key={p.id}>
-                <Card className="h-full p-4 sm:p-5">
-                  <span className="grid size-8 place-items-center rounded-lg bg-primary text-sm font-bold text-primary-foreground">
-                    {p.number}
-                  </span>
-                  <h3 className="mt-3 font-semibold">{p.name}</h3>
-                  <p className="mt-1 text-sm text-muted-foreground">{p.question}</p>
+                <Card className="flex h-full gap-4 p-5">
+                  <PillarTile id={p.id} number={p.number} size="sm" />
+                  <div>
+                    <h3 className="font-semibold">{p.name}</h3>
+                    <p className="mt-1 text-sm text-muted-foreground">{p.question}</p>
+                    <p className="mt-2 text-xs font-medium text-primary">
+                      You get: {p.deliverable}
+                    </p>
+                  </div>
                 </Card>
               </li>
             ))}
             <li>
-              <Card className="h-full border-primary/40 bg-founder-soft p-4 sm:p-5">
-                <span className="grid size-8 place-items-center rounded-lg bg-card text-primary">
-                  <ArrowRight className="size-4" aria-hidden />
+              <Card className="flex h-full gap-4 border-transparent bg-foreground p-5 text-background">
+                <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-background/15">
+                  <FounderPackIcon className="size-4" aria-hidden />
                 </span>
-                <h3 className="mt-3 font-semibold">Founder Pack</h3>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  A pitch document, financial model, detailed report, Business Model Canvas and a
-                  funding shortlist.
-                </p>
+                <div>
+                  <h3 className="font-semibold">Founder Pack</h3>
+                  <p className="mt-1 text-sm opacity-80">
+                    A pitch document, financial model, detailed report, Business Model Canvas and a
+                    funding shortlist.
+                  </p>
+                </div>
               </Card>
             </li>
           </ol>

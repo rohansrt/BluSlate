@@ -4,7 +4,7 @@ import { useActionState, useEffect, useRef, useState, useSyncExternalStore } fro
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, ArrowRight, Lightbulb, Building2, Wrench, Mail, Loader2 } from "lucide-react";
-import { Button, Card, Input, Label, Select, Textarea, cn } from "@bluslate/ui";
+import { Button, Card, Input, Label, PillarIcon, Select, Textarea, cn } from "@bluslate/ui";
 import { COUNTRY_OPTIONS } from "@/lib/countries";
 import {
   EXISTING_STAGES,
@@ -17,6 +17,7 @@ import {
 import { clearDraft, loadDraft, saveDraft } from "@/lib/onboarding-draft";
 import { PILLARS } from "@/lib/pillars";
 import { sendSignInLink, type SignInState } from "@/lib/auth-actions";
+import { site } from "@/lib/site";
 
 type Step = 1 | 2 | 3 | 4;
 
@@ -75,11 +76,16 @@ interface InitialState {
   step: Step;
 }
 
-function initialState(knownName: string | null | undefined): InitialState {
+/** Four steps when the founder must sign in to save; otherwise three. */
+function totalStepsFor(signedIn: boolean): 3 | 4 {
+  return site.signInRequired && !signedIn ? 4 : 3;
+}
+
+function initialState(knownName: string | null | undefined, total: 3 | 4): InitialState {
   const stored = loadDraft() ?? {};
   const draft: OnboardingDraft = { country: "IN", newIdeaMode: "idea", ...stored };
   if (!draft.firstName && knownName) draft.firstName = knownName;
-  const storedStep = draft.step && draft.step >= 1 && draft.step <= 4 ? draft.step : null;
+  const storedStep = draft.step && draft.step >= 1 && draft.step <= total ? draft.step : null;
   // Signed-in founders we already know skip the name question.
   return { draft, step: storedStep ?? (knownName ? 2 : 1) };
 }
@@ -115,7 +121,7 @@ export function OnboardingCard(props: OnboardingCardProps) {
 function PlaceholderCard({ className }: { className?: string }) {
   return (
     <Card className={cn("p-6 sm:p-8", className)} aria-busy="true">
-      <ProgressDots step={1} />
+      <ProgressDots step={1} total={totalStepsFor(false)} />
       <h2 className="mt-5 text-2xl font-bold tracking-tight">{stepTitle(1, undefined)}</h2>
       <div className="mt-5 space-y-2">
         <Label htmlFor="ob-first-name-placeholder">Your first name</Label>
@@ -137,7 +143,8 @@ function OnboardingCardInner({
   className,
 }: OnboardingCardProps) {
   const router = useRouter();
-  const [initial] = useState(() => initialState(knownName));
+  const total = totalStepsFor(signedIn);
+  const [initial] = useState(() => initialState(knownName, total));
   const shouldAutoSubmit = autoSubmit && signedIn && parseDraft(initial.draft).success;
   const [draft, setDraft] = useState<OnboardingDraft>(initial.draft);
   const [step, setStep] = useState<Step>(initial.step);
@@ -191,7 +198,9 @@ function OnboardingCardInner({
 
   const next = (e?: React.FormEvent) => {
     e?.preventDefault();
-    if (step < 4 && canContinue(step as 1 | 2 | 3, draft)) go((step + 1) as Step);
+    if (step === 4 || !canContinue(step, draft)) return;
+    if (step === total) saveStartup();
+    else go((step + 1) as Step);
   };
 
   if (autoSubmit && saving && !saveError && shouldAutoSubmit) {
@@ -207,7 +216,7 @@ function OnboardingCardInner({
 
   return (
     <Card className={cn("p-6 sm:p-8", className)} data-testid="onboarding-card">
-      <ProgressDots step={step} />
+      <ProgressDots step={step} total={total} />
       <h2
         ref={headingRef}
         tabIndex={-1}
@@ -276,50 +285,54 @@ function OnboardingCardInner({
           {draft.path === "new-idea" && <NewIdeaFields draft={draft} update={update} />}
           {draft.path === "existing" && <ExistingFields draft={draft} update={update} />}
           {draft.path === "one-tool" && <OneToolFields draft={draft} update={update} />}
-          <StepActions onBack={() => go(2)} canNext={canContinue(3, draft)} />
+          {saveError && (
+            <p role="alert" className="rounded-lg bg-danger-soft px-3 py-2 text-sm text-danger">
+              {saveError}
+            </p>
+          )}
+          <StepActions
+            onBack={() => go(2)}
+            canNext={canContinue(3, draft) && !saving}
+            busy={saving}
+            label={total === 3 ? "Open my city" : undefined}
+          />
+          {total === 3 && !signedIn && (
+            <p className="text-xs leading-5 text-muted-foreground">
+              No sign-up needed. Your startup is saved privately to this browser. By continuing you
+              agree to the{" "}
+              <Link href="/terms" className="underline underline-offset-2">
+                Terms
+              </Link>{" "}
+              and{" "}
+              <Link href="/privacy" className="underline underline-offset-2">
+                Privacy Policy
+              </Link>
+              .
+            </p>
+          )}
         </form>
       )}
 
-      {step === 4 && (
+      {step === 4 && total === 4 && (
         <div className="mt-5 space-y-5">
-          {signedIn ? (
-            <>
-              <p className="text-muted-foreground">
-                We&apos;ll create your startup and take you to your city: seven hubs, one for each
-                step.
-              </p>
-              {saveError && (
-                <p role="alert" className="rounded-lg bg-danger-soft px-3 py-2 text-sm text-danger">
-                  {saveError}
-                </p>
-              )}
-              <div className="flex items-center justify-between gap-3">
-                <Button type="button" variant="ghost" onClick={() => go(3)}>
-                  <ArrowLeft aria-hidden /> Back
-                </Button>
-                <Button type="button" onClick={saveStartup} disabled={saving}>
-                  {saving ? <Loader2 className="animate-spin" aria-hidden /> : null}
-                  Save and open my city
-                </Button>
-              </div>
-            </>
-          ) : (
-            <EmailStep onBack={() => go(3)} />
-          )}
+          <EmailStep onBack={() => go(3)} />
         </div>
       )}
     </Card>
   );
 }
 
-function ProgressDots({ step }: { step: Step }) {
+function ProgressDots({ step, total }: { step: Step; total: 3 | 4 }) {
   return (
     <div>
       <p className="text-xs font-semibold uppercase tracking-wider text-primary">
-        Step {step} of 4
+        Step {step} of {total}
       </p>
-      <div className="mt-2 grid grid-cols-4 gap-1.5" aria-hidden>
-        {[1, 2, 3, 4].map((n) => (
+      <div
+        className={cn("mt-2 grid gap-1.5", total === 4 ? "grid-cols-4" : "grid-cols-3")}
+        aria-hidden
+      >
+        {Array.from({ length: total }, (_, i) => i + 1).map((n) => (
           <span
             key={n}
             className={cn("h-1.5 rounded-full", n <= step ? "bg-primary" : "bg-muted")}
@@ -330,7 +343,17 @@ function ProgressDots({ step }: { step: Step }) {
   );
 }
 
-function StepActions({ onBack, canNext }: { onBack?: () => void; canNext: boolean }) {
+function StepActions({
+  onBack,
+  canNext,
+  busy = false,
+  label = "Continue",
+}: {
+  onBack?: () => void;
+  canNext: boolean;
+  busy?: boolean;
+  label?: string;
+}) {
   return (
     <div className={cn("flex items-center gap-3", onBack ? "justify-between" : "justify-end")}>
       {onBack && (
@@ -339,7 +362,8 @@ function StepActions({ onBack, canNext }: { onBack?: () => void; canNext: boolea
         </Button>
       )}
       <Button type="submit" disabled={!canNext}>
-        Continue <ArrowRight aria-hidden />
+        {busy ? <Loader2 className="animate-spin" aria-hidden /> : null}
+        {label} {!busy && <ArrowRight aria-hidden />}
       </Button>
     </div>
   );
@@ -526,7 +550,8 @@ function OneToolFields({ draft, update }: FieldProps) {
                   className="mt-1 accent-[var(--founder)]"
                 />
                 <span>
-                  <span className="block text-sm font-semibold">
+                  <span className="flex items-center gap-1.5 text-sm font-semibold">
+                    <PillarIcon id={p.id} className="size-4 text-primary" />
                     {p.number} · {p.name}
                   </span>
                   <span className="block text-sm text-muted-foreground">{p.question}</span>
