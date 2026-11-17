@@ -1,12 +1,13 @@
 # CLAUDE.md — BluSlate
 
-BluSlate is a standalone web app where founders take any idea (or a running business) through seven modular pillars — Discover, Customers, Market, Build, Set Up, Go to Market, Run & Grow — run it in a time-based simulated market, edit any decision at any time, and export a Founder Pack.
+BluSlate is a standalone web app where founders take any idea (or a running business) through seven modular pillars — Problem Discovery, Customer Discovery, Market Research, Product Design, Operations Setup, Go-to-Market Plan, Launch & Growth — run it in a time-based simulated market, edit any decision at any time, and export a Founder Pack.
 
 ## Source of truth
 
 - The full specification is **Part C** of `docs/BLUSLATE_SPEC.md`. Part B of the same file is the plain-language overview, and `docs/BluSlate_PM_Review.pdf` is that overview as a designed PDF. Read the sections named in the task before planning. Section numbers (e.g. §4.2) refer to Part C.
 - Each pillar also has its own `pillars/<NN-id>/SPEC.md`. Once a pillar has been deep-defined and approved, its SPEC.md is the detailed source of truth for that pillar; the main spec stays the source for shared rules.
-- If the code and the spec disagree, or the spec is ambiguous, stop and ask. Do not change the spec silently; propose the edit.
+- The PM's instructions win over the spec. When they differ, implement the instruction, record it in `docs/decisions/`, and update `docs/BLUSLATE_SPEC.md` (and this file, which mirrors its Part A) in the same piece of work.
+- If the code and the spec disagree, or the spec itself is ambiguous, stop and ask. Never change the spec silently.
 - At the end of every step, append to `docs/PROGRESS.md`: date, step, what was built, tests added, open issues.
 
 ## Commands
@@ -43,8 +44,8 @@ Next.js App Router · React · TypeScript strict · Tailwind + shadcn/ui · Rech
 ## AI rules
 
 1. All model calls go through `packages/ai` via `ai.run(taskId, input, ctx)`. No direct SDK calls anywhere else.
-2. Models come from env (`AI_MODEL_TOP`, `AI_MODEL_STANDARD`, `AI_MODEL_FAST`). Never hard-code model IDs.
-3. Structured outputs use `client.messages.parse` with `zodOutputFormat` from `@anthropic-ai/sdk/helpers/zod`. The API schema subset has no min/max or length constraints, so keep bounds in Zod and rely on post-parse validation.
+2. Models are chosen in the admin model registry (`/admin/models`; `AiModel` and `AiModelAssignment`): a pillar's assignment for the task's tier, then the default. API keys come from env, referenced by variable name only (`*_API_KEY`), and are never stored in the database. Never hard-code model IDs in tasks.
+3. Structured outputs use `client.beta.messages.parse` with `betaZodOutputFormat` from `@anthropic-ai/sdk/helpers/beta/zod` (the beta path carries server-side refusal `fallbacks` for models that support them). The API schema subset has no min/max or length constraints, so keep bounds in Zod and rely on post-parse validation.
 4. Every output uses the common envelope (`items`, `rationale`, `unknowns`, `sourceIds`, `confidence`) from Appendix A.0.
 5. **LLMs never produce KPI numbers, prices or market sizes as facts.** Calculators and `packages/sim-kernel` compute them. Narrative tasks receive numbers as input; a check ensures every number in the text exists in the payload.
 6. The gateway assigns evidence labels, not the model. Synthetic content is flagged in the DB and the UI.
@@ -75,7 +76,7 @@ Implement and test every guardrail in §9 (G1–G12). Most important: real vs sy
 ## Build order (§10)
 
 1. **Stage 1 — Structure:** S1 website and accounts (Home with onboarding, About), S2 seven pillar skeleton folders, S3 shared core.
-2. **Stage 2 — One pillar at a time** (P1 Discover → P7 Run & Grow), each as Define (rewrite the pillar's SPEC.md, no code) → Build → Review.
+2. **Stage 2 — One pillar at a time** (P1 Problem Discovery → P7 Launch & Growth), each as Define (rewrite the pillar's SPEC.md, no code) → Build → Review.
 3. **Stage 3 — Founder Pack**, then **Stage 4 — Launch ready**.
 
 Don't build a pillar in depth before its SPEC.md is approved. During a pillar's Build step, work only inside that pillar's folder and route; list any shared-package change in the plan and wait for approval.
@@ -97,11 +98,13 @@ Typed schemas (no `any`) · unit tests for logic · an end-to-end test for the m
 ```
 DATABASE_URL=
 AUTH_SECRET=
-ANTHROPIC_API_KEY=            # the app's own key; never commit it
-AI_MODEL_TOP=claude-opus-5-5
-AI_MODEL_STANDARD=claude-sonnet-5-5
-AI_MODEL_FAST=claude-haiku-5-5
-AI_DAILY_COST_CAP_USD=
+ANTHROPIC_API_KEY=            # the app's own key; never commit it. Models are added in /admin/models
+AI_DAILY_COST_CAP_USD=        # optional per-startup daily AI spend cap (USD)
+ADMIN_EMAILS=                 # comma-separated emails allowed into /admin
+NEXT_PUBLIC_REQUIRE_SIGN_IN=  # "true" brings back email sign-in as onboarding step 4
+NEXT_PUBLIC_SITE_URL=
+AUTH_RESEND_KEY=              # production sign-in email
+EMAIL_FROM=
 STORAGE_DRIVER=local          # or s3
 STORAGE_BUCKET=
 ```

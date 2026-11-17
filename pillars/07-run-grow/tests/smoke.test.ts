@@ -69,6 +69,6 @@ describe("pillar run-grow: skeleton smoke test", () => {
   it("has a SPEC.md marked as a draft to be deep-defined", () => {
     const spec = readFileSync(path.join(import.meta.dirname, "../SPEC.md"), "utf8");
     expect(spec).toContain("Draft — to be deep-defined");
-    expect(spec).toContain("#### 4.7 Pillar 7 — Run & Grow");
+    expect(spec).toContain("#### 4.7 Pillar 7 — Launch & Growth");
   });
 });

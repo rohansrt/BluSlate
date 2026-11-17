@@ -245,3 +245,15 @@ One entry per step (CLAUDE.md, "Source of truth").
 
 - Proposed CLAUDE.md and spec edits for the model registry and pillar names wait for PM approval (decision 0004).
 - AI stays off until a model is added *and* `ANTHROPIC_API_KEY` is set.
+
+---
+
+## 17 November 2026 — Spec v2.4 ✅
+
+- **`docs/BLUSLATE_SPEC.md` is now v2.4.** The PM's instructions take precedence and the spec is updated to match. There's a changelog under the header.
+- **Pillar names:** the new names are used throughout. The §6.1 layout diagram was redrawn, and every pillar's SPEC.md copy was regenerated.
+- **Guest-first onboarding and accounts:** Sign in, Sign up, Continue as guest, the profile menu, the logo going to Home, and deleting a startup are in §6.0 and B3.
+- **Admin back end and AI model registry:** in §5.8, §5.11, §11.2 and §11.3, and in Part A AI rule 2. Structured outputs are documented as the beta `parse` call, which carries refusal fallbacks.
+- **Schema additions:** in a new §8.3 (Draft, StaleMark, Auth.js tables, guests, the model registry, the admin audit log), with each pillar's first question.
+- **`CLAUDE.md`** was regenerated from Part A, so the two stay identical.
+- **Still out of date:** `BluSlate_PM_Review.pdf` still shows v2.3, as noted in the spec header.

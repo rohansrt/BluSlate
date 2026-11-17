@@ -1,6 +1,6 @@
 # BluSlate — Master Specification
 
-**Version 2.3 · 17 November 2026 · One file for VS Code and Claude Code**
+**Version 2.4 · 17 November 2026 · One file for VS Code and Claude Code**
 
 *BluSlate was developed under the working name "Startup City".*
 
@@ -18,7 +18,20 @@ This single file holds everything needed to build BluSlate: the rules Claude Cod
 2. Open Claude Code, switch to Plan mode, and paste the start prompt from `BluSlate_Start_Prompt.docx`.
 3. Claude moves both files into `docs/`, creates `CLAUDE.md` from Part A, and begins step S1.
 
-**Which part wins.** Parts A and C are authoritative; Part B explains them in plain words. If anything differs, Part C wins. Inside Part C the order is: Guardrails (§9) → Contracts (§3–§5) → everything else. All § numbers refer to Part C.
+**Which part wins.** The PM's instructions win over this document: when they differ, the instruction is implemented, recorded in `docs/decisions/`, and this file is updated to match. Within the document, Parts A and C are authoritative; Part B explains them in plain words. If anything differs, Part C wins. Inside Part C the order is: Guardrails (§9) → Contracts (§3–§5) → everything else. All § numbers refer to Part C.
+
+**What changed in v2.4** (PM decisions, recorded in `docs/decisions/0001`–`0004`)
+
+| Change | Where |
+| --- | --- |
+| The PM's instructions take precedence over the spec; the spec is updated to match | This header, Part A |
+| Pillars renamed for clarity: Problem Discovery, Customer Discovery, Market Research, Product Design, Operations Setup, Go-to-Market Plan, Launch & Growth (ids and folders unchanged) | Everywhere |
+| No sign-in required for now: onboarding is three steps and creates a private guest workspace; Sign in / Sign up / Continue as guest at the top right; guests who sign up keep their startups | §1.4, §6.0, B3 |
+| A profile menu at the top right; the logo always goes to Home; founders can delete a startup | §6.0, B3 |
+| An admin back end (`/admin`): aggregate statistics, audit log, and the AI model registry where models are added and assigned to pillars; API keys stay in env | §5.8, §5.11, §6.0, §11.2, Part A |
+| Twin workspace tables (Draft, StaleMark), each pillar's first question, and other schema additions | §5.1, §8.3 |
+
+`BluSlate_PM_Review.pdf` still shows v2.3 (old pillar names, four-step onboarding); Part B below is current.
 
 ---
 
@@ -29,13 +42,14 @@ Copy everything inside the box below, exactly as written, into `CLAUDE.md` at th
 ````markdown
 # CLAUDE.md — BluSlate
 
-BluSlate is a standalone web app where founders take any idea (or a running business) through seven modular pillars — Discover, Customers, Market, Build, Set Up, Go to Market, Run & Grow — run it in a time-based simulated market, edit any decision at any time, and export a Founder Pack.
+BluSlate is a standalone web app where founders take any idea (or a running business) through seven modular pillars — Problem Discovery, Customer Discovery, Market Research, Product Design, Operations Setup, Go-to-Market Plan, Launch & Growth — run it in a time-based simulated market, edit any decision at any time, and export a Founder Pack.
 
 ## Source of truth
 
 - The full specification is **Part C** of `docs/BLUSLATE_SPEC.md`. Part B of the same file is the plain-language overview, and `docs/BluSlate_PM_Review.pdf` is that overview as a designed PDF. Read the sections named in the task before planning. Section numbers (e.g. §4.2) refer to Part C.
 - Each pillar also has its own `pillars/<NN-id>/SPEC.md`. Once a pillar has been deep-defined and approved, its SPEC.md is the detailed source of truth for that pillar; the main spec stays the source for shared rules.
-- If the code and the spec disagree, or the spec is ambiguous, stop and ask. Do not change the spec silently; propose the edit.
+- The PM's instructions win over the spec. When they differ, implement the instruction, record it in `docs/decisions/`, and update `docs/BLUSLATE_SPEC.md` (and this file, which mirrors its Part A) in the same piece of work.
+- If the code and the spec disagree, or the spec itself is ambiguous, stop and ask. Never change the spec silently.
 - At the end of every step, append to `docs/PROGRESS.md`: date, step, what was built, tests added, open issues.
 
 ## Commands
@@ -72,8 +86,8 @@ Next.js App Router · React · TypeScript strict · Tailwind + shadcn/ui · Rech
 ## AI rules
 
 1. All model calls go through `packages/ai` via `ai.run(taskId, input, ctx)`. No direct SDK calls anywhere else.
-2. Models come from env (`AI_MODEL_TOP`, `AI_MODEL_STANDARD`, `AI_MODEL_FAST`). Never hard-code model IDs.
-3. Structured outputs use `client.messages.parse` with `zodOutputFormat` from `@anthropic-ai/sdk/helpers/zod`. The API schema subset has no min/max or length constraints, so keep bounds in Zod and rely on post-parse validation.
+2. Models are chosen in the admin model registry (`/admin/models`; `AiModel` and `AiModelAssignment`): a pillar's assignment for the task's tier, then the default. API keys come from env, referenced by variable name only (`*_API_KEY`), and are never stored in the database. Never hard-code model IDs in tasks.
+3. Structured outputs use `client.beta.messages.parse` with `betaZodOutputFormat` from `@anthropic-ai/sdk/helpers/beta/zod` (the beta path carries server-side refusal `fallbacks` for models that support them). The API schema subset has no min/max or length constraints, so keep bounds in Zod and rely on post-parse validation.
 4. Every output uses the common envelope (`items`, `rationale`, `unknowns`, `sourceIds`, `confidence`) from Appendix A.0.
 5. **LLMs never produce KPI numbers, prices or market sizes as facts.** Calculators and `packages/sim-kernel` compute them. Narrative tasks receive numbers as input; a check ensures every number in the text exists in the payload.
 6. The gateway assigns evidence labels, not the model. Synthetic content is flagged in the DB and the UI.
@@ -104,7 +118,7 @@ Implement and test every guardrail in §9 (G1–G12). Most important: real vs sy
 ## Build order (§10)
 
 1. **Stage 1 — Structure:** S1 website and accounts (Home with onboarding, About), S2 seven pillar skeleton folders, S3 shared core.
-2. **Stage 2 — One pillar at a time** (P1 Discover → P7 Run & Grow), each as Define (rewrite the pillar's SPEC.md, no code) → Build → Review.
+2. **Stage 2 — One pillar at a time** (P1 Problem Discovery → P7 Launch & Growth), each as Define (rewrite the pillar's SPEC.md, no code) → Build → Review.
 3. **Stage 3 — Founder Pack**, then **Stage 4 — Launch ready**.
 
 Don't build a pillar in depth before its SPEC.md is approved. During a pillar's Build step, work only inside that pillar's folder and route; list any shared-package change in the plan and wait for approval.
@@ -126,11 +140,13 @@ Typed schemas (no `any`) · unit tests for logic · an end-to-end test for the m
 ```
 DATABASE_URL=
 AUTH_SECRET=
-ANTHROPIC_API_KEY=            # the app's own key; never commit it
-AI_MODEL_TOP=claude-opus-5-5
-AI_MODEL_STANDARD=claude-sonnet-5-5
-AI_MODEL_FAST=claude-haiku-5-5
-AI_DAILY_COST_CAP_USD=
+ANTHROPIC_API_KEY=            # the app's own key; never commit it. Models are added in /admin/models
+AI_DAILY_COST_CAP_USD=        # optional per-startup daily AI spend cap (USD)
+ADMIN_EMAILS=                 # comma-separated emails allowed into /admin
+NEXT_PUBLIC_REQUIRE_SIGN_IN=  # "true" brings back email sign-in as onboarding step 4
+NEXT_PUBLIC_SITE_URL=
+AUTH_RESEND_KEY=              # production sign-in email
+EMAIL_FROM=
 STORAGE_DRIVER=local          # or s3
 STORAGE_BUCKET=
 ```
@@ -196,15 +212,15 @@ Not a business-plan writer, not a prediction of success, and not a replacement f
 >
 > She opens BluSlate. The **Home page** asks her name, where she's starting ("a new idea"), and her idea in one line. She signs in with her email and lands in her own **city** — seven hubs, one for each step.
 >
-> In **Discover**, the AI helps her turn "cheap e-bikes for students" into a clear problem: *students who live a few kilometres from campus lose time and money getting to class*. It lists the riskiest assumptions she should test.
+> In **Problem Discovery**, the AI helps her turn "cheap e-bikes for students" into a clear problem: *students who live a few kilometres from campus lose time and money getting to class*. It lists the riskiest assumptions she should test.
 >
-> In **Customers**, she "reaches out" to students. Only some reply — just like real life. She interviews AI-played characters; some are keen, some are polite but would never pay. A coach tells her when her questions are leading. She learns that **reliability matters more than price**.
+> In **Customer Discovery**, she "reaches out" to students. Only some reply — just like real life. She interviews AI-played characters; some are keen, some are polite but would never pay. A coach tells her when her questions are leading. She learns that **reliability matters more than price**.
 >
-> In **Market**, the AI finds sourced data on student numbers and existing mobility options, and helps her size the market from the bottom up.
+> In **Market Research**, the AI finds sourced data on student numbers and existing mobility options, and helps her size the market from the bottom up.
 >
-> In **Build**, **Set Up** and **Go to Market**, she decides the features, picks vehicle and maintenance suppliers (with realistic quotes and delivery times), sets a price and a campus launch plan.
+> In **Product Design**, **Operations Setup** and **Go-to-Market Plan**, she decides the features, picks vehicle and maintenance suppliers (with realistic quotes and delivery times), sets a price and a campus launch plan.
 >
-> In **Run & Grow**, she launches. The clock starts running. In month 4 she lowers her price; bookings rise but margins fall. In month 6 her maintenance supplier is late and reviews dip. She switches suppliers and watches the effect take hold a few weeks later.
+> In **Launch & Growth**, she launches. The clock starts running. In month 4 she lowers her price; bookings rise but margins fall. In month 6 her maintenance supplier is late and reviews dip. She switches suppliers and watches the effect take hold a few weeks later.
 >
 > When she's ready, she exports her **Founder Pack** and books a session with a startup consultant.
 
@@ -216,23 +232,24 @@ Not a business-plan writer, not a prediction of success, and not a replacement f
 
 | Page | What it does |
 | --- | --- |
-| **Home** | Shows the product name and promise, and starts onboarding **right on the page** — no separate marketing page |
+| **Home** | Opens with the hook ("Got a business idea? Will it work?"), a hero image and the seven steps as a clickable loop, and starts onboarding **right on the page**. Signed-in founders see a "continue" card instead. The logo always leads here |
 | **About** | Explains what BluSlate is, who it's for, how it works, how AI is used, and how we keep ideas private |
-| **Sign in** | Email link sign-in (Google optional later) |
-| **My startups** | All your startups, and a button to start another |
+| **Sign in / Sign up** | Top right. Email link (Google optional later), or **Continue as guest** |
+| **Profile** | Top-right menu: My startups, Profile, Admin (admins only), Sign out |
+| **My startups** | All your startups: open, rename or delete one, or start another |
 | **City** | Your startup's home: seven hubs, what's done, and the suggested next step |
 | **Pillar pages** | Where the work happens, one per step |
-| **Run & Grow** | The control room for the live, simulated market |
+| **Launch & Growth** | The control room for the live, simulated market |
 | **Founder Pack** | Your reports, investor shortlist and consultant booking |
+| **Admin** | For the BluSlate team: usage statistics (no founders' ideas), the AI models used by each step, and an audit log |
 
-#### B3.2 Home page onboarding — four short steps on one card
+#### B3.2 Home page onboarding — three short steps on one card
 
 1. **"What should we call you?"** — your first name.
 2. **"Where are you starting?"** — *I have a new idea* · *I already run a business* · *I just want one tool*.
-3. **The one thing that path needs** — your idea in a sentence (or "help me find a problem") and your city; or your business name, stage and industry; or which tool to open.
-4. **"Save your startup"** — sign in with your email and you land straight in your city.
+3. **The one thing that path needs** — your idea in a sentence (or "help me find a problem") and your city and country; or your business name, stage and industry; or which tool to open. **"Open my city"** takes you straight in.
 
-You can do steps 1–3 before signing in. People who come back see "Welcome back", their startups, and a "Start another" card.
+No sign-up is needed for now: your startup is kept in a private guest workspace in this browser. You can sign up at any time (top right) and keep everything. People who come back see "Welcome back" and a "Continue" card.
 
 #### B3.3 About page
 
@@ -265,15 +282,15 @@ Each pillar answers **one question**, works **on its own**, and **owns its own i
 
 | # | Pillar | The question it answers | The founder… | The AI… | What comes out |
 | --- | --- | --- | --- | --- | --- |
-| 1 | **Discover** | What problem is worth solving? | Describes the idea or frustration | Turns it into a clear problem and lists the riskiest assumptions | A one-page problem brief |
-| 2 | **Customers** | Who has the problem, and what's the proof? | Picks customer groups, reaches out, runs interviews | Plays realistic customer characters, coaches the interviews, groups what was learned | Customer needs, ranked, with evidence |
-| 3 | **Market** | How big is it, and who else is there? | Sets the boundaries (city, segment, period) | Finds sourced data and competitors; helps size the market | Market size and a competitor map |
-| 4 | **Build** | What exactly should we make? | Chooses features and the first version (MVP) | Maps needs to features, spots gaps, mocks up the product | A prioritised MVP and business model |
-| 5 | **Set Up** | How will we deliver it? | Decides who does what — team or partner | Finds real suppliers and simulated quotes, flags risks | An operating plan and cost base |
-| 6 | **Go to Market** | Who buys first, at what price, through which channels? | Sets price, channels, budget and launch date | Tests messages and prices on simulated customers | A launch plan and sales funnel |
-| 7 | **Run & Grow** | What happens over time? | Launches, adjusts price, spend, suppliers, hiring | Narrates events, explains why numbers moved, suggests moves | A live control room and scenarios |
+| 1 | **Problem Discovery** | What problem is worth solving? | Describes the idea or frustration | Turns it into a clear problem and lists the riskiest assumptions | A one-page problem brief |
+| 2 | **Customer Discovery** | Who has the problem, and what's the proof? | Picks customer groups, reaches out, runs interviews | Plays realistic customer characters, coaches the interviews, groups what was learned | Customer needs, ranked, with evidence |
+| 3 | **Market Research** | How big is it, and who else is there? | Sets the boundaries (city, segment, period) | Finds sourced data and competitors; helps size the market | Market size and a competitor map |
+| 4 | **Product Design** | What exactly should we make? | Chooses features and the first version (MVP) | Maps needs to features, spots gaps, mocks up the product | A prioritised MVP and business model |
+| 5 | **Operations Setup** | How will we deliver it? | Decides who does what — team or partner | Finds real suppliers and simulated quotes, flags risks | An operating plan and cost base |
+| 6 | **Go-to-Market Plan** | Who buys first, at what price, through which channels? | Sets price, channels, budget and launch date | Tests messages and prices on simulated customers | A launch plan and sales funnel |
+| 7 | **Launch & Growth** | What happens over time? | Launches, adjusts price, spend, suppliers, hiring | Narrates events, explains why numbers moved, suggests moves | A live control room and scenarios |
 
-**How information flows:** each pillar passes what it learned to the next ones. *Customers* passes needs to *Build*; *Build* passes the product to *Set Up* and *Go to Market*; everything feeds *Run & Grow*. When *Run & Grow* learns something new — say, why customers are leaving — it doesn't change earlier pillars itself. It sends a **suggestion** to the right pillar for the founder to accept.
+**How information flows:** each pillar passes what it learned to the next ones. *Customer Discovery* passes needs to *Product Design*; *Product Design* passes the product to *Operations Setup* and *Go-to-Market Plan*; everything feeds *Launch & Growth*. When *Launch & Growth* learns something new — say, why customers are leaving — it doesn't change earlier pillars itself. It sends a **suggestion** to the right pillar for the founder to accept.
 
 ---
 
@@ -376,8 +393,8 @@ The first fully playable business type will be a **digital subscription** (like 
 
 **Decisions to confirm**
 
-- [ ] The seven pillar names and their order
-- [ ] Home page onboarding: four steps, sign-in at the end
+- [x] The seven pillar names and their order (renamed in v2.4)
+- [x] Home page onboarding: three steps, no sign-in needed for now (guest workspace)
 - [ ] First playable business type: digital subscription, then local service
 - [ ] How BluSlate itself will charge (for example, a free first run for students and a paid Founder Pack)
 - [ ] Which consultants and partner programmes we list at launch
@@ -392,7 +409,7 @@ The first fully playable business type will be a **digital subscription** (like 
 
 1. **You review** — read this document, confirm the decisions above, and note anything to change.
 2. **We build the structure** — Stage 1 (S1–S3): website, onboarding, About page, the seven pillar folders and the shared core.
-3. **First pillar session** — we sit down together to define Discover in detail, then build it, review it, and move on.
+3. **First pillar session** — we sit down together to define Problem Discovery in detail, then build it, review it, and move on.
 
 ---
 
@@ -459,7 +476,7 @@ BluSlate uses **Claude**, made by Anthropic, through its developer service (the 
 
 All AI requests go through **one front door** in our code (the "AI gateway"). It:
 
-- picks the right model for the job (big, everyday or fast);
+- picks the model the admin chose for that step and job (big, everyday or fast);
 - attaches the rules every answer must follow;
 - checks the answer's format before anyone sees it;
 - labels it (sourced, estimate, assumption or simulated);
@@ -472,13 +489,13 @@ If the AI is unavailable, the founder can still type their own answers and use e
 
 | Pillar | What the AI does |
 | --- | --- |
-| Discover | Rewrites the idea as a clear problem, suggests problem areas, lists risky assumptions, challenges weak spots |
-| Customers | Suggests customer groups, drafts outreach messages, plays realistic customers, coaches interview questions, groups what was heard |
-| Market | Searches the web for sourced facts and competitors, explains conflicting numbers, suggests inputs for market sizing |
-| Build | Maps needs to features, suggests features, mocks up the product, runs pretend usability tests |
-| Set Up | Maps the delivery process, finds real suppliers, plays suppliers in a negotiation, lists risks and compliance questions |
-| Go to Market | Suggests positioning, finds competitor prices, writes ad messages, shows how simulated customers react |
-| Run & Grow | Decides competitor moves from a fixed list, writes reviews and news that match the numbers, runs the "board meeting", explains why numbers moved |
+| Problem Discovery | Rewrites the idea as a clear problem, suggests problem areas, lists risky assumptions, challenges weak spots |
+| Customer Discovery | Suggests customer groups, drafts outreach messages, plays realistic customers, coaches interview questions, groups what was heard |
+| Market Research | Searches the web for sourced facts and competitors, explains conflicting numbers, suggests inputs for market sizing |
+| Product Design | Maps needs to features, suggests features, mocks up the product, runs pretend usability tests |
+| Operations Setup | Maps the delivery process, finds real suppliers, plays suppliers in a negotiation, lists risks and compliance questions |
+| Go-to-Market Plan | Suggests positioning, finds competitor prices, writes ad messages, shows how simulated customers react |
+| Launch & Growth | Decides competitor moves from a fixed list, writes reviews and news that match the numbers, runs the "board meeting", explains why numbers moved |
 | Founder Pack | Writes the pitch and report from the saved data, finds verifiable investors, powers the AI consultant |
 
 #### B11.4 What the AI is never allowed to do
@@ -505,7 +522,7 @@ If the AI is unavailable, the founder can still type their own answers and use e
 
 | Term | Meaning |
 | --- | --- |
-| **Pillar** | One of the seven steps (Discover, Customers, Market, Build, Set Up, Go to Market, Run & Grow) |
+| **Pillar** | One of the seven steps (Problem Discovery, Customer Discovery, Market Research, Product Design, Operations Setup, Go-to-Market Plan, Launch & Growth) |
 | **Business Twin** | The shared memory of everything the founder has approved, with its full history |
 | **Persona** | A simulated customer with a visible profile and hidden traits, such as their real budget |
 | **Enabler** | An outside partner: a supplier, manufacturer, developer, delivery company, lawyer or accountant |
@@ -583,9 +600,9 @@ Not a questionnaire, not an AI business-plan writer, not a prediction of success
 | Topic | Decision | Why |
 | --- | --- | --- |
 | Pillar count | 7 pillars; the original 9 stages map onto them (§2.4) | MECE and simpler; nothing dropped |
-| Pricing | Inside Go to Market, as the Pricing Lab | Price, positioning and channels are one selling decision |
-| Revenue model type | Inside Build | It is part of what the offering is |
-| Launch and market simulation | Run & Grow | One living-market module |
+| Pricing | Inside Go-to-Market Plan, as the Pricing Lab | Price, positioning and channels are one selling decision |
+| Revenue model type | Inside Product Design | It is part of what the offering is |
+| Launch and market simulation | Launch & Growth | One living-market module |
 | Input modes | I'll decide · Guide me · Research & suggest | Founder-led; AI suggestions always need approval |
 | Pillar gates | Readiness score shown, never blocking (optional hard gates for cohorts) | Pillars must work independently |
 | Enablers | Real providers (researched, dated) and synthetic quotes (labelled) side by side | Real-world usefulness plus simulation |
@@ -595,6 +612,11 @@ Not a questionnaire, not an AI business-plan writer, not a prediction of success
 | Build order | Structure first (website, seven pillar folders, shared core), then one pillar at a time: Define → Build → Review | Keeps pillars independent; the PM signs off each pillar before the next |
 | Repository layout | One self-contained folder per pillar under `pillars/` | Each pillar can be defined, built, tested and upgraded on its own |
 | Website entry | Product name and onboarding directly on the Home page; a separate About page | The first visit starts the journey, with no separate marketing page |
+| Precedence (v2.4) | The PM's instructions win over this spec; the spec is updated to match | The PM owns the product |
+| Pillar names (v2.4) | Problem Discovery, Customer Discovery, Market Research, Product Design, Operations Setup, Go-to-Market Plan, Launch & Growth | Clearer to founders; ids unchanged |
+| Sign-in (v2.4) | Not required for now: onboarding creates a guest workspace (Auth.js session, no email); email sign-in and sign-up stay available; a guest who signs up keeps their startups | Lowest-friction first visit |
+| Model choice (v2.4) | An admin model registry with per-pillar, per-tier assignments replaces the `AI_MODEL_*` env tiers | Plug-and-play models without redeploys |
+| Twin workspace (v2.4) | Drafts and "may be outdated" marks live in their own tables; `Entity` holds only published versions | Keeps history strictly append-only |
 
 ---
 
@@ -604,11 +626,11 @@ Not a questionnaire, not an AI business-plan writer, not a prediction of success
 
 | Path | Minimum input | Lands in |
 | --- | --- | --- |
-| Start a new idea | An idea or problem (or "help me discover"), geography, business type if known | Pillar 1 · Discover |
+| Start a new idea | An idea or problem (or "help me discover"), geography, business type if known | Pillar 1 · Problem Discovery |
 | Bring an existing startup | Name, stage, industry, geography, any data or a brief | Business Twin import, then a gap map across all pillars |
 | Use one tool | That pillar's essential input only | That pillar, standalone |
 
-All three paths start from the onboarding card on the Home page (§6.0).
+All three paths start from the onboarding card on the Home page (§6.0). None needs an account for now: the first startup creates a private guest workspace.
 
 #### 2.2 The core loop
 
@@ -616,7 +638,7 @@ All three paths start from the onboarding card on the Home page (§6.0).
 flowchart TB
   entry([Entry: new idea, existing startup, or one tool])
   subgraph pillars [Seven pillars, usable in any order at any time]
-    P1[1 Discover] --> P2[2 Customers] --> P3[3 Market] --> P4[4 Build] --> P5[5 Set Up] --> P6[6 Go to Market] --> P7[7 Run and Grow]
+    P1[1 Problem Discovery] --> P2[2 Customer Discovery] --> P3[3 Market Research Research] --> P4[4 Product Design] --> P5[5 Operations Setup] --> P6[6 Go-to-Market Plan] --> P7[7 Launch and Growth]
   end
   twin[(Business Twin: approved, versioned state)]
   pack[[Founder Pack: export at any stage]]
@@ -634,22 +656,22 @@ The arrow order is the recommended first pass. A founder can enter any pillar, s
 3. **Review** — AI and framework outputs, with sources, uncertainty and suggested experiments.
 4. **Approve or revise** — the Publish panel shows downstream impact first; only approved outputs enter the Twin.
 5. **Propagate** — dependents are flagged "May be outdated"; deterministic numbers recompute at once; slow research refreshes are queued.
-6. **Simulate or branch** — test the decision in Run & Grow, or fork a what-if.
+6. **Simulate or branch** — test the decision in Launch & Growth, or fork a what-if.
 7. **Export** — at any time; incomplete evidence is shown, never invented.
 
 #### 2.4 Original vision → final pillars (traceability)
 
 | Original stage | Final home |
 | --- | --- |
-| Problem / business discovery | 1 Discover |
-| Target-group primary research: reach-out, AI-simulated interviews, needs and gaps | 2 Customers |
-| Secondary research, TAM/SAM/SOM, competition | 3 Market |
-| Features, gap coverage, prioritization | 4 Build |
-| MVP in the simulated environment, business model | 4 Build |
-| Execution, enablers, supply chain, tech, team | 5 Set Up |
-| Go-to-market with the target groups | 6 Go to Market |
-| Pricing | 6 Go to Market (Pricing Lab) |
-| Launch, customer response, market share, live levers, elapsed time | 7 Run & Grow |
+| Problem / business discovery | 1 Problem Discovery |
+| Target-group primary research: reach-out, AI-simulated interviews, needs and gaps | 2 Customer Discovery |
+| Secondary research, TAM/SAM/SOM, competition | 3 Market Research |
+| Features, gap coverage, prioritization | 4 Product Design |
+| MVP in the simulated environment, business model | 4 Product Design |
+| Execution, enablers, supply chain, tech, team | 5 Operations Setup |
+| Go-to-market with the target groups | 6 Go-to-Market Plan |
+| Pricing | 6 Go-to-Market Plan (Pricing Lab) |
+| Launch, customer response, market share, live levers, elapsed time | 7 Launch & Growth |
 | Pitch document, financial model, journey report, BMC, investor list, consultant | Founder Pack (§5.9) |
 
 ---
@@ -660,47 +682,47 @@ The arrow order is the recommended first pass. A founder can enter any pillar, s
 
 | # | Pillar | Question | Writes (owns) | Main deliverable |
 | --- | --- | --- | --- | --- |
-| 1 | Discover | What problem is worth solving? | Problem, Opportunity, Hypothesis | Problem brief and ranked hypotheses |
-| 2 | Customers | Who has the problem, and what is the evidence? | Segment, Persona, Interview, Insight, Need | Evidence board, needs and gaps |
-| 3 | Market | How big, reachable and contested is it? | MarketSize, Competitor, Benchmark | Sizing model and competitor map |
-| 4 | Build | What exactly should exist? | Feature, Offering, ValueProposition, RevenueModel | Prioritized MVP and business model |
-| 5 | Set Up | How will it be delivered? | Process, Enabler, Commitment, TeamRole, CostItem, Capacity | Operating plan and cost base |
-| 6 | Go to Market | Who buys first, at what price, through which channels? | Positioning, PricePlan, ChannelPlan, Campaign, LaunchPlan | GTM plan and funnel |
-| 7 | Run & Grow | What happens over time? | Scenario, SimRun, Period, LeverChange, MarketEvent, KpiSeries | Control room and scenario comparison |
+| 1 | Problem Discovery | What problem is worth solving? | Problem, Opportunity, Hypothesis | Problem brief and ranked hypotheses |
+| 2 | Customer Discovery | Who has the problem, and what is the evidence? | Segment, Persona, Interview, Insight, Need | Evidence board, needs and gaps |
+| 3 | Market Research | How big, reachable and contested is it? | MarketSize, Competitor, Benchmark | Sizing model and competitor map |
+| 4 | Product Design | What exactly should exist? | Feature, Offering, ValueProposition, RevenueModel | Prioritized MVP and business model |
+| 5 | Operations Setup | How will it be delivered? | Process, Enabler, Commitment, TeamRole, CostItem, Capacity | Operating plan and cost base |
+| 6 | Go-to-Market Plan | Who buys first, at what price, through which channels? | Positioning, PricePlan, ChannelPlan, Campaign, LaunchPlan | GTM plan and funnel |
+| 7 | Launch & Growth | What happens over time? | Scenario, SimRun, Period, LeverChange, MarketEvent, KpiSeries | Control room and scenario comparison |
 
 **Shared (not owned by any pillar):** Startup, Evidence/Source, Assumption, DecisionEvent, Dependency, Proposal, Snapshot, Report, Comment.
 
-**Computed, never written:** Hypothesis status (validated · invalidated · unclear) is derived from linked evidence, so Customers and Run & Grow can affect it without writing Discover's entities.
+**Computed, never written:** Hypothesis status (validated · invalidated · unclear) is derived from linked evidence, so Customer Discovery and Launch & Growth can affect it without writing Problem Discovery's entities.
 
 #### 3.1 Read matrix
 
 | Pillar | Reads (all optional — every pillar must work without them) |
 | --- | --- |
-| 1 Discover | Startup |
-| 2 Customers | Problem, Hypothesis |
-| 3 Market | Problem, Segment |
-| 4 Build | Problem, Need, Segment, Competitor |
-| 5 Set Up | Offering, Feature, RevenueModel, Segment |
-| 6 Go to Market | Segment, Need, ValueProposition, Offering, Competitor, Benchmark, CostItem, Capacity |
-| 7 Run & Grow | Every approved entity above |
+| 1 Problem Discovery | Startup |
+| 2 Customer Discovery | Problem, Hypothesis |
+| 3 Market Research | Problem, Segment |
+| 4 Product Design | Problem, Need, Segment, Competitor |
+| 5 Operations Setup | Offering, Feature, RevenueModel, Segment |
+| 6 Go-to-Market Plan | Segment, Need, ValueProposition, Offering, Competitor, Benchmark, CostItem, Capacity |
+| 7 Launch & Growth | Every approved entity above |
 
-**Feedback rule:** a pillar never writes another pillar's entities. Downstream learning becomes a **Proposal** (status Needs review) on the owning pillar — for example, churn reasons in Run & Grow propose a new Need in Customers.
+**Feedback rule:** a pillar never writes another pillar's entities. Downstream learning becomes a **Proposal** (status Needs review) on the owning pillar — for example, churn reasons in Launch & Growth propose a new Need in Customer Discovery.
 
 #### 3.2 Inputs and outputs between pillars
 
 ```mermaid
 flowchart LR
-  P1[1 Discover] -- Problem, Hypotheses --> P2[2 Customers]
-  P1 -- Problem --> P3[3 Market]
+  P1[1 Problem Discovery] -- Problem, Hypotheses --> P2[2 Customer Discovery]
+  P1 -- Problem --> P3[3 Market Research Research]
   P2 -- Segments --> P3
-  P2 -- Needs --> P4[4 Build]
+  P2 -- Needs --> P4[4 Product Design]
   P3 -- Competitors --> P4
-  P4 -- Offering, Features, Revenue model --> P5[5 Set Up]
-  P4 -- Value proposition, Offering --> P6[6 Go to Market]
+  P4 -- Offering, Features, Revenue model --> P5[5 Operations Setup]
+  P4 -- Value proposition, Offering --> P6[6 Go-to-Market Plan]
   P2 -- Segments, Needs --> P6
   P3 -- Benchmarks, Competitors --> P6
   P5 -- Unit costs, Capacity --> P6
-  P3 -- Market size, Competitors, Benchmarks --> P7[7 Run and Grow]
+  P3 -- Market size, Competitors, Benchmarks --> P7[7 Launch and Growth]
   P5 -- Costs, Capacity, Lead times --> P7
   P6 -- Price, Channels, Launch plan --> P7
   P7 -. proposals .-> P2
@@ -731,7 +753,7 @@ Every pillar follows the same template, so each can be built, tested and upgrade
 | Done when | Readiness criteria (shown as a score, never blocking) |
 | Guardrail | The pillar-specific rule that must never break |
 
-#### 4.1 Pillar 1 — Discover
+#### 4.1 Pillar 1 — Problem Discovery
 
 - **Question:** What real problem is worth solving?
 - **Minimum input:** an idea in one line, or an interest area plus geography.
@@ -743,7 +765,7 @@ Every pillar follows the same template, so each can be built, tested and upgrade
     2. Reframe it as a problem statement: who, pain, frequency, current workaround, cost of the pain.
     3. Compare 2–5 opportunity options on severity, frequency, urgency, workaround strength and feasibility.
     4. Generate falsifiable hypotheses across desirability, viability and feasibility; rank by risk × uncertainty.
-    5. Produce a short next-research plan for Customers and Market.
+    5. Produce a short next-research plan for Customer Discovery and Market Research.
 - **Writes:** Problem, Opportunity[], Hypothesis[] (plus Assumption entries).
 - **Calculations:** opportunity score = weighted sum of criteria (weights editable); hypothesis priority = risk × uncertainty.
 - **Methods and tools:** Design Thinking, Jobs to Be Done, Lean Canvas, assumption mapping · Google Trends, Miro/FigJam, a founder observation log.
@@ -751,7 +773,7 @@ Every pillar follows the same template, so each can be built, tested and upgrade
 - **Done when:** the problem is stated without naming a solution; at least 3 testable hypotheses exist; unknowns are marked.
 - **Guardrail:** reject "no competition" claims without examining alternatives; public discussion is not validated demand.
 
-#### 4.2 Pillar 2 — Customers
+#### 4.2 Pillar 2 — Customer Discovery
 
 - **Question:** Who experiences the problem, and what evidence exists?
 - **Minimum input:** a problem statement or a customer description.
@@ -771,9 +793,9 @@ Every pillar follows the same template, so each can be built, tested and upgrade
 - **Done when:** 8+ interviews across 2+ segments; each of the top 3 needs backed by 3+ sources; every synthetic item labelled.
 - **Guardrail:** synthetic interviews never count as real validation; personas never change their core facts to please the founder; personal data needs consent.
 
-Personas persist. The same characters later test the MVP (Build), react to messages and prices (Go to Market), and seed the simulated population (Run & Grow).
+Personas persist. The same characters later test the MVP (Product Design), react to messages and prices (Go-to-Market Plan), and seed the simulated population (Launch & Growth).
 
-#### 4.3 Pillar 3 — Market
+#### 4.3 Pillar 3 — Market Research
 
 - **Question:** How large, reachable and competitive is the opportunity?
 - **Minimum input:** industry or category, geography, customer description.
@@ -795,9 +817,9 @@ Personas persist. The same characters later test the MVP (Build), react to messa
 - **Done when:** SAM and SOM each have an explicit formula; 3+ competitors or substitutes are profiled; every figure has a label and a date.
 - **Guardrail:** search interest is not sales; TAM is not obtainable revenue; traffic estimates are directional; data licences are respected.
 
-Each approved Competitor becomes an agent in Run & Grow.
+Each approved Competitor becomes an agent in Launch & Growth.
 
-#### 4.4 Pillar 4 — Build
+#### 4.4 Pillar 4 — Product Design
 
 - **Question:** What should the product or service actually be?
 - **Minimum input:** a list of needs (or a problem) and a business type.
@@ -814,7 +836,7 @@ Each approved Competitor becomes an agent in Run & Grow.
 - **Writes:** Feature[], Offering (the MVP), ValueProposition, RevenueModel.
 - **Calculations:** coverage of top needs (%); RICE scores; effort totals in person-weeks; product-fit score = Σ (need weight × coverage quality), used by the engine.
 - **Methods and tools:** Value Proposition Canvas, Lean Startup build–measure–learn, MVP, RICE, Kano · Figma, Maze, PostHog, Notion.
-- **Simulated time:** effort is defined here; who builds it and when is scheduled in Set Up.
+- **Simulated time:** effort is defined here; who builds it and when is scheduled in Operations Setup.
 - **Done when:** each top-3 need is covered or deferred with a reason; the MVP scope line is set; a revenue model is chosen.
 - **Guardrail:** a generated prototype is not a deployed app, a manufactured product or a certified design.
 
@@ -827,7 +849,7 @@ Each approved Competitor becomes an agent in Run & Grow.
 | Two-sided marketplace | One-side seeding, manual matching | Supply–demand liquidity, take rate |
 | Mixed / B2B | Design partners, paid pilot | Sales-cycle length, procurement steps, implementation effort |
 
-#### 4.5 Pillar 5 — Set Up
+#### 4.5 Pillar 5 — Operations Setup
 
 - **Question:** What people, partners and resources make delivery possible?
 - **Minimum input:** the offering (or a description) and a target launch volume.
@@ -848,7 +870,7 @@ Each approved Competitor becomes an agent in Run & Grow.
 - **Done when:** every feature and component has an owner; launch capacity covers forecast month-one demand; every cost is labelled actual, estimated or synthetic.
 - **Guardrail:** AI can never bind the founder to a vendor; synthetic quotes are never shown as real; regulated sectors get a specialist-review flag.
 
-#### 4.6 Pillar 6 — Go to Market
+#### 4.6 Pillar 6 — Go-to-Market Plan
 
 - **Question:** Who buys first, at what price, and through which channels?
 - **Minimum input:** a segment and an offering description.
@@ -861,7 +883,7 @@ Each approved Competitor becomes an agent in Run & Grow.
     3. Channel Finder: a Bullseye shortlist with benchmark CPM, CPC, CTR and CAC ranges; small tests before scaling.
     4. Message testing on personas: qualitative reactions, with click-through computed by the engine.
     5. Campaign plan: audience, offer, message, channel, budget, duration, success metric.
-    6. Funnel forecast from reach to leads to customers, with CAC and payback; a launch checklist tied to Set Up readiness.
+    6. Funnel forecast from reach to leads to customers, with CAC and payback; a launch checklist tied to Operations Setup readiness.
 - **Writes:** Positioning, PricePlan, ChannelPlan, Campaign[], LaunchPlan.
 - **Calculations:** price waterfall; contribution per unit; break-even volume; funnel maths; diminishing-returns spend curve per channel.
 - **Methods and tools:** STP, Bullseye (Traction), marketing funnel, pricing research, Crossing the Chasm (optional) · Google Ads Keyword Planner, Meta Ads, LinkedIn Ads, HubSpot CRM, Google Analytics, Razorpay where suitable.
@@ -869,7 +891,7 @@ Each approved Competitor becomes an agent in Run & Grow.
 - **Done when:** net contribution per unit is known; the launch date is set and every dependency is ready before it; CAC is labelled validated or assumed.
 - **Guardrail:** no promised ROI; no real spend or sending without approval; ad reach is never treated as buyers.
 
-#### 4.7 Pillar 7 — Run & Grow
+#### 4.7 Pillar 7 — Launch & Growth
 
 - **Question:** What happens when the startup operates over time?
 - **Minimum input:** Sandbox — a business type and a few assumptions (labelled defaults allowed); Actuals + Sandbox — imported monthly revenue, costs and customers.
@@ -980,18 +1002,18 @@ Source rules:
 2. The Publish panel shows an **impact preview**: dependent entities, simulated lead time, one-time cost, and the projected range of key metrics over the next 3 simulated months (from a fast engine run).
 3. On approval, a new version and a DecisionEvent are saved with `effectiveFrom` = now + lead time (in simulated time).
 4. The dependency engine marks dependents **May be outdated** at entity level — a changed segment flags only what used that segment. Deterministic values recompute at once; research refreshes are queued.
-5. Run & Grow applies the change from its effective date; every chart shows a marker there.
+5. Launch & Growth applies the change from its effective date; every chart shows a marker there.
 
 | Change in | Ripples to | Typical lag or carry-over |
 | --- | --- | --- |
-| Discover · problem or archetype | Everything (effectively a pivot) | Weeks to months; most assets written down |
-| Customers · segment or needs | Sizing, feature coverage, positioning, channels, willingness to pay | Awareness in a new segment starts from zero |
-| Market · scope (e.g. a new city) | SAM/SOM, logistics, budget | 2–6 weeks of set-up |
-| Build · features | Product-fit score, effort, enablers, value-based price | Build time per feature |
-| Build · revenue model | Pricing, financials, churn behaviour | 1–4 weeks; existing customers may resist |
-| Set Up · supplier switch | Unit cost, quality, lead times | Onboarding time plus the old contract's notice period |
-| Go to Market · price | Conversion, margin, churn, competitor reaction | Next day, but customers remember the old price |
-| Go to Market · channel or spend | Reach, CAC, awareness | Ads lag 1–2 weeks; brand effects decay over months |
+| Problem Discovery · problem or archetype | Everything (effectively a pivot) | Weeks to months; most assets written down |
+| Customer Discovery · segment or needs | Sizing, feature coverage, positioning, channels, willingness to pay | Awareness in a new segment starts from zero |
+| Market Research · scope (e.g. a new city) | SAM/SOM, logistics, budget | 2–6 weeks of set-up |
+| Product Design · features | Product-fit score, effort, enablers, value-based price | Build time per feature |
+| Product Design · revenue model | Pricing, financials, churn behaviour | 1–4 weeks; existing customers may resist |
+| Operations Setup · supplier switch | Unit cost, quality, lead times | Onboarding time plus the old contract's notice period |
+| Go-to-Market Plan · price | Conversion, margin, churn, competitor reaction | Next day, but customers remember the old price |
+| Go-to-Market Plan · channel or spend | Reach, CAC, awareness | Ads lag 1–2 weeks; brand effects decay over months |
 
 **Carry-over rules:** the past is never rewritten; switching has costs (notice periods, unsold stock, set-up fees); customers remember (price rises churn price-sensitive customers; frequent changes erode trust). "Recalculate my scenario" is always distinct from "Apply to my main business".
 
@@ -1006,16 +1028,16 @@ Source rules:
 
 #### 5.7 Market and financial engine
 
-A pure, deterministic-core TypeScript package (`packages/sim-kernel`) computes every number in Run & Grow and every impact preview. AI only sets parameters from research (with sources) and writes the words around results. Full formulas are in Appendix B.
+A pure, deterministic-core TypeScript package (`packages/sim-kernel`) computes every number in Launch & Growth and every impact preview. AI only sets parameters from research (with sources) and writes the words around results. Full formulas are in Appendix B.
 
 | Layer | Models | Calibrated from |
 | --- | --- | --- |
-| Population | SAM split into segments: size, need weights, willingness-to-pay spread, channel habits, seasonality | Customers, Market |
-| Awareness and adoption | Diffusion: new adopters from marketing, imitators from existing customers, referrals and reviews | Go to Market spend, customer base |
-| Choice and share | Each buyer compares the venture, competitors and "do nothing" on fit, price, trust and convenience; market share emerges | Build, Market, Go to Market |
+| Population | SAM split into segments: size, need weights, willingness-to-pay spread, channel habits, seasonality | Customer Discovery, Market Research |
+| Awareness and adoption | Diffusion: new adopters from marketing, imitators from existing customers, referrals and reviews | Go-to-Market Plan spend, customer base |
+| Choice and share | Each buyer compares the venture, competitors and "do nothing" on fit, price, trust and convenience; market share emerges | Product Design, Market Research, Go-to-Market Plan |
 | Marketing response | Saturation curve per channel; CAC rises as a channel scales; creative fatigue | Benchmarks |
-| Operations | Capacity, inventory, lead times; stock-outs lose sales and trust; defects create returns | Set Up |
-| Competitors | Agents with a strategy that react when thresholds are crossed | Market |
+| Operations | Capacity, inventory, lead times; stock-outs lose sales and trust; defects create returns | Operations Setup |
+| Competitors | Agents with a strategy that react when thresholds are crossed | Market Research |
 | Finance ledger | Revenue recognized vs cash collected, unit costs, channel fees, payroll, rent, marketing, taxes, funding | All pillars |
 | Events | Calibrated random shocks and seasonality; difficulty sets frequency | Benchmarks |
 
@@ -1030,7 +1052,7 @@ A pure, deterministic-core TypeScript package (`packages/sim-kernel`) computes e
 | Enabler / partner (real or simulated) | Provide resources, quotes or services | Commit the founder to costs or contracts |
 | AI agents | Research, draft, recommend, simulate, explain | Publish to the Twin, contact anyone, spend, or make binding commitments |
 | Consultant / mentor | Review explicitly shared snapshots, comment, recommend | Access unshared data or claim ownership |
-| Platform admin | Run service quality, security and support with audited access | Reuse confidential founder data |
+| Platform admin (an email in `ADMIN_EMAILS`, signed in at `/admin/login`) | See aggregate statistics, manage the AI model registry, review the audit log; every admin action is logged | See or reuse founders' ideas and answers; store API keys |
 
 **Visual code (used on every screen and report):** founder decision = solid blue card "Your decision" · AI suggestion = dashed grey card "Suggested" until accepted · enabler = orange card tagged "Real provider" or "Synthetic quote" · needs review / may be outdated = amber banner · synthetic content = purple SYNTHETIC badge.
 
@@ -1062,7 +1084,7 @@ For each task, recommend 2–3 real-world tools or actions, ranked by fit, curre
 | --- | --- | --- |
 | Framework registry | Name, original author or source, when it applies, the decision it supports, prerequisites, prompts, calculation, outputs, caveats, licensing notes, version | `packages/contracts/frameworks/` |
 | Tool directory | Vendor, use cases, regions, official URL, approximate cost only when verified, integration permissions, last-checked date | Database table, admin-editable |
-| Model registry | Provider, model ID, prompt versions, parameters, eval scores, cost limits | `packages/ai/registry.ts` + env |
+| Model registry | Provider, model ID, display name, prices, credential env-var name, enabled, last test; which model each pillar uses per tier; prompt versions and eval scores per task | `AiModel` and `AiModelAssignment` tables (managed at `/admin/models`), `packages/ai/registry.ts` for known prices and the add-model catalogue; keys in env |
 | Simulation kernel | Formula versions, archetype plugins, event distributions, integration tests | `packages/sim-kernel` (`kernelVersion`) |
 
 Each registry is versioned on its own, so a method, tool list, model or formula can be upgraded without rewriting saved decisions, snapshots or reports.
@@ -1075,46 +1097,49 @@ Each registry is versioned on its own, so a method, tool list, model or formula 
 
 | Page | Route | Purpose |
 | --- | --- | --- |
-| Home | `/` | The product name and promise, with onboarding right on the page — no separate landing page |
+| Home | `/` | The hook question, hero image, seven-step loop and onboarding right on the page; a "continue" card for signed-in founders. The logo always links here |
 | About | `/about` | What BluSlate is, who it is for, how it works, how AI is used, real vs simulated, privacy |
-| Sign in | `/signin` | Email magic link (Google optional) |
-| My startups | `/startups` | The user's startups; start another |
+| Sign in / Sign up | `/signin`, `/signin?mode=signup` | Email magic link (Google optional), or Continue as guest |
+| Profile | `/profile` | Name, account (email or guest, with sign-up), sign out; reached from the top-right menu |
+| My startups | `/startups` | The user's startups: open, rename, delete (owner, with confirmation), start another |
 | City | `/startups/[id]` | The seven hubs with status and next best action (§6.2) |
 | Pillar | `/startups/[id]/[pillar]` | The pillar workspace (§6.3) |
-| Run & Grow | `/startups/[id]/run-grow` | The control room |
+| Launch & Growth | `/startups/[id]/run-grow` | The control room |
 | Founder Pack | `/startups/[id]/pack` | Reports, Funding Scout, consultant |
-| Legal | `/privacy`, `/terms` | Policies |
+| Legal | `/privacy`, `/terms`, `/cookies` | Policies |
+| Admin | `/admin`, `/admin/models`, `/admin/models/new`, `/admin/audit`, `/admin/login` | Aggregate statistics; the AI model registry (empty state, add-a-model workflow, pillar × tier assignments); audit log |
 
-**Home onboarding — four short steps on one card:**
+**Home onboarding — three short steps on one card:**
 
 1. **"What should we call you?"** — first name.
 2. **"Where are you starting?"** — New idea · Existing startup · Just one tool (the entry paths in §2.1).
-3. **The one input that path needs** — an idea in one line (or "Help me discover") plus city and country; or startup name, stage and industry; or the tool to open.
-4. **"Save your startup"** — sign in with email to keep it; the user lands in their city with the right pillar highlighted.
+3. **The one input that path needs** — an idea in one line (or "Help me discover") plus city and country; or startup name, stage and industry; or the tool to open (with country). **"Open my city"** creates the startup and lands the founder in their city with the right pillar highlighted.
 
-Onboarding works before sign-in: the draft is kept in the browser and attached to the account at step 4. Signed-in visitors see "Welcome back, *name*", their startups, and a "Start another" card.
+The draft is kept in the browser while the founder types. Without a session, the first startup creates a **guest workspace**: a `User` with `isGuest = true` and no email, plus an Auth.js database session cookie, so every page and tenant check works unchanged. Setting `NEXT_PUBLIC_REQUIRE_SIGN_IN=true` restores a fourth step, "Save your startup", which signs in by email first.
+
+**Accounts (top right):** visitors see **Sign in** and **Sign up** (the same email-link flow) and, on the sign-in page, **Continue as guest**. Signed-in people and guests see a **profile menu** (My startups, Profile, Admin for admins, Sign out; guests see "Sign up to keep your work" and "End guest session"). When a guest requests an email link, a signed httpOnly cookie records the guest account; when the link is opened in the same browser, the guest's startups move into the verified account and the guest is removed. Startups only ever move *into* the account whose email was just verified. Signed-in visitors see "Welcome back, *name*" and a "Continue" card on Home.
 
 **About page sections:** what BluSlate is · who it is for · the seven pillars · how a journey works (time, simulated market, Founder Pack) · how AI is used and what it never does · real vs simulated labels · privacy (ideas are private by default) · part of the YOPPI ecosystem · contact.
 
 #### 6.1 Layout
 
 ```
-+----------------------------------------------------------------------------+
-| Startup name - Sandbox - Saved               Levers   Founder Pack   Share |
-+----------------+--------------------------------------+--------------------+
-| CITY HUBS      | 4 BUILD   [Work] [Evidence] [Publish]| AI RAIL            |
-| * 1 Discover   |                                      | Ask why            |
-| * 2 Customers  | ! May be outdated: segment changed   | Research & suggest |
-| ~ 3 Market     | +- Your decision ------------------+ | Reality Check      |
-| ! 4 Build      | | MVP scope: features above line   | | Next best action   |
-|   5 Set Up     | +----------------------------------+ | Toolbox            |
-|   6 Go to Mkt  | +- Suggested by AI - - - - - - - - + |                    |
-|   7 Run & Grow | : Add a feature for uncovered need : |                    |
-|                | +- - - - - - - - - - - - - - - - - + |                    |
-| Founder Pack   | [I'll decide] [Guide me] [Research]  |                    |
-+----------------+--------------------------------------+--------------------+
-| || > >>  Day 143 - Month 5 - 12 Apr 2027 | Cash Burn Runway KPI | 2 alerts |
-+----------------------------------------------------------------------------+
++------------------------------------------------------------------------------------------+
+| Startup name - Sandbox - Saved                           Levers   Founder Pack   Share   |
++--------------------------+----------------------------------------+----------------------+
+| CITY HUBS                | 4 PRODUCT DESIGN [Work] [Evid] [Pub]   | AI RAIL              |
+| * 1 Problem Discovery    |                                        | Ask why              |
+| * 2 Customer Discovery   | ! May be outdated: segment changed     | Research & suggest   |
+| ~ 3 Market Research      | +- Your decision ------------------+   | Reality Check        |
+| ! 4 Product Design       | | MVP scope: features above line   |   | Next best action     |
+|   5 Operations Setup     | +----------------------------------+   | Toolbox              |
+|   6 Go-to-Market Plan    | +- Suggested by AI - - - - - - - - +   |                      |
+|   7 Launch & Growth      | : Add a feature for uncovered need :   |                      |
+|                          | +- - - - - - - - - - - - - - - - - +   |                      |
+| Founder Pack             | [I'll decide] [Guide me] [Research]    |                      |
++--------------------------+----------------------------------------+----------------------+
+| || > >>  Day 143 - Month 5 - 12 Apr 2027 | Cash Burn Runway KPI | 2 alerts               |
++------------------------------------------------------------------------------------------+
 ```
 
 | Area | Purpose |
@@ -1139,13 +1164,13 @@ A 2D city map with seven hubs (not a 3D world), each showing status and its next
 
 | Pillar | Visuals |
 | --- | --- |
-| Discover | Problem canvas, opportunity comparison, assumption map (risk × uncertainty) |
-| Customers | Segment cards, interview room with persona cards, affinity map, needs matrix (frequency × severity) |
-| Market | TAM/SAM/SOM funnel, sortable competitor matrix, positioning map, sensitivity tornado |
-| Build | Need → feature map, priority board, MVP preview, live Business Model Canvas |
-| Set Up | Process map, responsibility map, enabler quote cards, dependency timeline, capacity gauges |
-| Go to Market | Price waterfall, demand curve, Bullseye channel rings, funnel, launch checklist |
-| Run & Grow | Cash and runway chart, revenue vs cost, cohorts, market share, event feed, scenario comparison |
+| Problem Discovery | Problem canvas, opportunity comparison, assumption map (risk × uncertainty) |
+| Customer Discovery | Segment cards, interview room with persona cards, affinity map, needs matrix (frequency × severity) |
+| Market Research | TAM/SAM/SOM funnel, sortable competitor matrix, positioning map, sensitivity tornado |
+| Product Design | Need → feature map, priority board, MVP preview, live Business Model Canvas |
+| Operations Setup | Process map, responsibility map, enabler quote cards, dependency timeline, capacity gauges |
+| Go-to-Market Plan | Price waterfall, demand curve, Bullseye channel rings, funnel, launch checklist |
+| Launch & Growth | Cash and runway chart, revenue vs cost, cohorts, market share, event feed, scenario comparison |
 
 #### 6.5 Design tokens
 
@@ -1545,6 +1570,24 @@ model AiCall {
 
 ---
 
+#### 8.3 Additions to the data model (v2.4)
+
+`prisma/schema.prisma` is the authoritative schema. Beyond §8.1 it has:
+
+| Table or field | Purpose |
+| --- | --- |
+| `User`, `Account`, `Session`, `VerificationToken` | Auth.js. `User.email` is optional and `User.isGuest` marks guest workspaces |
+| `Startup.entryPath`, `Startup.onboarding` | The onboarding answers, kept as the founder typed them (not Twin entities) |
+| `Draft` | Unpublished work, editable; publishing turns it into the next `Entity` version and deletes it |
+| `StaleMark` | Append-only "may be outdated" marks for a specific entity version; a newer version clears it |
+| `AiCall.cacheReadTokens`, `cacheWriteTokens`, `outcome` | Fuller cost and quality logging |
+| `AiModel`, `AiModelAssignment` | The admin model registry (§5.11) |
+| `AdminAudit` | Every admin action (§5.8) |
+
+`Entity` rows are always `APPROVED` published versions; the status a founder sees (Not started, Draft, Needs review, Approved, May be outdated) is computed from `Entity`, `Draft`, `StaleMark` and `Proposal` (§5.1).
+
+Each pillar opens with **one question** (`pillars/<NN-id>/src/starter.ts`, a `PillarStarter`): the entity type and field its answer is stored in. Until a pillar's Build step, that answer is the manual value the founder can publish from it.
+
 ### 9. Guardrails
 
 Non-negotiable. Each has a code-level enforcement point and a test.
@@ -1559,7 +1602,7 @@ Non-negotiable. Each has a code-level enforcement point and a test.
 | G6 | Persona hidden profiles never reach the client; personas keep their core facts | API serializers; persona prompt constraints | Response payloads contain no `hidden`; consistency eval |
 | G7 | Actuals are immutable; branches never mutate the baseline unless applied | Twin service, scenario service | Writes to actual periods fail; branch changes leave the parent unchanged |
 | G8 | Tenant isolation; encryption at rest; export and delete on request; consent for personal data | Auth middleware, DB policies | Cross-tenant reads fail |
-| G9 | Regulated sectors are flagged for professional review; legality is never certified | Set Up compliance task | Regulated category shows the review flag |
+| G9 | Regulated sectors are flagged for professional review; legality is never certified | Operations Setup compliance task | Regulated category shows the review flag |
 | G10 | Funding Scout never promises meetings, funding or interest, and lists only verifiable entities with last-verified dates | Funding task schema, URL verification | Entries without a resolvable official URL are dropped |
 | G11 | Founder ideas are private by default and never reused across tenants | Data access layer, AI context builder | Context for startup A never includes startup B |
 | G12 | Model limitations and failure modes are documented, with human review and incident procedures (NIST AI RMF principles) | `docs/` and admin tooling | Checklist review before launch |
@@ -1582,7 +1625,7 @@ Non-negotiable. Each has a code-level enforcement point and a test.
 
 ```
 Stage 1 · Structure     S1 Website and accounts → S2 Pillar skeletons → S3 Shared core
-Stage 2 · Pillars       P1 Discover → P2 Customers → P3 Market → P4 Build → P5 Set Up → P6 Go to Market → P7 Run & Grow
+Stage 2 · Pillars       P1 Problem Discovery → P2 Customer Discovery → P3 Market Research → P4 Product Design → P5 Operations Setup → P6 Go-to-Market Plan → P7 Launch & Growth
                         (each pillar: Define → Build → Review)
 Stage 3 · Founder Pack  F1 Reports, Funding Scout, consultant
 Stage 4 · Launch ready  L1 Second archetype, actuals, hardening, pilot
@@ -1611,13 +1654,13 @@ Stage 4 · Launch ready  L1 Second archetype, actuals, hardening, pilot
 | S1 Website and accounts | Monorepo, Next.js, Postgres, Auth.js, design tokens; Home with product name and onboarding; About; sign-in; My startups | A visitor completes the Home onboarding, signs in and lands in an empty city; About is live | Foundation |
 | S2 Pillar skeletons | Seven folders `pillars/01-discover` … `07-run-grow` with the identical skeleton and a placeholder screen; city links to all seven; import-boundary lint rule | Every pillar opens from the city; each pillar's smoke test runs | Foundation |
 | S3 Shared core | Contracts, Business Twin, approvals, evidence labels, input modes, Publish panel, AI gateway, AI rail, time strip | A manual value can be published in every pillar and its status shows on the city | Foundation |
-| P1 Discover | Define → Build → Review | Acceptance tests pass standalone and connected; PM sign-off | R1 Validate |
-| P2 Customers | Define → Build → Review | Same | R1 Validate |
-| P3 Market | Define → Build → Review | Same | R1 Validate |
-| P4 Build | Define → Build → Review (subscription archetype first) | Same | R2 Design & Plan |
-| P5 Set Up | Define → Build → Review | Same | R2 Design & Plan |
-| P6 Go to Market | Define → Build → Review | Same | R2 Design & Plan |
-| P7 Run & Grow | Define → Build → Review, including the simulation kernel | Same, plus §12.2 | R3 Living Market |
+| P1 Problem Discovery | Define → Build → Review | Acceptance tests pass standalone and connected; PM sign-off | R1 Validate |
+| P2 Customer Discovery | Define → Build → Review | Same | R1 Validate |
+| P3 Market Research | Define → Build → Review | Same | R1 Validate |
+| P4 Product Design | Define → Build → Review (subscription archetype first) | Same | R2 Design & Plan |
+| P5 Operations Setup | Define → Build → Review | Same | R2 Design & Plan |
+| P6 Go-to-Market Plan | Define → Build → Review | Same | R2 Design & Plan |
+| P7 Launch & Growth | Define → Build → Review, including the simulation kernel | Same, plus §12.2 | R3 Living Market |
 | F1 Founder Pack | Five reports, Funding Scout, consultant handoff, AI consultant | Exports reconcile with the snapshot; all labels present | R4 Founder Pack |
 | L1 Launch ready | Second archetype, actuals import, ranges, performance, full guardrail suite, pilot | Full §12 suite green; pilot feedback addressed | R3 / R5 |
 | Later | Physical product, shop and marketplace plugins; voice interviews; cohort console; collaboration; connectors | Per-feature gates | R5 Depth |
@@ -1632,7 +1675,7 @@ Paste one prompt per new conversation, in Plan mode. Each ends by updating `docs
 Read CLAUDE.md and @docs/BLUSLATE_SPEC.md §6.0, §6.5 and §7.
 Scaffold the monorepo exactly as §7.3 with pnpm workspaces (apps/web, packages/*, worker/; leave pillars/ empty for now). apps/web: Next.js App Router, strict TypeScript, Tailwind, shadcn/ui, and the §6.5 design tokens as CSS variables (light and dark).
 Add docker-compose.yml (Postgres 16), Prisma with Startup, Member, Entity, Dependency and DecisionEvent from §8.1, Auth.js with email magic link, ESLint, Prettier, Vitest, Playwright, and a GitHub Actions workflow for lint, typecheck and test.
-Build the §6.0 public pages: Home (product name, one-line promise, and the four-step onboarding card that ends in sign-in and the city) and About (the listed sections). Add sign-in and My startups.
+Build the §6.0 public pages: Home (product name, one-line promise, and the onboarding card that lands in the city — three steps with a guest workspace, four when sign-in is required) and About (the listed sections). Add sign-in and sign-up (with Continue as guest), the top-right profile menu, and My startups.
 Done when a Playwright test completes the Home onboarding and lands in an empty city, and About renders.
 ```
 
@@ -1656,7 +1699,7 @@ Done when all seven placeholders open from the city and every smoke test runs in
 Read @docs/BLUSLATE_SPEC.md §5, §8, §11.3 and Appendix A.0.
 packages/contracts: EntityType, Zod entity schemas in entities/<pillar>.ts for every entity in §8.2, the PillarModule interface, evidence labels and statuses.
 packages/twin: publish with FounderApproval, append-only versions, DecisionEvent, dependencies, entity-level staleness, Snapshot, Proposal, assumptions register; enforce the single-writer rule. Add the remaining §8.1 models.
-packages/ai: `ai.run(taskId, input, ctx)`, the task registry, model tiers from env, structured outputs with `client.messages.parse` + `zodOutputFormat` from `@anthropic-ai/sdk/helpers/zod`, streaming, prompt caching, AiCall logging, per-startup cost caps, retries, and an "AI unavailable" fallback.
+packages/ai: `ai.run(taskId, input, ctx)`, the task registry, model tiers resolved through a `ModelResolver` (the admin model registry), structured outputs with `client.beta.messages.parse` + `betaZodOutputFormat` from `@anthropic-ai/sdk/helpers/beta/zod`, streaming, prompt caching, AiCall logging, per-startup cost caps, retries, and an "AI unavailable" fallback.
 packages/ui: InputModeSwitch, EvidenceBadge, DecisionCard, SuggestionCard, EnablerCard, Publish panel with ImpactPreview, AI rail (one generic guide task), TimeStrip.
 Write the Twin tests first. Done when a manual value can be published in every pillar skeleton and the city shows its status.
 ```
@@ -1681,13 +1724,13 @@ Done when the pillar's acceptance tests pass standalone (no other pillar data) a
 
 | Pillar | Must include |
 | --- | --- |
-| P1 Discover | Problem canvas, opportunity board, ranked hypotheses; the first real use of the AI gateway; evals for A.1 |
-| P2 Customers | Personas with server-only hidden profiles; streaming interview room with the live coach; simulated outreach and surveys; evidence board; synthetic evidence never counts as validated |
-| P3 Market | Research agent with the web search tool and `max_uses`; Source records with retrieval dates; sizing calculators with ranges; competitor explorer; benchmarks |
-| P4 Build | Need → feature map with gap flags; priority board; sandboxed MVP mock with no network access; revenue model; live Business Model Canvas |
-| P5 Set Up | Process map; "Who does this?"; enabler marketplace with real and synthetic quotes labelled; timeline with critical path; unit cost and capacity; risk register |
-| P6 Go to Market | Pricing Lab; Channel Finder; persona message tests; campaign planner; funnel forecast; launch checklist tied to Set Up readiness |
-| P7 Run & Grow | `packages/sim-kernel` with the subscription plugin (write the §12.2 tests first); clock with auto-pause; control room; levers with impact preview; events; board meeting; "Why did this move?"; branches; Proposals back to owning pillars |
+| P1 Problem Discovery | Problem canvas, opportunity board, ranked hypotheses; the first real use of the AI gateway; evals for A.1 |
+| P2 Customer Discovery | Personas with server-only hidden profiles; streaming interview room with the live coach; simulated outreach and surveys; evidence board; synthetic evidence never counts as validated |
+| P3 Market Research | Research agent with the web search tool and `max_uses`; Source records with retrieval dates; sizing calculators with ranges; competitor explorer; benchmarks |
+| P4 Product Design | Need → feature map with gap flags; priority board; sandboxed MVP mock with no network access; revenue model; live Business Model Canvas |
+| P5 Operations Setup | Process map; "Who does this?"; enabler marketplace with real and synthetic quotes labelled; timeline with critical path; unit cost and capacity; risk register |
+| P6 Go-to-Market Plan | Pricing Lab; Channel Finder; persona message tests; campaign planner; funnel forecast; launch checklist tied to Operations Setup readiness |
+| P7 Launch & Growth | `packages/sim-kernel` with the subscription plugin (write the §12.2 tests first); clock with auto-pause; control room; levers with impact preview; events; board meeting; "Why did this move?"; branches; Proposals back to owning pillars |
 
 **F1 · Founder Pack**
 
@@ -1737,21 +1780,24 @@ Run the full §12 suite and every §9 guardrail test, fix failures, and profile 
 | Statistics (no LLM) | L1 | Forecasting, backtesting, ranges | — |
 | Speech | Later | Voice interviews and transcription of consented recordings (pluggable provider) | — |
 
-#### 11.2 Model tiers (configuration, not code)
+#### 11.2 Model tiers (chosen in the admin registry, not in code)
 
-| Tier | Env var | Default (November 2026) | Use |
-| --- | --- | --- | --- |
-| Top | `AI_MODEL_TOP` | `claude-opus-5-5` | Long synthesis, pitch narrative, complex MVP specs, AI consultant |
-| Standard | `AI_MODEL_STANDARD` | `claude-sonnet-5-5` | Most tasks: research, personas, coaching, options |
-| Fast | `AI_MODEL_FAST` | `claude-haiku-5-5` | Tagging, extraction, classification, competitor moves, short narration |
+Every task runs at a tier. Admins add models at `/admin/models` and choose one per tier in the **default** row, optionally overriding it for any pillar. With no model assigned, AI features show the manual fallback.
 
-Model IDs change over time; confirm them on the Claude models overview page before launch and keep them in env vars only.
+| Tier | Suggested model (November 2026) | Use |
+| --- | --- | --- |
+| Top | `claude-opus-5-5` | Long synthesis, pitch narrative, complex MVP specs, AI consultant |
+| Standard | `claude-sonnet-5-5` | Most tasks: research, personas, coaching, options |
+| Fast | `claude-haiku-5-5` | Tagging, extraction, classification, competitor moves, short narration, Guide me |
+
+**Adding a model:** provider → model (from the catalogue or any ID) → API key, given as the *name* of an env variable ending `_API_KEY` → prices → where to use it. **Test connection** uses the free Models API. Keys are never stored in the database. Model IDs change over time; confirm them on the Claude models overview page before launch.
 
 #### 11.3 Gateway principles
 
-- One entry point: `ai.run(taskId, input, ctx)`. No direct SDK calls outside `packages/ai`.
+- One entry point: `ai.run(taskId, input, ctx)`. No direct SDK calls outside `packages/ai` (the admin connection test uses the free Models API).
+- **Model resolution:** the gateway asks a `ModelResolver`. The app's resolver uses the admin registry: the pillar's assignment for the task's tier, then the default. Shared tasks use the pillar the founder is in (`ctx.pillar`). The admin's prices are used for cost.
 - Each task declares tier, prompt version, tools, Zod output schema, max tokens, timeout, cost cap and default evidence label.
-- **Structured outputs:** `client.messages.parse` with `zodOutputFormat(schema)`; the SDK validates the result. The API's JSON schema subset has no numeric or string-length constraints, so bounds stay in Zod and are checked after parsing.
+- **Structured outputs:** `client.beta.messages.parse` with `betaZodOutputFormat(schema)`, plus `fallbacks: "default"` (beta `server-side-fallback-2026-07-01`) on models that support it; the SDK validates the result. The API's JSON schema subset has no numeric or string-length constraints, so bounds stay in Zod and are checked after parsing.
 - **Tools:** strict tool use (`strict: true`) for agent actions; the web search server tool with `max_uses` for research; every retrieved page becomes a Source with a retrieval date.
 - **Prompt caching** on the base system prompt, task prompts and the Twin context summary.
 - **Streaming** for chat surfaces (interviews, AI rail, negotiation, consultant).
@@ -1768,7 +1814,7 @@ Model IDs change over time; confirm them on the Claude models overview page befo
 | --- | --- |
 | Blank new founder | Discovers a problem, researches, builds, sets up, launches a sandbox and exports a pack |
 | Existing business | Imports actuals, starts at any relevant pillar, runs forecasts without altering history |
-| Single pillar | Market (or any pillar) works without other pillars and exports a useful result |
+| Single pillar | Market Research (or any pillar) works without other pillars and exports a useful result |
 | Unknown input | "Guide me" and "Research & suggest" produce prompts, options and transparent assumptions |
 | Edit an older pillar | Dependents are marked May be outdated; numbers recompute; the market shows the effect from the effective date |
 | Market economics | Orders are capped by demand, capacity and inventory; revenue and cash stay consistent |
@@ -1798,13 +1844,13 @@ Founder comprehension, task completion, time to first useful result, citation ac
 
 **Affordable e-bike rental for college students in one city** (recurring-service archetype, step L1):
 
-1. **Discover** — the idea is reframed around student mobility pain; alternatives such as walking, buses and ride-hailing are listed.
-2. **Customers** — the founder rehearses with synthetic students and campus operators; a real field-research checklist is kept separately.
-3. **Market** — sourced campus and population data feed a bottom-up estimate; reach and willingness to pay stay labelled as assumptions.
-4. **Build** — booking, access, payments, deposits and support are designed; the MVP scope is set.
-5. **Set Up** — vehicle procurement, charging, maintenance and campus partnerships get estimated prices and lead times.
-6. **Go to Market** — rental rates, campus referral offers, paid marketing and partnerships get budgets.
-7. **Run & Grow** — simulated months run; revenue, fleet availability, downtime, refunds and cash react to decisions.
+1. **Problem Discovery** — the idea is reframed around student mobility pain; alternatives such as walking, buses and ride-hailing are listed.
+2. **Customer Discovery** — the founder rehearses with synthetic students and campus operators; a real field-research checklist is kept separately.
+3. **Market Research** — sourced campus and population data feed a bottom-up estimate; reach and willingness to pay stay labelled as assumptions.
+4. **Product Design** — booking, access, payments, deposits and support are designed; the MVP scope is set.
+5. **Operations Setup** — vehicle procurement, charging, maintenance and campus partnerships get estimated prices and lead times.
+6. **Go-to-Market Plan** — rental rates, campus referral offers, paid marketing and partnerships get budgets.
+7. **Launch & Growth** — simulated months run; revenue, fleet availability, downtime, refunds and cash react to decisions.
 
 Revision timeline the fixture must reproduce (directional effects, not predictions):
 
@@ -1882,7 +1928,7 @@ You are an assistant inside BluSlate, a founder-led startup workspace.
 
 **Input modes map to tasks:** *Guide me* → `<pillar>.explain` (concept card plus 2–4 questions, Fast tier) · *Research & suggest* → `<pillar>.suggest<Field>` (2–4 ranked options with sources, Standard tier). *I'll decide* uses no AI, except an optional Reality Check.
 
-#### A.1 Discover
+#### A.1 Problem Discovery
 
 | Task | Trigger | Tier | Tools | Output | Guard |
 | --- | --- | --- | --- | --- | --- |
@@ -1894,7 +1940,7 @@ You are an assistant inside BluSlate, a founder-led startup workspace.
 
 **Evals:** problem statements contain no solution; at least 3 falsifiable hypotheses; no statistic without a source.
 
-#### A.2 Customers
+#### A.2 Customer Discovery
 
 | Task | Trigger | Tier | Tools | Output | Guard |
 | --- | --- | --- | --- | --- | --- |
@@ -1913,7 +1959,7 @@ You are an assistant inside BluSlate, a founder-led startup workspace.
 
 **Evals:** consistency across 20 turns; leading-question detection precision; extraction recall on gold transcripts; the persona never volunteers a buying commitment it would not make.
 
-#### A.3 Market
+#### A.3 Market Research
 
 | Task | Trigger | Tier | Tools | Output | Guard |
 | --- | --- | --- | --- | --- | --- |
@@ -1928,7 +1974,7 @@ You are an assistant inside BluSlate, a founder-led startup workspace.
 
 **Evals:** 100% of numeric claims carry a source or appear in `unknowns`; every source has a date; generated URLs resolve.
 
-#### A.4 Build
+#### A.4 Product Design
 
 | Task | Trigger | Tier | Tools | Output | Guard |
 | --- | --- | --- | --- | --- | --- |
@@ -1943,7 +1989,7 @@ You are an assistant inside BluSlate, a founder-led startup workspace.
 
 **Evals:** traceability coverage; mockups render offline; specs never exceed the chosen scope.
 
-#### A.5 Set Up
+#### A.5 Operations Setup
 
 | Task | Trigger | Tier | Tools | Output | Guard |
 | --- | --- | --- | --- | --- | --- |
@@ -1958,7 +2004,7 @@ You are an assistant inside BluSlate, a founder-led startup workspace.
 
 **Evals:** synthetic quotes stay inside configured bounds; real providers always have a URL and date; negotiation never closes a deal.
 
-#### A.6 Go to Market
+#### A.6 Go-to-Market Plan
 
 | Task | Trigger | Tier | Tools | Output | Guard |
 | --- | --- | --- | --- | --- | --- |
@@ -1969,13 +2015,13 @@ You are an assistant inside BluSlate, a founder-led startup workspace.
 | `gtm.messageVariants` | Campaign planner | Standard | — | Copy variants per channel | — |
 | `gtm.messageReactions` | Message test | Fast | — | Persona reactions (qualitative) | Click-through computed by the engine |
 | `gtm.campaignPlan` | Campaign planner | Standard | — | Campaign draft | No spend without approval |
-| `gtm.launchChecklist` | Launch date set | Fast | — | Checklist from Set Up readiness and dependencies | — |
+| `gtm.launchChecklist` | Launch date set | Fast | — | Checklist from Operations Setup readiness and dependencies | — |
 
 Van Westendorp and Gabor-Granger curves are computed by the engine from the population's willingness-to-pay distribution; the LLM never produces them.
 
 **Evals:** no ROI promises in text; every price number comes from the founder, a source or the engine.
 
-#### A.7 Run & Grow
+#### A.7 Launch & Growth
 
 | Task | Trigger | Tier | Tools | Output | Guard |
 | --- | --- | --- | --- | --- | --- |
@@ -2059,7 +2105,7 @@ q_s      = imitation rate, scaled by average rating and referral programme
 #### B.4 Choice and market share (multinomial logit)
 
 ```
-Fit[j,s] = Σ_n weight[n,s] × coverage[j,n]                      // need weights from Customers; coverage from Build or competitor features
+Fit[j,s] = Σ_n weight[n,s] × coverage[j,n]                      // need weights from Customer Discovery; coverage from Product Design or competitor features
 U[j,s]   = βfit × Fit[j,s] + βprice × ln(NetPrice_j / RefPrice_s) + βtrust × Trust_j + βconv × Convenience_j + βpromo × Promo_j
 P[j,s]   = exp(U[j,s]) / Σ_k exp(U[k,s])                        // k includes "do nothing" with U = 0
 βprice   < 0, scaled by the segment's price sensitivity (from its willingness-to-pay spread)
@@ -2157,18 +2203,18 @@ BluSlate applies these methods in original interactive workflows; it never repro
 
 | Foundation | Reference | Pillars |
 | --- | --- | --- |
-| Design thinking | IDEO Human-Centered Design; Jobs to Be Done literature | Discover, Customers |
-| Validation | Eric Ries, *The Lean Startup*; Steve Blank, Customer Development | Discover, Customers, Build |
-| Interview craft | Rob Fitzpatrick, *The Mom Test*; YC Startup School on user interviews | Customers |
-| Value proposition | Strategyzer, *Value Proposition Design* | Discover, Customers, Build |
-| Business model | Osterwalder & Pigneur, *Business Model Generation* | Build, Set Up, Go to Market |
+| Design thinking | IDEO Human-Centered Design; Jobs to Be Done literature | Problem Discovery, Customer Discovery |
+| Validation | Eric Ries, *The Lean Startup*; Steve Blank, Customer Development | Problem Discovery, Customer Discovery, Product Design |
+| Interview craft | Rob Fitzpatrick, *The Mom Test*; YC Startup School on user interviews | Customer Discovery |
+| Value proposition | Strategyzer, *Value Proposition Design* | Problem Discovery, Customer Discovery, Product Design |
+| Business model | Osterwalder & Pigneur, *Business Model Generation* | Product Design, Operations Setup, Go-to-Market Plan |
 | Experiments | Bland & Osterwalder, *Testing Business Ideas* | All validation stages |
-| Feature priority | Intercom, RICE | Build |
-| Industry strategy | Michael Porter, Five Forces | Market |
-| Growth | Weinberg & Mares, *Traction* (Bullseye) | Go to Market |
-| Market adoption | Geoffrey Moore, *Crossing the Chasm* | Go to Market |
-| Metrics | Croll & Yoskovitz, *Lean Analytics* | Run & Grow |
-| Operations | ASQ, SIPOC and FMEA | Set Up |
+| Feature priority | Intercom, RICE | Product Design |
+| Industry strategy | Michael Porter, Five Forces | Market Research |
+| Growth | Weinberg & Mares, *Traction* (Bullseye) | Go-to-Market Plan |
+| Market adoption | Geoffrey Moore, *Crossing the Chasm* | Go-to-Market Plan |
+| Metrics | Croll & Yoskovitz, *Lean Analytics* | Launch & Growth |
+| Operations | ASQ, SIPOC and FMEA | Operations Setup |
 | Investor narrative | Sequoia Capital, *Writing a Business Plan* | Founder Pack |
 | AI risk | NIST Generative AI risk management profile | Guardrails |
 

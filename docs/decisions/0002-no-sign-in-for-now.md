@@ -15,7 +15,7 @@
 - **Schema.** `User.email` is now optional, and `User.isGuest` was added (migration `guest_users`).
 - **Legal pages.** Privacy and Cookies were updated to describe use without an account.
 
-## Proposed spec edit (not yet applied)
+## Spec edit (applied in v2.4)
 
 §6.0 "Home onboarding": add "While sign-in is switched off, step 3 opens the city directly and the startup is kept in a guest workspace in the browser." Part B §B3.2 should match.
 

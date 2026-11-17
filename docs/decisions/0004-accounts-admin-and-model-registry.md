@@ -2,7 +2,7 @@
 
 - **Date:** 17 November 2026
 - **Requested by:** the PM
-- **Status:** Accepted. Items 3 and 5 change rules in CLAUDE.md and the spec; the proposed edits are listed at the end and **wait for PM approval**.
+- **Status:** Accepted. The edits below were **applied in spec v2.4** (PM: "the instructions here are superior to spec").
 
 ## 1. Sign in, sign up, guests
 
@@ -59,7 +59,7 @@ Display names changed; ids, folders and packages did not.
 | Go to Market | Go-to-Market Plan |
 | Run & Grow | Launch & Growth |
 
-## Proposed edits to CLAUDE.md and the spec (not yet applied)
+## Edits to CLAUDE.md and the spec (applied in v2.4)
 
 1. **CLAUDE.md, AI rule 2:** replace "Models come from env (`AI_MODEL_TOP`, …). Never hard-code model IDs." with "Models are chosen in the admin model registry (`/admin/models`, `AiModel` and `AiModelAssignment`). API keys come from env by variable name only. Never hard-code model IDs in tasks."
 2. **Spec §5.11 Model registry, "Lives in":** add the admin registry tables.
