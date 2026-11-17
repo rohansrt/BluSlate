@@ -19,3 +19,24 @@ export { DecisionCard, SuggestionCard, EnablerCard, ReviewBanner } from "./compo
 export { PublishPanel, type PublishChange } from "./components/publish-panel";
 export { TimeStrip, type TimeStripFigure } from "./components/time-strip";
 export { AiRailPanel, type AiRailState } from "./components/ai-rail-panel";
+export {
+  newRowId,
+  Section,
+  Field,
+  TextField,
+  Segmented,
+  ChipSelect,
+  TagInput,
+  Dots,
+  NumberField,
+  RowList,
+  GoalsPanel,
+  AiPlaceholder,
+  Bars,
+  Quadrant,
+  LineChart,
+  Stat,
+  ReportOut,
+  ReportBody,
+  FromUpstream,
+} from "./components/workbench";

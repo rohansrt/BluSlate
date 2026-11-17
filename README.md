@@ -7,7 +7,7 @@ A founder takes an idea through seven pillars: **Problem Discovery → Customer 
 This README is the **handover file**. Give it to any new Claude session and it has everything:
 
 1. **Part 1:** the project's current state and how to keep working on it.
-2. **Part 2:** the full master specification (v2.4), embedded word for word.
+2. **Part 2:** the full master specification (v2.5), embedded word for word.
 
 ---
 
@@ -47,14 +47,17 @@ Open this folder in VS Code with Claude Code (or attach this README to any Claud
 | S2 Pillar skeletons | ✅ | Seven `pillars/0N-*` packages (draft SPEC.md, module stub, placeholder screen, smoke test), pillar routes, import-boundary lint |
 | S3 Shared core | ✅ | Business Twin, AI gateway, entity schemas, input modes, Publish panel, live hub statuses, §7.4 API routes |
 | PM additions | ✅ | No sign-in needed (guest workspaces); Sign in / Sign up / Continue as guest; profile menu; delete a startup; Home with hook, hero and seven-step loop; admin dashboard with statistics, audit log and the plug-in **AI model registry**; clearer pillar names |
-| **P1 Problem Discovery** | ⏭ next | **Define** step: interview the PM and rewrite `pillars/01-discover/SPEC.md`. No code until it's signed off |
-| P2–P7, F1, L1 | — | Not started |
+| P1 Define | 📝 proposed | `pillars/01-discover/SPEC.md` rewritten in depth (dashboard, every question, formulas, fixture, 30 acceptance tests, open questions). Awaiting PM sign-off; it guides P1 v2 |
+| **Pillars v1 (all seven)** | ✅ | Decision 0006. Each pillar has its own screen with structured inputs, works alone, pre-fills from upstream, shows live **Goals** on the right (TAM/SAM/SOM, unit cost, runway…), ends with a **Report out**, autosaves, and publishes to the Twin with approval. AI is placeholders |
+| **Founder Pack report** | ✅ v1 | `/startups/[id]/pack`: every pillar's report out, status and goals; print or save as PDF. Other exports are placeholders |
+| Pillars v2, F1 exports, L1 | — | Not started |
 
 **Current behaviour, briefly:**
 
 - **Onboarding:** visitors onboard in three steps without an account; a guest workspace is created. They can sign up later and keep their startups.
-- **Pillars:** each pillar page asks its first question. "I'll decide" saves a draft, the Publish panel shows the impact, and approval publishes to the Twin.
-- **AI:** "Guide me" goes through the AI gateway. It shows a fallback until an admin adds a model at `/admin/models` **and** `ANTHROPIC_API_KEY` is set. Neither is set yet.
+- **Pillars (v1):** each pillar page is its own set of numbered steps. Answers autosave to the pillar's workspace (`PillarWorkspace`). The right column shows live Goals, Publish and the AI helpers. "Review and publish" lists every entity it will create, and Approve publishes them through the Twin; unchanged ones are skipped.
+- **Upstream pre-fill:** a fresh workspace reads the approved entities the pillar may read (§3.1), so Customer Discovery starts from the published Problem, Go-to-Market from the costs, and so on. Used alone, each pillar asks for what it needs.
+- **AI:** every AI feature is a visible "AI · coming soon" placeholder in v1. The gateway and model registry from S3 are in place for when they're built.
 
 ### Run it locally
 
@@ -121,14 +124,16 @@ apps/web/                 Next.js 16 app (App Router)
                           journey map (city), pillar shell + workspace, admin
   lib/                    db, auth actions, guest + guest-merge, twin (+ Postgres store),
                           ai (+ model registry resolver), admin (+ stats, actions), pillar registry
-pillars/0N-<id>/          one package per pillar: SPEC.md, src/{module,schema,calculators,
-                          ai-tasks,starter}.ts, ui/, tests/
+pillars/0N-<id>/          one package per pillar: SPEC.md, src/workspace.ts (state, calculators,
+                          goals, report out, entities), src/{module,starter,ai-tasks}.ts,
+                          ui/index.tsx (the pillar's screen), tests/
 packages/contracts        pillar metadata, entity types + Zod schemas, PillarModule, PillarStarter
 packages/twin             Business Twin: drafts, approval-gated publish, versions, decisions,
                           dependencies, staleness, statuses, proposals, snapshots, assumptions
 packages/ai               AI gateway: ai.run / ai.stream, tasks, envelope, checks, pricing,
                           model catalogue, ModelResolver
-packages/ui               design tokens, components, slate drawings, Publish panel, AI rail, time strip
+packages/ui               design tokens, components, slate drawings, workbench pieces (Goals panel,
+                          Dots, chips, number fields, row lists, charts, Report out, AI placeholder)
 packages/sim-kernel, reports   placeholders (P7, F1)
 prisma/                   schema + migrations
 tests/e2e, tests/architecture  Playwright; import-boundary and README-sync tests
@@ -152,6 +157,7 @@ docs/                     BLUSLATE_SPEC.md (source of truth), PM review PDF (v2.
 - **0003:** Twin workspace tables, each pillar's first question, AI gateway details.
 - **0004:** accounts and profile menu, guest sign-up, deleting startups, the admin dashboard, the AI model registry, new pillar names.
 - **0005:** admin sign-in with email and password (a hash in env, failed attempts throttled).
+- **0006:** v1 of all seven pillars at once: own screens, live Goals, Report out, the Founder Pack report, AI as placeholders, the `PillarWorkspace` table.
 
 ### Open issues
 
@@ -162,7 +168,8 @@ docs/                     BLUSLATE_SPEC.md (source of truth), PM review PDF (v2.
   - rate limiting on guest creation;
   - a retention rule for inactive guests.
 - **Launch & Growth:** its `Scenario` exists as both an entity and a table; decide in P7.
-- **Unbuilt parts:** the Evidence and Publish tabs, the Founder Pack and the time strip arrive with later steps.
+- **Unbuilt parts:** the Evidence view, the time strip, the full simulation kernel (P7 v1 uses a simple monthly model), and the Founder Pack's pitch, workbook, canvas and funding exports.
+- **Removing published items:** deleting a row from a workspace doesn't retire its last published entity (v1 limitation, decision 0006).
 - **PDF:** `docs/BluSlate_PM_Review.pdf` is still v2.3.
 
 ### Gotchas
@@ -176,11 +183,11 @@ docs/                     BLUSLATE_SPEC.md (source of truth), PM review PDF (v2.
 
 ### What's next
 
-**P1 Problem Discovery: Define.** Use the "Step 1, Define a pillar" prompt in spec §10.5 with `{NN-id}` = `01-discover`:
+1. **PM review of pillars v1.** Click through all seven pillars and the Founder Pack report, and list what to change.
+2. **Sign off `pillars/01-discover/SPEC.md`**, answering its §16 open questions. It's the plan for P1 v2: the dashboard, Help me discover, an observation log, and readiness.
+3. **Then pillar by pillar (v2):** Define → Build → Review, deepening each pillar from its v1, and switching AI slots on once a model and key are set.
 
-1. Interview the PM one topic at a time.
-2. Rewrite `pillars/01-discover/SPEC.md` with screens, questions (three input modes), inputs and outputs, calculations, AI tasks and prompts, states, a fixture and acceptance tests.
-3. Get the PM's sign-off before any code.
+**Adding to a pillar:** change `pillars/<NN-id>/src/workspace.ts` (schema with defaults, `goals`, `report`, `entities`) and `ui/index.tsx`. Keep new state fields defaulted, so saved workspaces still parse.
 
 ---
 
@@ -190,7 +197,7 @@ docs/                     BLUSLATE_SPEC.md (source of truth), PM review PDF (v2.
 
 # BluSlate — Master Specification
 
-**Version 2.4 · 17 November 2026 · One file for VS Code and Claude Code**
+**Version 2.5 · 17 November 2026 · One file for VS Code and Claude Code**
 
 *BluSlate was developed under the working name "Startup City".*
 
@@ -209,6 +216,16 @@ This single file holds everything needed to build BluSlate: the rules Claude Cod
 3. Claude moves both files into `docs/`, creates `CLAUDE.md` from Part A, and begins step S1.
 
 **Which part wins.** The PM's instructions win over this document: when they differ, the instruction is implemented, recorded in `docs/decisions/`, and this file is updated to match. Within the document, Parts A and C are authoritative; Part B explains them in plain words. If anything differs, Part C wins. Inside Part C the order is: Guardrails (§9) → Contracts (§3–§5) → everything else. All § numbers refer to Part C.
+
+**What changed in v2.5** (PM decision, recorded in `docs/decisions/0006`)
+
+| Change | Where |
+| --- | --- |
+| v1 of all seven pillars built at once, each with its own screen of mostly structured inputs, usable alone and pre-filled from upstream when it exists | §6.3, §10.2, Part A |
+| A live **Goals** column on the right of every pillar (for example TAM / SAM / SOM in Market Research), filled in as values become calculable | §6.1, §6.3 |
+| A **Report out** block at the end of every pillar, and the Founder Pack report page that collects them | §6.0, §6.3 |
+| AI features are placeholders in v1; every AI slot is visible and marked "coming soon" | §6.3, Part A |
+| `PillarWorkspace` table for each pillar's autosaved working state | §8.3 |
 
 **What changed in v2.4** (PM decisions, recorded in `docs/decisions/0001`–`0004`)
 
@@ -305,12 +322,16 @@ Implement and test every guardrail in §9 (G1–G12). Most important: real vs sy
 - Every number shows its evidence label badge.
 - Every empty state offers the three input modes.
 - The bottom TimeStrip is visible whenever a scenario exists.
+- Each pillar has its own screen (`pillars/<NN-id>/ui`) built from `packages/ui` workbench pieces, a live Goals column, and a Report out block; its logic lives in `pillars/<NN-id>/src/workspace.ts` (pure, tested).
+- AI slots that aren't switched on are `AiPlaceholder` cards: visible, disabled, never fake output.
 
 ## Build order (§10)
 
 1. **Stage 1 — Structure:** S1 website and accounts (Home with onboarding, About), S2 seven pillar skeleton folders, S3 shared core.
 2. **Stage 2 — One pillar at a time** (P1 Problem Discovery → P7 Launch & Growth), each as Define (rewrite the pillar's SPEC.md, no code) → Build → Review.
 3. **Stage 3 — Founder Pack**, then **Stage 4 — Launch ready**.
+
+**v1 (v2.5, decision 0006):** all seven pillars have a working v1, built together at the PM's request. Going deeper on a pillar (v2) follows Define → Build → Review again.
 
 Don't build a pillar in depth before its SPEC.md is approved. During a pillar's Build step, work only inside that pillar's folder and route; list any shared-package change in the plan and wait for approval.
 
@@ -809,6 +830,7 @@ Not a questionnaire, not an AI business-plan writer, not a prediction of success
 | Sign-in (v2.4) | Not required for now: onboarding creates a guest workspace (Auth.js session, no email); email sign-in and sign-up stay available; a guest who signs up keeps their startups | Lowest-friction first visit |
 | Model choice (v2.4) | An admin model registry with per-pillar, per-tier assignments replaces the `AI_MODEL_*` env tiers | Plug-and-play models without redeploys |
 | Twin workspace (v2.4) | Drafts and "may be outdated" marks live in their own tables; `Entity` holds only published versions | Keeps history strictly append-only |
+| Pillar v1 (v2.5) | All seven pillars get a working v1 at once: own screen, live Goals column, Report out, AI as placeholders; publishing turns the autosaved workspace into the pillar's entities | The PM wants every pillar usable end to end before going deep on any one |
 
 ---
 
@@ -1297,7 +1319,7 @@ Each registry is versioned on its own, so a method, tool list, model or formula 
 | City | `/startups/[id]` | The seven hubs with status and next best action (§6.2) |
 | Pillar | `/startups/[id]/[pillar]` | The pillar workspace (§6.3) |
 | Launch & Growth | `/startups/[id]/run-grow` | The control room |
-| Founder Pack | `/startups/[id]/pack` | Reports, Funding Scout, consultant |
+| Founder Pack | `/startups/[id]/pack` | The report: every pillar's Report out block with its status and goals, printable as PDF. Pitch, workbook, canvas, Funding Scout and consultant arrive later |
 | Legal | `/privacy`, `/terms`, `/cookies` | Policies |
 | Admin | `/admin`, `/admin/models`, `/admin/models/new`, `/admin/audit`, `/admin/login` | Aggregate statistics; the AI model registry (empty state, add-a-model workflow, pillar × tier assignments); audit log. Admins sign in with **email and password**: the email must be in `ADMIN_EMAILS`, and the password is checked against `ADMIN_PASSWORD_HASH` (scrypt; the password itself is never stored). A wrong email or password gives the same message, and repeated failures are throttled |
 
@@ -1339,7 +1361,7 @@ The draft is kept in the browser while the founder types. Without a session, the
 | Top bar | Startup name, mode (Sandbox / Actuals), save state, Levers, Founder Pack, Share, account |
 | Left rail — City hubs | Seven pillars with status (`*` approved, `~` draft, `!` needs review or may be outdated, blank = not started) |
 | Centre — Workspace | The pillar's canvas, with tabs **Work · Evidence · Publish** |
-| Right — AI rail | Collapsible: ask why, research options, Reality Check flags, next best action, Founder Toolbox |
+| Right — Goals and AI | The pillar's live **Goals** (each shows "—" until it can be calculated, then its value and label), **Publish**, and the **AI helpers** (ask why, research options, Reality Check, Founder Toolbox; placeholders in v1) |
 | Bottom — Time strip | Simulated date, play controls, cash, burn, runway, a key metric, alerts — always visible once a scenario exists |
 
 #### 6.2 City view (inside the app)
@@ -1348,9 +1370,26 @@ A 2D city map with seven hubs (not a 3D world), each showing status and its next
 
 #### 6.3 Standard pillar workspace
 
-- **Work** — the main canvas plus a Framework Studio (the relevant method as an interactive activity).
-- **Evidence** — sources, assumptions, calculations, contradictions, gaps and refresh actions.
-- **Publish** — proposed changes, their labels, and which pillars they will affect; Approve, Edit or Reject.
+The frame is shared, so founders learn it once: city hubs on the left, the pillar's screen in the centre, Goals, Publish and AI helpers on the right. **The screen itself is unique to each pillar** (v2.5, decision 0006), designed around what that pillar serves:
+
+- **Numbered steps** in the pillar's natural order. Inputs are mostly structured (ratings, chips, choices, numbers, small cards), not long text.
+- **Works alone.** Approved upstream entities pre-fill fields, marked "From <pillar>". Without them the pillar asks for what it needs.
+- **Live Goals** on the right: the pillar's key outputs (for example TAM / SAM / SOM, unit cost, runway). Each shows "—" until it can be calculated, then its value, formula hint and evidence label.
+- **Report out** at the end: a headline and labelled key lines, with Copy. The Founder Pack report collects all seven.
+- **Autosave** to the pillar's workspace. **Publish** shows every entity it will create or update, with its label; approval publishes them through the Twin.
+- **AI slots** sit where the AI would act, as dashed "AI · coming soon" cards, until AI is switched on.
+
+| Pillar | Steps | Goals |
+| --- | --- | --- |
+| 1 Problem Discovery | Problem canvas · compare framings · beliefs to test · next week | Problem strength, best framing, testable beliefs, riskiest belief, sprint days, readiness |
+| 2 Customer Discovery | Problem · segments · outreach · interview log · needs · belief check | Real interviews (of 8), segments interviewed, top need, needs with 3+ sources, beliefs ✓/✗/?, expected replies, willingness to pay |
+| 3 Market Research | Boundary · bottom-up sizing · top-down check · competitors and positioning · trend | TAM, SAM, SOM with ranges, customers at SOM, cross-check, competitors, sources |
+| 4 Product Design | Needs · value proposition · features (RICE) and MVP line · business model | Value proposition, MVP features, effort, time to build, needs covered, top feature, business model |
+| 5 Operations Setup | Process · team · costs · providers · risks | Monthly fixed cost, variable cost per unit, capacity and bottleneck, team, time to get ready, providers, top risk |
+| 6 Go-to-Market Plan | Positioning · Pricing Lab · Bullseye channels · launch | Price, contribution, margin, blended CAC, customers a month, break-even, payback, launch checklist |
+| 7 Launch & Growth | Scenario · starting numbers · levers · control room | Runway, break-even month, customers, revenue, lowest cash, end cash (SYNTHETIC) |
+
+Later versions add the **Evidence** view (sources, assumptions, calculations, contradictions, gaps and refresh actions) and per-entity Approve, Edit or Reject.
 
 #### 6.4 Signature visuals
 
@@ -1784,6 +1823,7 @@ model AiCall {
 | `Startup.entryPath`, `Startup.onboarding` | The onboarding answers, kept as the founder typed them (not Twin entities) |
 | `Draft` | Unpublished work, editable; publishing turns it into the next `Entity` version and deletes it |
 | `StaleMark` | Append-only "may be outdated" marks for a specific entity version; a newer version clears it |
+| `PillarWorkspace` (v2.5) | Each pillar's autosaved working state (one row per startup and pillar) and the map from workspace items to published logical ids. Not Twin history |
 | `AiCall.cacheReadTokens`, `cacheWriteTokens`, `outcome` | Fuller cost and quality logging |
 | `AiModel`, `AiModelAssignment` | The admin model registry (§5.11) |
 | `AdminAudit` | Every admin action (§5.8) |
@@ -1836,6 +1876,7 @@ Stage 4 · Launch ready  L1 Second archetype, actuals, hardening, pilot
 ```
 
 - **Stage 1** produces a complete, clickable website: Home with onboarding, About, sign-in, the city, and all seven pillars as separate folders with placeholder screens wired to the shared core. Nothing pillar-specific is built in depth yet.
+- **Pillars v1 (v2.5):** before going deep, all seven pillars got a working v1 together: own screen, live Goals, Report out, publishing, and the Founder Pack report, with AI as placeholders (decision 0006). Stage 2 below now deepens each pillar from its v1.
 - **Stage 2** deepens one pillar at a time, in three steps:
     1. **Define** — the PM, the founder and Claude turn §4.x and Appendix A.x into that pillar's own `pillars/0N-<id>/SPEC.md`: every screen, every question asked, inputs and outputs, calculations, AI tasks and prompts, sample data and acceptance tests. The PM signs it off.
     2. **Build** — Claude Code implements inside that pillar's folder only; any change to a shared package is listed in the plan and approved first.

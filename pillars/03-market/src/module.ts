@@ -38,3 +38,4 @@ export const marketModule: PillarModule<MarketInput, MarketOutput> = {
 export { marketStarter } from "./starter";
 
 export { PLANNED_AI_TASKS } from "./ai-tasks";
+export { marketWorkspace } from "./workspace";

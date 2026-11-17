@@ -25,7 +25,14 @@ export const ChannelPlanSchema = z
   .object({
     channels: z.array(
       z
-        .object({ channel: text, monthlyBudget: money, currency, benchmarkIds: z.array(id) })
+        .object({
+          channel: text,
+          monthlyBudget: money,
+          currency,
+          benchmarkIds: z.array(id),
+          ring: z.enum(["inner", "middle", "outer"]),
+          expectedCac: money,
+        })
         .partial(),
     ),
   })

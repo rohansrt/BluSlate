@@ -112,7 +112,7 @@ export function JourneyMap({ mode, startupId, highlight = null, statuses = {} }:
           })}
         </ol>
         <div className="absolute bottom-5 right-5">
-          <PackTile mode={mode} />
+          <PackTile mode={mode} startupId={startupId} />
         </div>
       </div>
 
@@ -139,7 +139,7 @@ export function JourneyMap({ mode, startupId, highlight = null, statuses = {} }:
           <span className="z-10 grid size-12 shrink-0 place-items-center rounded-xl bg-foreground text-background shadow-md">
             <FounderPackIcon className="size-5" aria-hidden />
           </span>
-          <PackTile mode={mode} className="flex-1" />
+          <PackTile mode={mode} startupId={startupId} className="flex-1" />
         </li>
       </ol>
     </div>
@@ -255,8 +255,16 @@ function StatusBadge({ suggested, status }: { suggested: boolean; status: Pillar
   );
 }
 
-function PackTile({ mode, className }: { mode: JourneyMode; className?: string }) {
-  return (
+function PackTile({
+  mode,
+  className,
+  startupId,
+}: {
+  mode: JourneyMode;
+  className?: string;
+  startupId?: string;
+}) {
+  const body = (
     <div
       className={cn(
         "flex items-center gap-3 rounded-2xl bg-foreground px-4 py-3 text-background shadow-lg",
@@ -268,11 +276,18 @@ function PackTile({ mode, className }: { mode: JourneyMode; className?: string }
         <p className="font-semibold">Founder Pack</p>
         <p className="text-xs opacity-80">
           {mode === "city"
-            ? "Grows as you work through the steps"
+            ? "Open the report: it grows as you work"
             : "Pitch, financial model, report, canvas, funding list"}
         </p>
       </div>
       {mode === "home" && <ArrowRight className="hidden size-4 opacity-70 lg:block" aria-hidden />}
     </div>
+  );
+  return mode === "city" && startupId ? (
+    <Link href={`/startups/${startupId}/pack`} className={cn("block", className)}>
+      {body}
+    </Link>
+  ) : (
+    body
   );
 }

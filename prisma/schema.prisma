@@ -128,6 +128,7 @@ model Startup {
   members   Member[]
   entities  Entity[]
   scenarios Scenario[]
+  workspaces PillarWorkspace[]
 
   @@index([ownerId])
 }
@@ -440,4 +441,19 @@ model AdminAudit {
   createdAt  DateTime @default(now())
 
   @@index([createdAt])
+}
+
+// A pillar's working state (decision 0006): the founder's structured inputs,
+// autosaved. Not Twin history: publishing turns it into versioned entities.
+model PillarWorkspace {
+  id        String   @id @default(cuid())
+  startupId String
+  pillar    String
+  data      Json
+  // workspace entity key -> Twin logicalId, filled in on publish
+  published Json     @default("{}")
+  updatedAt DateTime @updatedAt
+  startup   Startup  @relation(fields: [startupId], references: [id], onDelete: Cascade)
+
+  @@unique([startupId, pillar])
 }

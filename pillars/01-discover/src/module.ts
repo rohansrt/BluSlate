@@ -38,3 +38,4 @@ export const discoverModule: PillarModule<DiscoverInput, DiscoverOutput> = {
 export { discoverStarter } from "./starter";
 
 export { PLANNED_AI_TASKS } from "./ai-tasks";
+export { discoverWorkspace } from "./workspace";

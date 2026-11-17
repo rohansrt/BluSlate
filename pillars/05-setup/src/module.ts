@@ -33,3 +33,4 @@ export const setupModule: PillarModule<SetupInput, SetupOutput> = {
 export { setupStarter } from "./starter";
 
 export { PLANNED_AI_TASKS } from "./ai-tasks";
+export { setupWorkspace } from "./workspace";

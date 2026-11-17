@@ -280,3 +280,26 @@ One entry per step (CLAUDE.md, "Source of truth").
   - end-to-end tests for wrong-password and non-admin refusals, and for an admin signing in and plugging in a model;
   - CI uses a test-only admin.
 - **Fix:** hashes use `:` separators, because Next.js expands `$NAME` in `.env` values.
+
+---
+
+## 17 November 2026 — Pillars v1 (all seven) and the Founder Pack report ✅
+
+The PM asked for a working v1 of every pillar at once (decision 0006, spec v2.5).
+
+- **Each pillar has its own screen** of numbered steps with structured inputs: rating dots, chips, choices, numbers and small cards. Its logic lives in `pillars/<NN-id>/src/workspace.ts`: state schema, calculators, goals, report out and entities.
+- **Works alone, better together:** a fresh workspace pre-fills from approved upstream entities ("From <pillar>"); without them, the pillar asks.
+- **Live Goals column** on the right. Each goal fills in when it can be calculated, for example:
+  - TAM / SAM / SOM with ranges (Market Research);
+  - unit cost and capacity (Operations Setup);
+  - contribution, CAC and break-even (Go-to-Market Plan);
+  - runway and break-even month (Launch & Growth).
+- **Report out** at the end of every pillar. **Founder Pack report** at `/startups/[id]/pack` with all seven blocks; print or save as PDF.
+- **Autosave** to a new `PillarWorkspace` table (migration `pillar_workspaces`). **Publish** turns the workspace into the pillar's entities through the Twin, with the founder's approval. Unchanged entities are skipped, and upstream entities become dependencies.
+- **AI:** placeholders only, shown where each helper would act.
+- **P1 Define:** `pillars/01-discover/SPEC.md` was rewritten in depth and is awaiting sign-off, as the plan for P1 v2.
+- **Removed:** the S3 first-question UI (`pillar-workspace.tsx`). The starter API routes stay.
+- **Tests:**
+  - unit: 159 passing, including P1, P3, P6 and P7 calculators, plus cross-pillar checks that every pillar works alone and publishes only valid entities it owns;
+  - end-to-end: 46 passing (2 admin tests skipped without the password), including new v1 flows: P1 → P2 pre-fill, live TAM, the P7 control room and the Founder Pack.
+- **Note:** after pulling, run `pnpm db:migrate` and restart `pnpm dev`.

@@ -26,6 +26,10 @@ export const InterviewSchema = z
       .partial(),
     synthetic: z.boolean(),
     coachScores: scores,
+    // v1 additions (decision 0006).
+    date: text,
+    segmentName: text,
+    painLevel: z.number(),
   })
   .partial();
 

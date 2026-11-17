@@ -1,15 +1,15 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import type { PillarStatus } from "@bluslate/twin";
-import { Badge, FounderPackIcon, PillarIcon, cn } from "@bluslate/ui";
+import { FounderPackIcon, PillarIcon, cn } from "@bluslate/ui";
 import { PILLARS, type PillarId, type PillarInfo } from "@/lib/pillars";
 import { PILLAR_STATUS_INFO } from "@/lib/pillar-status";
 
 /**
  * The standard pillar layout (spec §6.1, §6.3): city hubs on the left, the
  * pillar's workspace in the centre with Work · Evidence · Publish tabs, and the
- * AI rail on the right (both in PillarWorkspace). Every pillar looks the same,
- * so founders learn it once.
+ * Goals column on the right (both in PillarWorkbench). The frame is the same
+ * everywhere so founders learn it once; each pillar's screen is its own.
  */
 export function PillarShell({
   startup,
@@ -36,14 +36,15 @@ export function PillarShell({
             <PillarIcon id={active.id} className="size-6 text-primary" />
             {active.number} · {active.name}
           </h1>
+          <p className="mt-0.5 text-sm text-muted-foreground">{active.question}</p>
         </div>
-        <span
-          className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-1.5 text-sm text-muted-foreground"
+        <Link
+          href={`/startups/${startup.id}/pack`}
+          className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-1.5 text-sm font-medium hover:bg-accent"
           title="Your Founder Pack grows as you work through the steps"
         >
-          <FounderPackIcon className="size-4" aria-hidden /> Founder Pack
-          <Badge variant="neutral">Soon</Badge>
-        </span>
+          <FounderPackIcon className="size-4" aria-hidden /> Founder Pack report
+        </Link>
       </div>
 
       <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-[220px_minmax(0,1fr)_260px]">

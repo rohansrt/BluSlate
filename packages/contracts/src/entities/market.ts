@@ -25,6 +25,9 @@ export const CompetitorSchema = z
     funding: text,
     estimatedShare: z.number(),
     strategy: z.enum(["price_leader", "premium", "fast_follower", "incumbent"]),
+    // v1 additions (decision 0006): the positioning map axes, 1–5.
+    priceLevel: z.number(),
+    quality: z.number(),
   })
   .partial();
 

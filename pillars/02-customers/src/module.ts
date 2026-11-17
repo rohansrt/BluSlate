@@ -38,3 +38,4 @@ export const customersModule: PillarModule<CustomersInput, CustomersOutput> = {
 export { customersStarter } from "./starter";
 
 export { PLANNED_AI_TASKS } from "./ai-tasks";
+export { customersWorkspace } from "./workspace";

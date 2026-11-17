@@ -63,9 +63,11 @@ describe("pillar discover: skeleton smoke test", () => {
     expect(PLANNED_AI_TASKS.length).toBeGreaterThan(0);
   });
 
-  it("has a SPEC.md marked as a draft to be deep-defined", () => {
+  it("has a deep-defined SPEC.md with a status, a fixture and acceptance tests", () => {
     const spec = readFileSync(path.join(import.meta.dirname, "../SPEC.md"), "utf8");
-    expect(spec).toContain("Draft — to be deep-defined");
-    expect(spec).toContain("#### 4.1 Pillar 1 — Problem Discovery");
+    expect(spec).toContain("# Pillar 1 — Problem Discovery");
+    expect(spec).toMatch(/\*\*Status:/);
+    expect(spec).toContain("## 14. Sample fixture");
+    expect(spec).toContain("## 15. Acceptance tests");
   });
 });

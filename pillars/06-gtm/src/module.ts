@@ -42,3 +42,4 @@ export const gtmModule: PillarModule<GtmInput, GtmOutput> = {
 export { gtmStarter } from "./starter";
 
 export { PLANNED_AI_TASKS } from "./ai-tasks";
+export { gtmWorkspace } from "./workspace";

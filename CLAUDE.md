@@ -72,12 +72,16 @@ Implement and test every guardrail in §9 (G1–G12). Most important: real vs sy
 - Every number shows its evidence label badge.
 - Every empty state offers the three input modes.
 - The bottom TimeStrip is visible whenever a scenario exists.
+- Each pillar has its own screen (`pillars/<NN-id>/ui`) built from `packages/ui` workbench pieces, a live Goals column, and a Report out block; its logic lives in `pillars/<NN-id>/src/workspace.ts` (pure, tested).
+- AI slots that aren't switched on are `AiPlaceholder` cards: visible, disabled, never fake output.
 
 ## Build order (§10)
 
 1. **Stage 1 — Structure:** S1 website and accounts (Home with onboarding, About), S2 seven pillar skeleton folders, S3 shared core.
 2. **Stage 2 — One pillar at a time** (P1 Problem Discovery → P7 Launch & Growth), each as Define (rewrite the pillar's SPEC.md, no code) → Build → Review.
 3. **Stage 3 — Founder Pack**, then **Stage 4 — Launch ready**.
+
+**v1 (v2.5, decision 0006):** all seven pillars have a working v1, built together at the PM's request. Going deeper on a pillar (v2) follows Define → Build → Review again.
 
 Don't build a pillar in depth before its SPEC.md is approved. During a pillar's Build step, work only inside that pillar's folder and route; list any shared-package change in the plan and wait for approval.
 
