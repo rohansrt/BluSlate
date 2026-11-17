@@ -54,3 +54,24 @@
     @apply border-b border-border py-2 pr-4 align-top text-foreground/85;
   }
 }
+
+/* The step brief fades in when a new step is chosen. */
+@keyframes brief-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

@@ -6,3 +6,10 @@ export { Card, CardHeader, CardTitle, CardDescription, CardContent } from "./com
 export { Badge, badgeVariants, type BadgeProps } from "./components/badge";
 export { PILLAR_ICONS, PillarIcon, PillarTile, FounderPackIcon } from "./components/pillar-icon";
 export { PillarPlaceholder, type PillarPlaceholderProps } from "./components/pillar-placeholder";
+export {
+  ChalkDefs,
+  Slate,
+  SlateDrawing,
+  SlateDrawingStrokes,
+  type SlateDrawingName,
+} from "./components/slate-drawings";

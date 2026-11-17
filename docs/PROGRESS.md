@@ -132,3 +132,24 @@ One entry per step (CLAUDE.md, "Source of truth").
 - The supporting types in `packages/contracts/src/module.ts` are placeholders that S3 defines properly.
 - Hub statuses are all "Not started" until the Twin exists (S3).
 - Guests: account upgrade, rate limiting and retention (decision 0002).
+
+---
+
+## 17 November 2026 — Home redesign (PM feedback) ✅
+
+**Built**
+
+- **Hook first:**
+  - The headline is the question "Got a business idea? Will it work?", followed by one line.
+  - The "Startup simulator" badge is gone, and the text is cut down throughout.
+- **Hero image:**
+  - Original SVG artwork: a blue slate board with chalk sketches of the journey (problem, customers, market, launch) and three floating notes.
+  - It sits above the onboarding card on phones.
+- **Seven steps as a loop:**
+  - Each step is a chalk drawing on a blue slate, with its name underneath.
+  - Clicking (or using the arrow keys) shows that step's short brief in one panel.
+  - Run & Grow loops back to Discover.
+  - The road map and the step cards were removed from Home.
+- **Slate drawings:** `Slate`, `SlateDrawing` and `ChalkDefs` in packages/ui. Pillar tiles in the city and on pillar pages use the same drawings.
+
+**Tests:** a new end-to-end test covers the loop: seven tabs, the brief changing on click, and keyboard wrap-around (26 end-to-end tests in total).

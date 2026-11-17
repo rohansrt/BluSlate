@@ -4,8 +4,8 @@ import { magicLinkFor, onboardAsRiya, uniqueEmail } from "./helpers";
 test.describe("Home onboarding (S1 exit gate, without sign-in)", () => {
   test("a new founder completes onboarding and lands in an empty city", async ({ page }) => {
     await page.goto("/");
-    await expect(page.getByRole("heading", { level: 1 })).toContainText(
-      "Test a business idea before you spend real money on it.",
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText(
+      "Got a business idea?Will it work?",
     );
     await expect(page.getByRole("link", { name: "Sign in" })).toHaveCount(0);
 

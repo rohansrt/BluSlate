@@ -1,12 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Clock, Plus, ShieldCheck, Tags } from "lucide-react";
-import { Badge, Card, FounderPackIcon, PillarTile } from "@bluslate/ui";
 import { auth } from "@/auth";
-import { JourneyMap } from "@/components/journey/journey-map";
+import { HeroArt } from "@/components/home/hero-art";
+import { StepsCycle } from "@/components/home/steps-cycle";
 import { OnboardingCard } from "@/components/onboarding/onboarding-card";
 import { StartupCard } from "@/components/startup-card";
-import { PILLARS } from "@/lib/pillars";
 import { site, absoluteUrl } from "@/lib/site";
 import { listStartupsForUser } from "@/lib/startups";
 
@@ -18,18 +17,10 @@ const PROMISES = [
   {
     icon: ShieldCheck,
     title: "You decide",
-    body: "AI researches and suggests. Nothing enters your plan until you approve it, and it never contacts anyone or spends money for you.",
+    body: "AI suggests. Nothing enters your plan without your yes.",
   },
-  {
-    icon: Tags,
-    title: "Real and simulated, never mixed",
-    body: "Every number carries a label: actual, field evidence, sourced, assumed, estimated or synthetic.",
-  },
-  {
-    icon: Clock,
-    title: "Time matters",
-    body: "A clock is always running. Interviews take days, building takes weeks, and every week costs money.",
-  },
+  { icon: Tags, title: "Real vs simulated", body: "Every number says where it came from." },
+  { icon: Clock, title: "Time matters", body: "A clock runs, and every week costs money." },
 ];
 
 export default async function HomePage() {
@@ -45,9 +36,6 @@ export default async function HomePage() {
           <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
             Welcome back{user.name ? `, ${user.name}` : ""}
           </h1>
-          <p className="mt-2 text-muted-foreground">
-            Pick up where you left off, or test another idea.
-          </p>
           <ul className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {startups.map((s) => (
               <li key={s.id}>
@@ -66,108 +54,67 @@ export default async function HomePage() {
           </ul>
         </section>
       ) : (
-        <section className="mx-auto grid max-w-6xl items-start gap-10 px-4 pb-12 pt-10 sm:px-6 sm:pt-16 lg:grid-cols-[1.1fr_1fr] lg:gap-14">
-          <div className="lg:pt-6">
-            <Badge variant="founder">Startup simulator</Badge>
-            <h1 className="mt-4 text-4xl font-extrabold leading-[1.05] tracking-tight sm:text-5xl lg:text-6xl">
-              Test a business idea before you spend real money on it.
-            </h1>
-            <p className="mt-5 max-w-xl text-lg leading-8 text-muted-foreground">
-              Bring an idea, or just a problem that bothers you. BluSlate walks you through what a
-              real founder does, runs your business in a simulated market month by month, and hands
-              you a Founder Pack.
-            </p>
-            <div className="relative mt-10 hidden sm:block">
-              <span
-                aria-hidden
-                className="absolute left-[7%] right-[7%] top-[18px] h-1 rounded-full bg-gradient-to-r from-primary/50 via-primary/30 to-primary/10"
-              />
-              <ol
-                className="relative grid grid-cols-7 gap-1"
-                aria-label="The seven steps at a glance"
-              >
-                {PILLARS.map((p) => (
-                  <li key={p.id} className="flex flex-col items-center gap-2 text-center">
-                    <PillarTile id={p.id} size="sm" />
-                    <span className="text-xs font-medium leading-tight">{p.name}</span>
-                  </li>
-                ))}
-              </ol>
+        <section className="relative overflow-hidden">
+          <div
+            aria-hidden
+            className="absolute inset-x-0 top-0 -z-10 h-[38rem] bg-[radial-gradient(70%_60%_at_20%_0%,var(--founder-soft),transparent_70%)]"
+          />
+          <div className="mx-auto grid max-w-6xl items-center gap-10 px-4 pb-14 pt-10 sm:px-6 sm:pt-14 lg:grid-cols-[1.15fr_1fr] lg:gap-14">
+            <div>
+              <h1 className="text-4xl font-extrabold leading-[1.06] tracking-tight sm:text-5xl lg:text-[3.15rem]">
+                Got a business idea?
+                <span className="block text-primary">Will it work?</span>
+              </h1>
+              <p className="mt-5 max-w-md text-lg leading-8 text-muted-foreground">
+                Test it step by step, before you spend real money.
+              </p>
+              <div className="mt-10">
+                <HeroArt />
+              </div>
             </div>
+            <OnboardingCard
+              signedIn={Boolean(user)}
+              knownName={user?.name}
+              className="lg:self-center"
+            />
           </div>
-          <OnboardingCard signedIn={Boolean(user)} knownName={user?.name} />
         </section>
       )}
 
-      <section aria-labelledby="pillars-heading" className="border-t border-border/70 bg-card/40">
-        <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6">
-          <h2 id="pillars-heading" className="text-2xl font-bold tracking-tight sm:text-3xl">
-            Seven steps, one journey
+      <section aria-labelledby="steps-heading" className="border-t border-border/70 bg-card/40">
+        <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
+          <h2 id="steps-heading" className="text-2xl font-bold tracking-tight sm:text-3xl">
+            Seven steps, one loop
           </h2>
-          <p className="mt-2 max-w-2xl text-muted-foreground">
-            Each step answers one question and works on its own. Do them in order, skip around, or
-            come back and change any decision later.
-          </p>
-          <div className="mt-8">
-            <JourneyMap mode="home" />
+          <p className="mt-2 text-muted-foreground">Tap a step to see what it does.</p>
+          <div className="mt-10">
+            <StepsCycle />
           </div>
-          {/* Wide screens: the details under the map (narrow screens show them in the route). */}
-          <ol
-            className="mt-6 hidden gap-3 lg:grid lg:grid-cols-4"
-            aria-label="What each step gives you"
-          >
-            {PILLARS.map((p) => (
-              <li key={p.id}>
-                <Card className="flex h-full gap-4 p-5">
-                  <PillarTile id={p.id} number={p.number} size="sm" />
-                  <div>
-                    <h3 className="font-semibold">{p.name}</h3>
-                    <p className="mt-1 text-sm text-muted-foreground">{p.question}</p>
-                    <p className="mt-2 text-xs font-medium text-primary">
-                      You get: {p.deliverable}
-                    </p>
-                  </div>
-                </Card>
-              </li>
-            ))}
-            <li>
-              <Card className="flex h-full gap-4 border-transparent bg-foreground p-5 text-background">
-                <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-background/15">
-                  <FounderPackIcon className="size-4" aria-hidden />
-                </span>
-                <div>
-                  <h3 className="font-semibold">Founder Pack</h3>
-                  <p className="mt-1 text-sm opacity-80">
-                    A pitch document, financial model, detailed report, Business Model Canvas and a
-                    funding shortlist.
-                  </p>
-                </div>
-              </Card>
-            </li>
-          </ol>
         </div>
       </section>
 
       <section aria-labelledby="promises-heading" className="mx-auto max-w-6xl px-4 py-14 sm:px-6">
-        <h2 id="promises-heading" className="text-2xl font-bold tracking-tight sm:text-3xl">
-          Honest by design
+        <h2 id="promises-heading" className="sr-only">
+          Our promises
         </h2>
-        <div className="mt-8 grid gap-4 md:grid-cols-3">
+        <ul className="grid gap-6 sm:grid-cols-3">
           {PROMISES.map(({ icon: Icon, title, body }) => (
-            <Card key={title} className="p-6">
-              <Icon className="size-6 text-primary" aria-hidden />
-              <h3 className="mt-3 font-semibold">{title}</h3>
-              <p className="mt-1 text-sm leading-6 text-muted-foreground">{body}</p>
-            </Card>
+            <li key={title} className="flex items-start gap-3">
+              <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-founder-soft text-primary">
+                <Icon className="size-5" aria-hidden />
+              </span>
+              <div>
+                <h3 className="font-semibold">{title}</h3>
+                <p className="mt-0.5 text-sm text-muted-foreground">{body}</p>
+              </div>
+            </li>
           ))}
-        </div>
-        <p className="mt-8 text-sm text-muted-foreground">
-          BluSlate is a practice ground, not a prediction of success or a substitute for real
-          customers or professional advice.{" "}
+        </ul>
+        <p className="mt-10 text-sm text-muted-foreground">
+          Practice, not a prediction.{" "}
           <Link href="/about" className="font-medium text-primary underline underline-offset-4">
-            Read how it works
+            How BluSlate works
           </Link>
-          .
         </p>
       </section>
     </>
