@@ -5,6 +5,11 @@ import { SlateDrawingStrokes, type SlateDrawingName } from "@bluslate/ui";
  * The hero image: a blue slate board with the journey sketched in chalk, from
  * a question to a launch. Original artwork drawn in SVG; the chalk edge
  * comes from the shared #bluslate-chalk filter.
+ *
+ * The chalk rocket floats along the route from the first sketch to the launch
+ * spot, drawing its chalk trail as it goes, then fades and starts again. It is
+ * plain SVG animation (no JavaScript). With "reduce motion" on, the rocket
+ * stays still at the end of the route instead.
  */
 
 // Sketches on the board: drawing, x, y, size (in board units).
@@ -12,11 +17,20 @@ const SKETCHES: [SlateDrawingName, number, number, number][] = [
   ["discover", 70, 170, 92],
   ["customers", 196, 220, 92],
   ["market", 318, 168, 88],
-  ["rocket", 432, 92, 104],
 ];
+// Where the rocket rests at the end (and stays, with reduced motion).
+const ROCKET_REST: [number, number, number] = [432, 92, 104];
 
 // The chalk route joining the sketches, ending in an arrow at the rocket.
 const ROUTE = "M120 290 C 160 330, 210 330, 240 318 S 320 290, 360 262 S 430 210, 470 200";
+// The rocket's flight: the route, then a short lift into its resting spot.
+const FLIGHT = `${ROUTE} Q 486 190, 484 150`;
+
+// One loop: wait, fly (eased), hold at the top, fade. Shared so the trail and rocket stay in step.
+const LOOP = "9s";
+const KEY_TIMES = "0;0.06;0.7;1";
+const FLY_SPLINES = "0 0 1 1;0.45 0 0.3 1;0 0 1 1";
+const ROCKET_SIZE = 84;
 
 export function HeroArt() {
   return (
@@ -116,6 +130,113 @@ export function HeroArt() {
               <SlateDrawingStrokes name={name} />
             </svg>
           ))}
+
+          {/* Reduced motion: the rocket waits at the end of the route. */}
+          <g className="hidden motion-reduce:inline">
+            <svg
+              x={ROCKET_REST[0]}
+              y={ROCKET_REST[1]}
+              width={ROCKET_REST[2]}
+              height={ROCKET_REST[2]}
+              viewBox="0 0 64 64"
+              color="white"
+              overflow="visible"
+            >
+              <SlateDrawingStrokes name="rocket" />
+            </svg>
+          </g>
+
+          {/* The flight: a chalk trail drawn behind a floating rocket. */}
+          <g className="motion-reduce:hidden" data-testid="hero-rocket">
+            <path
+              d={FLIGHT}
+              pathLength={1}
+              fill="none"
+              stroke="white"
+              strokeOpacity="0.9"
+              strokeWidth="3.4"
+              strokeLinecap="round"
+              strokeDasharray="1 1"
+              strokeDashoffset="1"
+              filter="url(#bluslate-chalk)"
+            >
+              <animate
+                attributeName="stroke-dashoffset"
+                values="1;1;0;0"
+                keyTimes={KEY_TIMES}
+                calcMode="spline"
+                keySplines={FLY_SPLINES}
+                dur={LOOP}
+                repeatCount="indefinite"
+              />
+              <animate
+                attributeName="opacity"
+                values="1;1;1;0"
+                keyTimes="0;0.06;0.9;1"
+                dur={LOOP}
+                repeatCount="indefinite"
+              />
+            </path>
+            <g opacity="0">
+              <animateMotion
+                path={FLIGHT}
+                keyPoints="0;0;1;1"
+                keyTimes={KEY_TIMES}
+                calcMode="spline"
+                keySplines={FLY_SPLINES}
+                dur={LOOP}
+                repeatCount="indefinite"
+              />
+              <animate
+                attributeName="opacity"
+                values="0;1;1;0"
+                keyTimes="0;0.06;0.9;1"
+                dur={LOOP}
+                repeatCount="indefinite"
+              />
+              {/* A gentle float while it flies. */}
+              <g>
+                <animateTransform
+                  attributeName="transform"
+                  type="translate"
+                  values="0 0;0 -6;0 0"
+                  dur="1.8s"
+                  calcMode="spline"
+                  keyTimes="0;0.5;1"
+                  keySplines="0.45 0 0.55 1;0.45 0 0.55 1"
+                  repeatCount="indefinite"
+                />
+                <svg
+                  x={-ROCKET_SIZE / 2}
+                  y={-ROCKET_SIZE / 2}
+                  width={ROCKET_SIZE}
+                  height={ROCKET_SIZE}
+                  viewBox="0 0 64 64"
+                  color="white"
+                  overflow="visible"
+                >
+                  <SlateDrawingStrokes name="rocket" />
+                  {/* Chalk exhaust, flickering. */}
+                  <g
+                    stroke="white"
+                    strokeWidth={2.4}
+                    strokeLinecap="round"
+                    fill="none"
+                    filter="url(#bluslate-chalk)"
+                  >
+                    <path d="M13 53 l-7 7 M17 57 l-3 6 M9 49 l-6 2">
+                      <animate
+                        attributeName="opacity"
+                        values="0.95;0.25;0.8;0.35;0.95"
+                        dur="0.6s"
+                        repeatCount="indefinite"
+                      />
+                    </path>
+                  </g>
+                </svg>
+              </g>
+            </g>
+          </g>
 
           {/* Chalk tray */}
           <rect x="120" y="382" width="360" height="12" rx="6" fill="#071b5e" />
