@@ -1,0 +1,8 @@
+packages:
+  - apps/*
+  - packages/*
+  - pillars/*
+  - worker
+allowBuilds:
+  "@prisma/engines": true
+  prisma: true

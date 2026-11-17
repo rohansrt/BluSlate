@@ -1,0 +1,153 @@
+/*
+ * BluSlate design tokens (spec §6.5) and the shadcn/ui variable set.
+ * Light and dark themes follow the visitor's system setting.
+ *
+ * Product tokens:
+ *   --founder    founder decisions, primary actions (brand blue from the logo)
+ *   --ai         AI suggestions until accepted (neutral grey, dashed border)
+ *   --enabler    enabler cards and quotes (orange)
+ *   --review     needs review / may be outdated (amber)
+ *   --synthetic  SYNTHETIC badge (purple)
+ *   --actual     ACTUAL badge and real-evidence markers (green)
+ *   --danger     runway and cash alerts (red)
+ */
+
+@source "./";
+
+:root {
+  --radius: 0.75rem;
+
+  --founder: #004bfc;
+  --founder-soft: #eaf0ff;
+  --founder-foreground: #ffffff;
+  --ai: #64748b;
+  --ai-soft: #f1f5f9;
+  --enabler: #c2410c;
+  --enabler-soft: #fff1e6;
+  --review: #b45309;
+  --review-soft: #fef3c7;
+  --synthetic: #7c3aed;
+  --synthetic-soft: #f3edff;
+  --actual: #15803d;
+  --actual-soft: #e7f6ec;
+  --danger: #dc2626;
+  --danger-soft: #fdecec;
+
+  --background: #f6f8fe;
+  --foreground: #0b1530;
+  --card: #ffffff;
+  --card-foreground: #0b1530;
+  --popover: #ffffff;
+  --popover-foreground: #0b1530;
+  --primary: var(--founder);
+  --primary-foreground: var(--founder-foreground);
+  --secondary: #eef2fb;
+  --secondary-foreground: #0b1530;
+  --muted: #eef2fb;
+  --muted-foreground: #55617a;
+  --accent: #eaf0ff;
+  --accent-foreground: #0b1530;
+  --destructive: var(--danger);
+  --border: #dfe5f2;
+  --input: #cfd7e8;
+  --ring: #004bfc;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --founder: #4d84ff;
+    --founder-soft: #0f2257;
+    --founder-foreground: #ffffff;
+    --ai: #9aa7bf;
+    --ai-soft: #141d36;
+    --enabler: #fb923c;
+    --enabler-soft: #2e1a0c;
+    --review: #fbbf24;
+    --review-soft: #2d2207;
+    --synthetic: #b394ff;
+    --synthetic-soft: #24173f;
+    --actual: #4ade80;
+    --actual-soft: #0d2a19;
+    --danger: #f87171;
+    --danger-soft: #2f1214;
+
+    --background: #010826;
+    --foreground: #e8edfb;
+    --card: #0a1435;
+    --card-foreground: #e8edfb;
+    --popover: #0a1435;
+    --popover-foreground: #e8edfb;
+    --primary: var(--founder);
+    --primary-foreground: var(--founder-foreground);
+    --secondary: #121d44;
+    --secondary-foreground: #e8edfb;
+    --muted: #121d44;
+    --muted-foreground: #a3afc9;
+    --accent: #142356;
+    --accent-foreground: #e8edfb;
+    --destructive: var(--danger);
+    --border: #1d2a55;
+    --input: #2a3a6b;
+    --ring: #4d84ff;
+  }
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-founder: var(--founder);
+  --color-founder-soft: var(--founder-soft);
+  --color-founder-foreground: var(--founder-foreground);
+  --color-ai: var(--ai);
+  --color-ai-soft: var(--ai-soft);
+  --color-enabler: var(--enabler);
+  --color-enabler-soft: var(--enabler-soft);
+  --color-review: var(--review);
+  --color-review-soft: var(--review-soft);
+  --color-synthetic: var(--synthetic);
+  --color-synthetic-soft: var(--synthetic-soft);
+  --color-actual: var(--actual);
+  --color-actual-soft: var(--actual-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+}
+
+@layer base {
+  * {
+    border-color: var(--border);
+  }
+  html {
+    color-scheme: light dark;
+  }
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+  }
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+}

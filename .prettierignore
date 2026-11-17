@@ -1,0 +1,10 @@
+pnpm-lock.yaml
+docs/
+.next/
+apps/web/lib/generated/
+CLAUDE.md
+apps/web/AGENTS.md
+README.md
+.dev-mail/
+test-results/
+playwright-report/

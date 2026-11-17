@@ -1,0 +1,30 @@
+# dependencies
+node_modules/
+.pnpm-store/
+
+# builds
+.next/
+out/
+dist/
+*.tsbuildinfo
+next-env.d.ts
+
+# generated
+apps/web/lib/generated/
+
+# env and secrets — never commit
+.env
+.env.*
+!.env.example
+
+# local dev mail outbox (magic links in development)
+.dev-mail/
+
+# tests
+test-results/
+playwright-report/
+coverage/
+
+# os / editor
+.DS_Store
+*.log

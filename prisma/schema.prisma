@@ -1,0 +1,178 @@
+// BluSlate database schema.
+// Core models follow spec §8.1. S1 adds the Startup, Member, Entity, Dependency and
+// DecisionEvent models plus the tables Auth.js needs; the remaining §8.1 models
+// (Proposal, Source, Assumption, Persona, Scenario, …) arrive in S3.
+// See docs/decisions/0001-s1-schema-additions.md for the additions to §8.1.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../apps/web/lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum EntityStatus {
+  NOT_STARTED
+  DRAFT
+  NEEDS_REVIEW
+  APPROVED
+  MAY_BE_OUTDATED
+}
+
+enum EvidenceLabel {
+  ACTUAL
+  FIELD
+  SOURCED
+  ASSUMED
+  ESTIMATE
+  SYNTHETIC
+}
+
+enum Actor {
+  FOUNDER
+  AI
+  IMPORT
+  SYSTEM
+}
+
+// How the founder arrived (§2.1). Addition to §8.1.
+enum EntryPath {
+  NEW_IDEA
+  EXISTING
+  ONE_TOOL
+}
+
+// ─── Accounts (Auth.js) ──────────────────────────────────────────────────────
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts      Account[]
+  sessions      Session[]
+  memberships   Member[]
+  ownedStartups Startup[]
+}
+
+model Account {
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([provider, providerAccountId])
+}
+
+model Session {
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  @@id([identifier, token])
+}
+
+// ─── Business Twin core (§8.1) ───────────────────────────────────────────────
+
+model Startup {
+  id           String     @id @default(cuid())
+  name         String
+  stage        String
+  businessType String?
+  geography    String
+  currency     String
+  ownerId      String
+  // Raw onboarding answers, kept as the founder typed them. They are not Twin
+  // entities: Discover turns the idea into a Problem in its own step.
+  entryPath    EntryPath
+  onboarding   Json
+  createdAt    DateTime   @default(now())
+
+  owner    User     @relation(fields: [ownerId], references: [id])
+  members  Member[]
+  entities Entity[]
+
+  @@index([ownerId])
+}
+
+model Member {
+  id        String  @id @default(cuid())
+  startupId String
+  userId    String
+  role      String // owner | member | mentor | consultant
+  startup   Startup @relation(fields: [startupId], references: [id], onDelete: Cascade)
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([startupId, userId])
+  @@index([userId])
+}
+
+model Entity {
+  id            String        @id @default(cuid())
+  startupId     String
+  logicalId     String // stable across versions
+  version       Int
+  type          String // see §8.2
+  ownerPillar   String
+  schemaVersion String
+  status        EntityStatus
+  evidenceLabel EvidenceLabel
+  confidence    Float?
+  data          Json // validated by the Zod schema for `type`
+  effectiveFrom DateTime? // simulated time, where relevant
+  createdBy     Actor
+  createdAt     DateTime      @default(now())
+  startup       Startup       @relation(fields: [startupId], references: [id], onDelete: Cascade)
+
+  @@unique([logicalId, version])
+  @@index([startupId, type, status])
+}
+
+model Dependency {
+  fromLogicalId String // upstream entity
+  toLogicalId   String // downstream entity that used it
+
+  @@id([fromLogicalId, toLogicalId])
+}
+
+model DecisionEvent {
+  id              String    @id @default(cuid())
+  startupId       String
+  scenarioId      String?
+  entityLogicalId String
+  fromVersion     Int?
+  toVersion       Int
+  actorId         String
+  rationale       String?
+  effectiveAt     DateTime? // simulated time
+  createdAt       DateTime  @default(now())
+
+  @@index([startupId])
+}
