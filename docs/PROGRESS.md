@@ -336,3 +336,9 @@ The PM added the custom domain and asked to make the site live. GitHub Pages can
 - **Live (pilot), 18 November 2026.** A duplicate Vercel import (`blu-slate-pf3t`) was deleted; the project is `blu-slate`, with the Neon database `bluslate-db` and the domain. `AUTH_SECRET` is set (a pilot value; rotate it before launch). Against https://bluslate.yoppi.in, the public-page and guest onboarding end-to-end tests pass (the full onboarding test needs a longer timeout over the network). The email sign-in test was skipped: production has no Resend key yet.
 
 - **README shortened (18 November 2026).** The README is now a one-screen summary: done, remaining, accounts and credentials (no secrets; the repo is public), running locally. Working rules, commands, env vars, the code map, decisions, limitations and gotchas moved to `docs/HANDOVER.md`. The embedded spec is folded into a `<details>` block; `pnpm docs:readme` and its drift test still work.
+
+---
+
+## 18 November 2026 — Product README (decision 0008)
+
+The PM asked for a much shorter, product-focused README. `README.md` is now 44 lines: what BluSlate does, the seven steps, what's ready, what's coming. Developer detail, accounts, setup and the embedded spec moved to `docs/HANDOVER.md`; `pnpm docs:readme` became `pnpm docs:handover`, and the drift test checks the handover file.

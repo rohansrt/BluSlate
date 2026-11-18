@@ -6,7 +6,7 @@ BluSlate is a standalone web app where founders take any idea (or a running busi
 
 - The full specification is **Part C** of `docs/BLUSLATE_SPEC.md`. Part B of the same file is the plain-language overview, and `docs/BluSlate_PM_Review.pdf` is that overview as a designed PDF. Read the sections named in the task before planning. Section numbers (e.g. §4.2) refer to Part C.
 - Each pillar also has its own `pillars/<NN-id>/SPEC.md`. Once a pillar has been deep-defined and approved, its SPEC.md is the detailed source of truth for that pillar; the main spec stays the source for shared rules.
-- The PM's instructions win over the spec. When they differ, implement the instruction, record it in `docs/decisions/`, and update `docs/BLUSLATE_SPEC.md` (and this file, which mirrors its Part A) in the same piece of work, then run `pnpm docs:readme` so the copy of the spec embedded in `README.md` matches.
+- The PM's instructions win over the spec. When they differ, implement the instruction, record it in `docs/decisions/`, and update `docs/BLUSLATE_SPEC.md` (and this file, which mirrors its Part A) in the same piece of work, then run `pnpm docs:handover` so the copy of the spec embedded in `docs/HANDOVER.md` matches.
 - If the code and the spec disagree, or the spec itself is ambiguous, stop and ask. Never change the spec silently.
 - At the end of every step, append to `docs/PROGRESS.md`: date, step, what was built, tests added, open issues.
 

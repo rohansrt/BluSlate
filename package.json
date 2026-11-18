@@ -25,7 +25,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "postinstall": "prisma generate",
-    "docs:readme": "node scripts/sync-readme.mjs",
+    "docs:handover": "node scripts/sync-handover.mjs",
     "admin:password": "node scripts/hash-password.mjs"
   },
   "devDependencies": {
