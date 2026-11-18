@@ -342,3 +342,5 @@ The PM added the custom domain and asked to make the site live. GitHub Pages can
 ## 18 November 2026 — Product README (decision 0008)
 
 The PM asked for a much shorter, product-focused README. `README.md` is now 44 lines: what BluSlate does, the seven steps, what's ready, what's coming. Developer detail, accounts, setup and the embedded spec moved to `docs/HANDOVER.md`; `pnpm docs:readme` became `pnpm docs:handover`, and the drift test checks the handover file.
+
+- **Fix: push deploys failed with a cached build.** From the second successful build on, Vercel restored its build cache, `pnpm install` had nothing to do and skipped `postinstall` (`prisma generate`), so `next build` couldn't find `@/lib/generated/prisma/client` (gitignored). Dashboard redeploys without the cache worked. `scripts/vercel-build.sh` now runs `prisma generate` itself on every build. Checked locally by deleting the generated client and running the script.

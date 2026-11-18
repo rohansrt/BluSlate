@@ -5,7 +5,7 @@ BluSlate is a server app with a database, so it can't run on GitHub Pages (stati
 **How deploys work:** Vercel is connected to the GitHub repo, and every push to `main` deploys to production.
 
 - `apps/web/vercel.json` runs the app in Singapore (`sin1`), next to the database, and pins pnpm 12.
-- Its build runs `scripts/vercel-build.sh`. On production builds, that applies new database migrations first, then builds the app.
+- Its build runs `scripts/vercel-build.sh`. It always generates the Prisma client (Vercel's build cache makes `pnpm install` skip `postinstall`), applies new database migrations on production builds, then builds the app.
 - GitHub Actions CI still runs on every push, but it doesn't block the deploy. Check that CI is green.
 
 ## One-time setup
