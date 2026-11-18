@@ -330,3 +330,5 @@ The PM added the custom domain and asked to make the site live. GitHub Pages can
   - the site URL defaults to bluslate.yoppi.in in production.
   
   A local `vercel build --prod` with `VERCEL_ENV=production` installed with pnpm 12.21.0, applied migrations ("No pending migrations") and built.
+
+- **Region: Singapore, not Mumbai.** Neon offers no Mumbai region, so the database was created in Singapore (`aws-ap-southeast-1`), and `apps/web/vercel.json` now runs the functions in Singapore (`sin1`) as well, so queries don't cross between cities. Decision 0007, `docs/DEPLOY.md` and the README updated.

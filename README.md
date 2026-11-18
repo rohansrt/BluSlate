@@ -50,7 +50,7 @@ Open this folder in VS Code with Claude Code (or attach this README to any Claud
 | P1 Define | 📝 proposed | `pillars/01-discover/SPEC.md` rewritten in depth (dashboard, every question, formulas, fixture, 30 acceptance tests, open questions). Awaiting PM sign-off; it guides P1 v2 |
 | **Pillars v1 (all seven)** | ✅ | Decision 0006. Each pillar has its own screen with structured inputs, works alone, pre-fills from upstream, shows live **Goals** on the right (TAM/SAM/SOM, unit cost, runway…), ends with a **Report out**, autosaves, and publishes to the Twin with approval. AI is placeholders |
 | **Founder Pack report** | ✅ v1 | `/startups/[id]/pack`: every pillar's report out, status and goals; print or save as PDF. Other exports are placeholders |
-| **Hosting** | ⚙️ set up | Decision 0007. `bluslate.yoppi.in` on Vercel + Neon (Mumbai). Vercel deploys every push to `main` and runs migrations first. Goes live once the one-time setup in `docs/DEPLOY.md` is done |
+| **Hosting** | ⚙️ set up | Decision 0007. `bluslate.yoppi.in` on Vercel + Neon (Singapore). Vercel deploys every push to `main` and runs migrations first. Goes live once the one-time setup in `docs/DEPLOY.md` is done |
 | Pillars v2, F1 exports, L1 | — | Not started |
 
 **Current behaviour, briefly:**
@@ -163,7 +163,7 @@ docs/                     BLUSLATE_SPEC.md (source of truth), PM review PDF (v2.
 - **0004:** accounts and profile menu, guest sign-up, deleting startups, the admin dashboard, the AI model registry, new pillar names.
 - **0005:** admin sign-in with email and password (a hash in env, failed attempts throttled).
 - **0006:** v1 of all seven pillars at once: own screens, live Goals, Report out, the Founder Pack report, AI as placeholders, the `PillarWorkspace` table.
-- **0007:** production on Vercel (Mumbai) with Neon, at `bluslate.yoppi.in`; Vercel deploys every push to `main` and runs migrations first.
+- **0007:** production on Vercel (Singapore) with Neon, at `bluslate.yoppi.in`; Vercel deploys every push to `main` and runs migrations first.
 
 ### Open issues
 

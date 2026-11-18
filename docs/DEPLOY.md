@@ -1,17 +1,17 @@
 # Deploying BluSlate to bluslate.yoppi.in
 
-BluSlate is a server app with a database, so it can't run on GitHub Pages (static files only). It runs on **Vercel** (project `blu-slate-pf3t`, team "JoyBoy's projects"), with a **Neon** Postgres database in Mumbai (decision 0007).
+BluSlate is a server app with a database, so it can't run on GitHub Pages (static files only). It runs on **Vercel** (project `blu-slate-pf3t`, team "JoyBoy's projects"), with a **Neon** Postgres database in Singapore (decision 0007).
 
 **How deploys work:** Vercel is connected to the GitHub repo, and every push to `main` deploys to production.
 
-- `apps/web/vercel.json` sets the Mumbai region and pins pnpm 12.
+- `apps/web/vercel.json` runs the app in Singapore (`sin1`), next to the database, and pins pnpm 12.
 - Its build runs `scripts/vercel-build.sh`. On production builds, that applies new database migrations first, then builds the app.
 - GitHub Actions CI still runs on every push, but it doesn't block the deploy. Check that CI is green.
 
 ## One-time setup
 
 1. **Import** `rohansrt/BluSlate` in Vercel with Root Directory `apps/web`, then click Deploy. The first build fails without a database; that's expected. *(Done.)*
-2. **Database:** in the project, open **Storage → Create Database → Neon**. Choose the Free plan and the **Mumbai (aws-ap-south-1)** region, then connect it to all environments. This adds `DATABASE_URL` and `DATABASE_URL_UNPOOLED`.
+2. **Database:** in the project, open **Storage → Create Database → Neon**. Choose the Free plan and the **Singapore (aws-ap-southeast-1)** region (Neon has no Mumbai region). Leave **Auth** and **Realtime** off: BluSlate has its own sign-in. Connect it to all environments. *(Done.)* This adds `DATABASE_URL` and `DATABASE_URL_UNPOOLED`.
 3. **Secret:** go to **Settings → Environment Variables** and add `AUTH_SECRET`. Make the value with `openssl rand -base64 32`.
 4. **Redeploy:** open **Deployments**, click the latest deployment's **⋯** menu and choose **Redeploy**.
 5. **Domain:**
