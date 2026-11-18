@@ -1,4 +1,4 @@
-# 0007 — Production on Vercel at bluslate.yoppi.in, deployed by GitHub Actions
+# 0007 — Production on Vercel at bluslate.yoppi.in
 
 - **Date:** 18 November 2026
 - **Requested by:** the PM ("I have added the custom domain bluslate.yoppi.in… configure GitHub Actions and make the website live"), choosing the full app on Vercel over a static GitHub Pages site
@@ -18,26 +18,21 @@ and all of those need Postgres. So a Pages build could only have shown the home 
 ## Decision
 
 - **Hosting:**
-  - the app runs on Vercel, with Root Directory `apps/web`;
-  - its functions are in Mumbai (`bom1`);
+  - the app runs on Vercel (project `blu-slate-pf3t`, Root Directory `apps/web`), with its functions in Mumbai (`bom1`);
   - the database is Neon Postgres in Mumbai (`aws-ap-south-1`), added through Vercel Storage.
-- **The only way to deploy is GitHub Actions** (`.github/workflows/deploy.yml`). It runs after the CI workflow passes on a push to `main`, or by hand. In order, it:
-  1. applies migrations with `prisma migrate deploy`, using the direct Neon URL;
-  2. runs `vercel pull`;
-  3. runs `vercel build --prod` on the runner;
-  4. runs `vercel deploy --prebuilt --prod`.
-
-  Vercel's own Git deploys are off (`apps/web/vercel.json`), so code that fails CI or the end-to-end tests never reaches production. Migrations always run before the code that needs them.
-- **Secrets:**
-  - Runtime secrets live in Vercel env: `AUTH_SECRET`, `ADMIN_PASSWORD_HASH`, `DATABASE_URL`, and later Resend and Anthropic keys.
-  - Deploy secrets live in GitHub repository secrets: `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`, `DATABASE_URL`.
-  - None go in the repo. Without the deploy secrets, the workflow skips with a warning.
-- **The Vercel CLI is pinned** (`vercel@65.9.0`); bump it on purpose.
+- **Deploys come from Vercel's Git integration:** every push to `main` goes to production.
+  - **First attempt:** a GitHub Actions deploy workflow (Vercel token plus four repository secrets). The PM found the setup too complicated, so it was removed the same day.
+  - **Build pins:** `apps/web/vercel.json` pins pnpm 12 for install, and builds through `scripts/vercel-build.sh`.
+  - **Migrations first:** on production builds, that script runs `prisma migrate deploy` before `next build`, using `DATABASE_URL_UNPOOLED` (the direct Neon connection; see `prisma.config.ts`). A build without a database stops with a clear message.
+- **CI** (`.github/workflows/ci.yml`) still runs on every push, but doesn't gate the deploy.
+- **Secrets** live only in Vercel env: `AUTH_SECRET`, the Neon variables, and optional admin, Resend and Anthropic keys.
+- **The site URL** defaults to `https://bluslate.yoppi.in` on production builds.
 
 ## Consequences
 
-- Production uses a new admin password; the development one in the README never applies there.
-- Magic-link sign-in needs `AUTH_RESEND_KEY` and `EMAIL_FROM` with a verified `yoppi.in` sender. Until then guests and admin password sign-in work, and email sign-in errors.
+- A push that fails CI can still deploy; check CI. Gating deploys on CI can come back later, when the setup is worth it.
+- Admin stays off in production until `ADMIN_PASSWORD_HASH` is set with a new password (never the development one).
+- Magic-link sign-in needs `AUTH_RESEND_KEY` and `EMAIL_FROM` with a verified `yoppi.in` sender. Until then guests (and admin, once set up) work, and email sign-in errors.
 - Migrations must stay backward compatible (add, don't drop or rename in one step). Rolling back in Vercel doesn't roll back the database.
 - Hobby is for non-commercial use: move to Vercel Pro before the public launch (B10.2).
 - Setup steps: `docs/DEPLOY.md`.

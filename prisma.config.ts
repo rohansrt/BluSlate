@@ -10,5 +10,8 @@ const LOCAL_DATABASE_URL = "postgresql://bluslate:bluslate@localhost:5432/blusla
 export default defineConfig({
   schema: "prisma/schema.prisma",
   migrations: { path: "prisma/migrations" },
-  datasource: { url: process.env.DATABASE_URL ?? LOCAL_DATABASE_URL },
+  // Migrations use the direct connection when there is one (Neon on Vercel sets DATABASE_URL_UNPOOLED).
+  datasource: {
+    url: process.env.DATABASE_URL_UNPOOLED ?? process.env.DATABASE_URL ?? LOCAL_DATABASE_URL,
+  },
 });

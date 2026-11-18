@@ -306,7 +306,7 @@ The PM asked for a working v1 of every pillar at once (decision 0006, spec v2.5)
 
 ---
 
-## 18 November 2026 — Hosting: bluslate.yoppi.in on Vercel, deployed by GitHub Actions ⚙️
+## 18 November 2026 — Hosting: bluslate.yoppi.in on Vercel ⚙️
 
 The PM added the custom domain and asked to make the site live. GitHub Pages can't run BluSlate (it needs a server and Postgres), so the PM chose the full app on Vercel (decision 0007).
 
@@ -323,3 +323,10 @@ The PM added the custom domain and asked to make the site live. GitHub Pages can
   - Resend and rollback.
 - **Checked:** `vercel build --prod` (CLI 65.9.0) succeeds locally on the monorepo. pnpm workspaces, the Prisma 7 client and every route end up in the output.
 - **Waiting on the PM:** the one-time setup. The site goes live on the first Deploy run after it.
+
+- **Simplified the same day.** The PM found the token and secrets setup too complicated, so the Actions deploy workflow was removed. Vercel's Git integration now deploys every push to `main`:
+  - `apps/web/vercel.json` pins pnpm 12 and calls `scripts/vercel-build.sh`;
+  - on production builds, that script runs `prisma migrate deploy` (with `DATABASE_URL_UNPOOLED`), then `next build`;
+  - the site URL defaults to bluslate.yoppi.in in production.
+  
+  A local `vercel build --prod` with `VERCEL_ENV=production` installed with pnpm 12.21.0, applied migrations ("No pending migrations") and built.
