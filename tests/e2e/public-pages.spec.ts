@@ -20,9 +20,12 @@ test.describe("Public pages", () => {
     await expect(brief).toContainText("Who buys first, at what price, through which channels?");
     await expect(brief).toContainText("You get: A launch plan and sales funnel");
 
-    // Keyboard: the arrow keys move around the loop, and Run & Grow wraps to Discover.
+    // Keyboard: the arrow keys move around the loop; after step 7 comes Pitch, then step 1 again.
     await page.keyboard.press("ArrowRight");
     await expect(steps.getByRole("tab", { name: "Step 7: Launch & Growth" })).toBeFocused();
+    await page.keyboard.press("ArrowRight");
+    await expect(page.getByRole("tab", { name: "Then: Pitch" })).toBeFocused();
+    await expect(brief).toContainText("Ready to show the world?");
     await page.keyboard.press("ArrowRight");
     await expect(brief).toContainText("What problem is worth solving?");
   });

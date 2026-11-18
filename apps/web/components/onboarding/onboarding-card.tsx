@@ -14,11 +14,18 @@ import {
   type EntryPathId,
   type OnboardingDraft,
 } from "@/lib/onboarding";
-import { clearDraft, loadDraft, saveDraft } from "@/lib/onboarding-draft";
+import {
+  getOnboarding,
+  initOnboarding,
+  resetOnboarding,
+  setOnboarding,
+  subscribeOnboarding,
+  type OnboardingState,
+  type Step,
+} from "@/lib/onboarding-store";
+import { setNoTrack, track } from "@/lib/analytics/client";
 import { PILLARS } from "@/lib/pillars";
 import { EmailCodeForm } from "@/components/auth/email-code-form";
-
-type Step = 1 | 2 | 3 | 4;
 
 const PATHS: { id: EntryPathId; title: string; hint: string; icon: typeof Lightbulb }[] = [
   {
@@ -54,8 +61,10 @@ export interface OnboardingCardProps {
   signedIn: boolean;
   /** The signed-in founder's name, if we already know it. */
   knownName?: string | null;
-  /** Save a complete draft straight away (used after the magic-link sign-in). */
+  /** Save a complete draft straight away (used after the email-code sign-in). */
   autoSubmit?: boolean;
+  /** Where the card sits, for analytics: the Home hero, beside the circle, or /startups/new. */
+  placement?: "hero" | "circle" | "new";
   className?: string;
 }
 
@@ -70,27 +79,12 @@ function useIsClient(): boolean {
   );
 }
 
-interface InitialState {
-  draft: OnboardingDraft;
-  step: Step;
-}
-
-/** Four steps for visitors (the last one signs in with an email code); three when signed in. */
-function totalStepsFor(signedIn: boolean): 3 | 4 {
-  return signedIn ? 3 : 4;
-}
-
-function initialState(knownName: string | null | undefined, total: 3 | 4): InitialState {
-  const stored = loadDraft() ?? {};
-  const draft: OnboardingDraft = { country: "IN", newIdeaMode: "idea", ...stored };
-  if (!draft.firstName && knownName) draft.firstName = knownName;
-  // A draft saved at step 4 (the email step) reopens at step 3 once signed in,
-  // so a failed save after sign-in shows its error next to "Open my city".
-  const storedStep = draft.step && draft.step >= 1 ? (Math.min(draft.step, total) as Step) : null;
-  // Founders (and guests) whose name we know skip the name question, even if
-  // the card was left at step 1 before they signed in.
-  const step = storedStep ?? 1;
-  return { draft, step: knownName && step === 1 ? 2 : step };
+/**
+ * Visitors see four steps (name and age, starting point, details, save by
+ * email code); signed-in founders see two (starting point, details).
+ */
+function shownStep(step: Step, signedIn: boolean): { n: number; total: number } {
+  return signedIn ? { n: Math.max(1, step - 1), total: 2 } : { n: step, total: 4 };
 }
 
 type SaveResult = { ok: true; id: string } | { ok: false; error: string };
@@ -122,14 +116,14 @@ export function OnboardingCard(props: OnboardingCardProps) {
 }
 
 function PlaceholderCard({ signedIn, className }: { signedIn: boolean; className?: string }) {
+  const { n, total } = shownStep(signedIn ? 2 : 1, signedIn);
   return (
     <Card className={cn("p-6 sm:p-8", className)} aria-busy="true">
-      <ProgressDots step={1} total={totalStepsFor(signedIn)} />
-      <h2 className="mt-5 text-2xl font-bold tracking-tight">{stepTitle(1, undefined)}</h2>
-      <div className="mt-5 space-y-2">
-        <Label htmlFor="ob-first-name-placeholder">Your first name</Label>
-        <Input id="ob-first-name-placeholder" disabled placeholder="Riya" />
-      </div>
+      <ProgressDots n={n} total={total} />
+      <h2 className="mt-5 text-2xl font-bold tracking-tight">
+        {stepTitle(signedIn ? 2 : 1, undefined)}
+      </h2>
+      <div className="mt-5 h-24 rounded-xl bg-muted/60" />
       <div className="mt-5 flex justify-end">
         <Button disabled>
           Continue <ArrowRight aria-hidden />
@@ -139,37 +133,44 @@ function PlaceholderCard({ signedIn, className }: { signedIn: boolean; className
   );
 }
 
+function useOnboardingState(signedIn: boolean, knownName?: string | null): OnboardingState {
+  initOnboarding(signedIn, knownName);
+  const current = useSyncExternalStore(subscribeOnboarding, getOnboarding, getOnboarding);
+  // initOnboarding always sets the state, so this only guards the type.
+  return current ?? { draft: {}, step: 1 };
+}
+
 function OnboardingCardInner({
   signedIn,
   knownName,
   autoSubmit = false,
+  placement = "hero",
   className,
 }: OnboardingCardProps) {
   const router = useRouter();
-  const total = totalStepsFor(signedIn);
-  const [initial] = useState(() => initialState(knownName, total));
-  const shouldAutoSubmit = autoSubmit && signedIn && parseDraft(initial.draft).success;
-  const [draft, setDraft] = useState<OnboardingDraft>(initial.draft);
-  const [step, setStep] = useState<Step>(initial.step);
+  const { draft, step } = useOnboardingState(signedIn, knownName);
+  const [initialDraft] = useState(draft);
+  const shouldAutoSubmit = autoSubmit && signedIn && parseDraft(initialDraft).success;
   const [saving, setSaving] = useState(shouldAutoSubmit);
   const [saveError, setSaveError] = useState<string | null>(null);
   const headingRef = useRef<HTMLHeadingElement>(null);
+  // Only the card the founder is using moves focus (Home can show two cards).
   const movedRef = useRef(false);
   const autoSubmittedRef = useRef(false);
-
-  // Keep the draft in the browser as the founder types.
-  useEffect(() => {
-    saveDraft({ ...draft, step });
-  }, [draft, step]);
+  const { n, total } = shownStep(step, signedIn);
+  const lastStep: Step = signedIn ? 3 : 4;
 
   // Move focus to the new step's heading so screen readers announce it.
   useEffect(() => {
-    if (movedRef.current) headingRef.current?.focus();
+    if (!movedRef.current) return;
+    movedRef.current = false;
+    headingRef.current?.focus();
   }, [step]);
 
-  function handleResult(result: SaveResult) {
+  function handleResult(result: SaveResult, entryPath: string | undefined) {
     if (result.ok) {
-      clearDraft();
+      track("startup_created", { entryPath: entryPath ?? "unknown", where: placement });
+      resetOnboarding();
       router.push(`/startups/${result.id}`);
       router.refresh();
       return;
@@ -181,28 +182,36 @@ function OnboardingCardInner({
   function saveStartup() {
     setSaving(true);
     setSaveError(null);
-    void postStartup(draft).then(handleResult);
+    void postStartup(draft).then((r) => handleResult(r, draft.path));
   }
 
-  // After the magic link: a complete draft is saved without another click.
+  // After the email code: a complete draft is saved without another click.
   useEffect(() => {
     if (!shouldAutoSubmit || autoSubmittedRef.current) return;
     autoSubmittedRef.current = true;
-    void postStartup(initial.draft).then(handleResult);
+    void postStartup(initialDraft).then((r) => handleResult(r, initialDraft.path));
     // eslint-disable-next-line react-hooks/exhaustive-deps -- run once on mount
   }, []);
 
-  const update = (patch: Partial<OnboardingDraft>) => setDraft((d) => ({ ...d, ...patch }));
+  const update = (patch: Partial<OnboardingDraft>) =>
+    setOnboarding((s) => ({ ...s, draft: { ...s.draft, ...patch } }));
   const go = (next: Step) => {
     movedRef.current = true;
     setSaveError(null);
-    setStep(next);
+    setOnboarding((s) => ({ ...s, step: next }));
+    track("onboarding_step", { step: next, signedIn, where: placement });
   };
 
   const next = (e?: React.FormEvent) => {
     e?.preventDefault();
     if (step === 4 || !canContinue(step, draft)) return;
-    if (step === total) saveStartup();
+    if (step === 1) {
+      // Under-18s are never tracked (docs/decisions/0011).
+      const age = Number(draft.age);
+      setNoTrack(Number.isFinite(age) && age < 18);
+    }
+    if (step === 2 && draft.path) track("onboarding_path", { path: draft.path, where: placement });
+    if (step === lastStep) saveStartup();
     else go((step + 1) as Step);
   };
 
@@ -217,9 +226,14 @@ function OnboardingCardInner({
     );
   }
 
+  const id = (name: string) => `ob-${placement}-${name}`;
+
   return (
-    <Card className={cn("p-6 sm:p-8", className)} data-testid="onboarding-card">
-      <ProgressDots step={step} total={total} />
+    <Card
+      className={cn("p-6 sm:p-8", className)}
+      data-testid={`onboarding-card${placement === "circle" ? "-circle" : ""}`}
+    >
+      <ProgressDots n={n} total={total} />
       <h2
         ref={headingRef}
         tabIndex={-1}
@@ -231,17 +245,32 @@ function OnboardingCardInner({
 
       {step === 1 && (
         <form onSubmit={next} className="mt-5 space-y-5">
-          <div className="space-y-2">
-            <Label htmlFor="ob-first-name">Your first name</Label>
-            <Input
-              id="ob-first-name"
-              name="firstName"
-              autoComplete="given-name"
-              maxLength={LIMITS.firstName}
-              value={draft.firstName ?? ""}
-              onChange={(e) => update({ firstName: e.target.value })}
-              placeholder="Riya"
-            />
+          <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_7rem]">
+            <div className="space-y-2">
+              <Label htmlFor={id("first-name")}>Your first name</Label>
+              <Input
+                id={id("first-name")}
+                name="firstName"
+                autoComplete="given-name"
+                maxLength={LIMITS.firstName}
+                value={draft.firstName ?? ""}
+                onChange={(e) => update({ firstName: e.target.value })}
+                placeholder="Riya"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor={id("age")}>Your age</Label>
+              <Input
+                id={id("age")}
+                name="age"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                maxLength={3}
+                value={draft.age ?? ""}
+                onChange={(e) => update({ age: e.target.value.replace(/\D/g, "") })}
+                placeholder="20"
+              />
+            </div>
           </div>
           <StepActions canNext={canContinue(1, draft)} />
         </form>
@@ -264,7 +293,7 @@ function OnboardingCardInner({
                 >
                   <input
                     type="radio"
-                    name="path"
+                    name={id("path")}
                     value={p.id}
                     checked={checked}
                     onChange={() => update({ path: p.id })}
@@ -279,15 +308,18 @@ function OnboardingCardInner({
               );
             })}
           </fieldset>
-          <StepActions onBack={() => go(1)} canNext={canContinue(2, draft)} />
+          <StepActions
+            onBack={signedIn ? undefined : () => go(1)}
+            canNext={canContinue(2, draft)}
+          />
         </form>
       )}
 
       {step === 3 && (
         <form onSubmit={next} className="mt-5 space-y-5">
-          {draft.path === "new-idea" && <NewIdeaFields draft={draft} update={update} />}
-          {draft.path === "existing" && <ExistingFields draft={draft} update={update} />}
-          {draft.path === "one-tool" && <OneToolFields draft={draft} update={update} />}
+          {draft.path === "new-idea" && <NewIdeaFields draft={draft} update={update} idp={id} />}
+          {draft.path === "existing" && <ExistingFields draft={draft} update={update} idp={id} />}
+          {draft.path === "one-tool" && <OneToolFields draft={draft} update={update} idp={id} />}
           {saveError && (
             <p role="alert" className="rounded-lg bg-danger-soft px-3 py-2 text-sm text-danger">
               {saveError}
@@ -297,12 +329,12 @@ function OnboardingCardInner({
             onBack={() => go(2)}
             canNext={canContinue(3, draft) && !saving}
             busy={saving}
-            label={total === 3 ? "Open my city" : undefined}
+            label={signedIn ? "Open my city" : undefined}
           />
         </form>
       )}
 
-      {step === 4 && total === 4 && (
+      {step === 4 && !signedIn && (
         <div className="mt-5">
           <EmailCodeForm
             intro={
@@ -311,7 +343,8 @@ function OnboardingCardInner({
                 is kept in your account, so you can open it on any device.
               </p>
             }
-            idPrefix="ob"
+            idPrefix={id("save")}
+            where="onboarding"
             // After the code, /startups/new saves the draft kept in this browser.
             redirectTo="/startups/new"
             verifyLabel="Open my city"
@@ -336,21 +369,18 @@ function OnboardingCardInner({
   );
 }
 
-function ProgressDots({ step, total }: { step: Step; total: 3 | 4 }) {
+function ProgressDots({ n, total }: { n: number; total: number }) {
   return (
     <div>
       <p className="text-xs font-semibold uppercase tracking-wider text-primary">
-        Step {step} of {total}
+        Step {n} of {total}
       </p>
       <div
-        className={cn("mt-2 grid gap-1.5", total === 4 ? "grid-cols-4" : "grid-cols-3")}
+        className={cn("mt-2 grid gap-1.5", total === 4 ? "grid-cols-4" : "grid-cols-2")}
         aria-hidden
       >
-        {Array.from({ length: total }, (_, i) => i + 1).map((n) => (
-          <span
-            key={n}
-            className={cn("h-1.5 rounded-full", n <= step ? "bg-primary" : "bg-muted")}
-          />
+        {Array.from({ length: total }, (_, i) => i + 1).map((k) => (
+          <span key={k} className={cn("h-1.5 rounded-full", k <= n ? "bg-primary" : "bg-muted")} />
         ))}
       </div>
     </div>
@@ -383,22 +413,28 @@ function StepActions({
   );
 }
 
-type FieldProps = { draft: OnboardingDraft; update: (patch: Partial<OnboardingDraft>) => void };
+type FieldProps = {
+  draft: OnboardingDraft;
+  update: (patch: Partial<OnboardingDraft>) => void;
+  /** Field ids are unique per card (Home can show two). */
+  idp: (name: string) => string;
+};
 
 function PlaceFields({
   draft,
   update,
+  idp,
   cityOptional = false,
 }: FieldProps & { cityOptional?: boolean }) {
   return (
     <div className="grid gap-4 sm:grid-cols-2">
       <div className="space-y-2">
-        <Label htmlFor="ob-city">
+        <Label htmlFor={idp("city")}>
           City
           {cityOptional && <span className="font-normal text-muted-foreground"> (optional)</span>}
         </Label>
         <Input
-          id="ob-city"
+          id={idp("city")}
           autoComplete="address-level2"
           maxLength={LIMITS.city}
           value={draft.city ?? ""}
@@ -407,9 +443,9 @@ function PlaceFields({
         />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="ob-country">Country</Label>
+        <Label htmlFor={idp("country")}>Country</Label>
         <Select
-          id="ob-country"
+          id={idp("country")}
           autoComplete="country"
           value={draft.country ?? "IN"}
           onChange={(e) => update({ country: e.target.value })}
@@ -425,7 +461,7 @@ function PlaceFields({
   );
 }
 
-function NewIdeaFields({ draft, update }: FieldProps) {
+function NewIdeaFields({ draft, update, idp }: FieldProps) {
   const discover = draft.newIdeaMode === "discover";
   return (
     <>
@@ -459,9 +495,9 @@ function NewIdeaFields({ draft, update }: FieldProps) {
       </div>
       {discover ? (
         <div className="space-y-2">
-          <Label htmlFor="ob-interest">An area you care about</Label>
+          <Label htmlFor={idp("interest")}>An area you care about</Label>
           <Input
-            id="ob-interest"
+            id={idp("interest")}
             maxLength={LIMITS.idea}
             value={draft.interest ?? ""}
             onChange={(e) => update({ interest: e.target.value })}
@@ -473,9 +509,9 @@ function NewIdeaFields({ draft, update }: FieldProps) {
         </div>
       ) : (
         <div className="space-y-2">
-          <Label htmlFor="ob-idea">Your idea in one sentence</Label>
+          <Label htmlFor={idp("idea")}>Your idea in one sentence</Label>
           <Textarea
-            id="ob-idea"
+            id={idp("idea")}
             rows={3}
             maxLength={LIMITS.idea}
             value={draft.idea ?? ""}
@@ -487,18 +523,18 @@ function NewIdeaFields({ draft, update }: FieldProps) {
           </p>
         </div>
       )}
-      <PlaceFields draft={draft} update={update} />
+      <PlaceFields draft={draft} update={update} idp={idp} />
     </>
   );
 }
 
-function ExistingFields({ draft, update }: FieldProps) {
+function ExistingFields({ draft, update, idp }: FieldProps) {
   return (
     <>
       <div className="space-y-2">
-        <Label htmlFor="ob-startup-name">Business name</Label>
+        <Label htmlFor={idp("startup-name")}>Business name</Label>
         <Input
-          id="ob-startup-name"
+          id={idp("startup-name")}
           autoComplete="organization"
           maxLength={LIMITS.startupName}
           value={draft.startupName ?? ""}
@@ -507,9 +543,9 @@ function ExistingFields({ draft, update }: FieldProps) {
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
-          <Label htmlFor="ob-stage">Stage</Label>
+          <Label htmlFor={idp("stage")}>Stage</Label>
           <Select
-            id="ob-stage"
+            id={idp("stage")}
             value={draft.stage ?? ""}
             onChange={(e) => update({ stage: e.target.value })}
           >
@@ -524,9 +560,9 @@ function ExistingFields({ draft, update }: FieldProps) {
           </Select>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="ob-industry">Industry</Label>
+          <Label htmlFor={idp("industry")}>Industry</Label>
           <Input
-            id="ob-industry"
+            id={idp("industry")}
             maxLength={LIMITS.industry}
             value={draft.industry ?? ""}
             onChange={(e) => update({ industry: e.target.value })}
@@ -534,12 +570,12 @@ function ExistingFields({ draft, update }: FieldProps) {
           />
         </div>
       </div>
-      <PlaceFields draft={draft} update={update} />
+      <PlaceFields draft={draft} update={update} idp={idp} />
     </>
   );
 }
 
-function OneToolFields({ draft, update }: FieldProps) {
+function OneToolFields({ draft, update, idp }: FieldProps) {
   return (
     <>
       <fieldset className="space-y-2">
@@ -557,7 +593,7 @@ function OneToolFields({ draft, update }: FieldProps) {
               >
                 <input
                   type="radio"
-                  name="tool"
+                  name={idp("tool")}
                   value={p.id}
                   checked={checked}
                   onChange={() => update({ tool: p.id })}
@@ -575,7 +611,7 @@ function OneToolFields({ draft, update }: FieldProps) {
           })}
         </div>
       </fieldset>
-      <PlaceFields draft={draft} update={update} cityOptional />
+      <PlaceFields draft={draft} update={update} idp={idp} cityOptional />
     </>
   );
 }

@@ -39,19 +39,30 @@ const sections: LegalSection[] = [
         <h3>Information you give us</h3>
         <ul>
           <li>
-            <strong>Account details:</strong> the first name you tell us, and the email address you
-            sign in with. Your startups are linked to your account, so you can open them on any
-            device. If you continue as a guest, we keep the first name and email you give us (we
-            don&apos;t check the email) so we know who used BluSlate, and your startups are linked
-            to a private session in your browser.
+            <strong>Account details:</strong> the first name and age you tell us, and the email
+            address you sign in with. Your startups are linked to your account, so you can open them
+            on any device. If you continue as a guest, we keep the first name and email you give us
+            (we don&apos;t check the email) so we know who used BluSlate, and your startups are
+            linked to a private session in your browser.
           </li>
           <li>
             <strong>Your startup content:</strong> your idea, onboarding answers, decisions, notes,
             interview notes and anything else you type, choose or upload while using BluSlate.
           </li>
           <li>
-            <strong>Messages to us:</strong> what you send when you contact us for support or
-            feedback.
+            <strong>Idea Book:</strong> the ideas you save as notes, kept in your account.
+          </li>
+          <li>
+            <strong>Friends (Collaborate):</strong> the email addresses you send friend requests to,
+            and whether they accepted.
+          </li>
+          <li>
+            <strong>Consult requests:</strong> the name, email, phone number and message you send
+            when you ask us for consulting.
+          </li>
+          <li>
+            <strong>Feedback and messages to us:</strong> your answers to our feedback questions,
+            and what you send when you contact us.
           </li>
         </ul>
         <h3>Information collected automatically</h3>
@@ -61,8 +72,19 @@ const sections: LegalSection[] = [
             and timestamps, kept in server logs for security and troubleshooting.
           </li>
           <li>
-            <strong>Cookies and similar storage:</strong> only what is needed to sign you in and
-            keep your onboarding draft. See our <Link href="/cookies">Cookie Policy</Link>.
+            <strong>Product analytics:</strong> which pages you open and which steps you take (for
+            example, starting onboarding, asking for a sign-in code, opening or publishing a
+            pillar), with a random ID kept in your browser, the referring website or campaign tag,
+            your device type, browser and operating system, and your country and region worked out
+            from your network. We do not store your IP address or the content of anything you type
+            in these records. Once you are signed in, they are linked to your account so we can see
+            how far people get. We record nothing for people who tell us they are under 18, or whose
+            browser sends a Do Not Track signal.
+          </li>
+          <li>
+            <strong>Cookies and similar storage:</strong> what is needed to sign you in, keep your
+            onboarding draft and run the analytics above. See our{" "}
+            <Link href="/cookies">Cookie Policy</Link>.
           </li>
         </ul>
         <p>
@@ -91,8 +113,12 @@ const sections: LegalSection[] = [
           <li>to send you service emails, such as sign-in codes and important changes;</li>
           <li>to keep the service safe, prevent abuse and fix problems;</li>
           <li>
-            to understand, in aggregate, how the service is used so we can improve it, without using
-            the content of your ideas;
+            to understand how BluSlate is used (where visitors come from, which steps they finish
+            and where they stop) so we can improve it, without reading the content of your ideas;
+          </li>
+          <li>
+            to reply to your consult requests and feedback, and to show your friend requests to the
+            people you send them to;
           </li>
           <li>to comply with the law and respond to lawful requests.</li>
         </ul>
@@ -179,7 +205,8 @@ const sections: LegalSection[] = [
           </li>
           <li>
             <strong>People you choose:</strong> a team member, mentor or consultant you invite sees
-            only what you decide to share with them.
+            only what you decide to share with them. When you send a friend request, the person you
+            send it to sees your name and email; once they accept, you see theirs.
           </li>
           <li>
             <strong>Authorities</strong> when the law requires it, or to protect the rights, safety
@@ -222,6 +249,8 @@ const sections: LegalSection[] = [
         <li>
           Server logs are kept for up to 90 days, unless we need them longer to investigate abuse.
         </li>
+        <li>Product analytics records are deleted after 13 months.</li>
+        <li>Consult requests and feedback are kept for up to 24 months.</li>
         <li>
           Sign-in codes expire after 10 minutes, work only once, and stop working after five wrong
           tries.
@@ -272,14 +301,20 @@ const sections: LegalSection[] = [
   },
   {
     id: "children",
-    title: "Age limit",
+    title: "Young founders",
     body: (
-      <p>
-        BluSlate is for people aged 18 and over. We do not knowingly collect personal data from
-        anyone under 18. If you believe a child has created an account, contact us and we will
-        delete it. YOPPI&apos;s programmes for schools are separate services with their own
-        policies.
-      </p>
+      <>
+        <p>
+          BluSlate is for founders of every age: it is a practice simulator, with nothing
+          age-restricted in it. We ask your age when you sign up.
+        </p>
+        <p>
+          If you are under 18, please use BluSlate with your parent or guardian&apos;s knowledge.
+          For people who tell us they are under 18, we never record product analytics, never track
+          or profile their behaviour, and never show advertising. A parent or guardian can ask us to
+          see or delete a young person&apos;s data at any time by writing to the contact below.
+        </p>
+      </>
     ),
   },
   {

@@ -1,5 +1,8 @@
+"use client";
+
 import { PlayCircle } from "lucide-react";
 import type { DemoVideo } from "@/lib/demo-video";
+import { track } from "@/lib/analytics/client";
 
 /** The demo of a founder's journey on Home (docs/decisions/0009). */
 export function DemoVideoSection({ video }: { video: DemoVideo }) {
@@ -37,6 +40,7 @@ export function DemoVideoSection({ video }: { video: DemoVideo }) {
               controls
               preload="metadata"
               playsInline
+              onPlay={() => track("demo_play", { via: "file" })}
               className="size-full bg-black"
               aria-label="BluSlate demo: a founder's journey"
             />
@@ -44,5 +48,18 @@ export function DemoVideoSection({ video }: { video: DemoVideo }) {
         </div>
       </div>
     </section>
+  );
+}
+
+/** "Watch the demo" under the onboarding card. YouTube plays can't be seen, so the click is counted. */
+export function WatchDemoLink() {
+  return (
+    <a
+      href="#demo"
+      onClick={() => track("demo_play", { via: "link" })}
+      className="inline-flex items-center gap-1 font-medium text-primary underline underline-offset-4"
+    >
+      <PlayCircle className="size-4" aria-hidden /> Watch the demo
+    </a>
   );
 }

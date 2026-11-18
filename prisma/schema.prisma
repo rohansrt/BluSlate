@@ -55,7 +55,7 @@ enum EntryPath {
 model User {
   id            String    @id @default(cuid())
   name          String?
-  // Optional only for legacy guest accounts (docs/decisions/0002, ended by 0009).
+  // Null for guests (docs/decisions/0010); set only by a verified sign-in code.
   email         String?   @unique
   // A browser-only guest account (docs/decisions/0010). Guests give a first
   // name and an email; they can sign in with a code later and keep their work.
@@ -63,15 +63,123 @@ model User {
   // The email a guest typed. Not verified, so it is kept apart from `email`
   // (which only a sign-in code can set) and never signs anyone in.
   guestEmail    String?
+  // Age in years, asked at sign-up (docs/decisions/0011). All ages may use
+  // BluSlate; under-18s are never tracked by analytics.
+  age           Int?
   emailVerified DateTime?
   image         String?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  accounts      Account[]
-  sessions      Session[]
-  memberships   Member[]
-  ownedStartups Startup[]
+  accounts        Account[]
+  sessions        Session[]
+  memberships     Member[]
+  ownedStartups   Startup[]
+  ideaNotes       IdeaNote[]
+  friendsAsked    FriendRequest[]  @relation("FriendFrom")
+  friendsAskedBy  FriendRequest[]  @relation("FriendTo")
+  consultRequests ConsultRequest[]
+  feedback        Feedback[]
+}
+
+// ─── Account pages (docs/decisions/0011) ────────────────────────────────────
+
+// Idea Book: short memos a founder keeps for later.
+model IdeaNote {
+  id        String   @id @default(cuid())
+  userId    String
+  text      String
+  // "own" when typed, "suggested" when picked from the ideas we show.
+  source    String   @default("own")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+}
+
+// Collaborate: a friend request sent to an email. It is visible to whoever
+// signs in with that email (verified by code), now or later.
+model FriendRequest {
+  id          String    @id @default(cuid())
+  fromUserId  String
+  toEmail     String
+  toUserId    String?
+  // pending | accepted | declined
+  status      String    @default("pending")
+  createdAt   DateTime  @default(now())
+  respondedAt DateTime?
+
+  from User  @relation("FriendFrom", fields: [fromUserId], references: [id], onDelete: Cascade)
+  to   User? @relation("FriendTo", fields: [toUserId], references: [id], onDelete: SetNull)
+
+  @@unique([fromUserId, toEmail])
+  @@index([toEmail])
+}
+
+// Consult: a founder asks the team for real-world consulting.
+model ConsultRequest {
+  id        String   @id @default(cuid())
+  userId    String?
+  name      String?
+  email     String
+  phone     String
+  message   String
+  // new | contacted | closed
+  status    String   @default("new")
+  emailedAt DateTime?
+  createdAt DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([createdAt])
+}
+
+// Feedback: a few multiple-choice questions and an optional note.
+model Feedback {
+  id         String   @id @default(cuid())
+  userId     String?
+  worksWell  String[]
+  needsWork  String[]
+  usefulness String?
+  wantNext   String[]
+  // 0–10: how likely to recommend BluSlate to a friend.
+  recommend  Int?
+  comment    String?
+  createdAt  DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([createdAt])
+}
+
+// First-party product analytics (docs/decisions/0011). No IP address and no
+// full user agent are stored; visitorId is a random ID kept in the browser's
+// local storage. Never written for people who said they are under 18.
+model AnalyticsEvent {
+  id          String   @id @default(cuid())
+  createdAt   DateTime @default(now())
+  name        String
+  visitorId   String
+  sessionId   String
+  userId      String?
+  path        String?
+  referrer    String?
+  utmSource   String?
+  utmMedium   String?
+  utmCampaign String?
+  // mobile | tablet | desktop
+  device      String?
+  browser     String?
+  os          String?
+  country     String?
+  region      String?
+  props       Json?
+
+  @@index([createdAt])
+  @@index([name, createdAt])
+  @@index([visitorId])
 }
 
 model Account {

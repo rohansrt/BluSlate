@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { fail, requirePillar, twinErrorResponse } from "@/lib/api";
 import { prisma } from "@/lib/db";
 import { publishWorkspace } from "@/lib/workspace";
+import { trackServer } from "@/lib/analytics/server";
 
 type Params = { params: Promise<{ id: string; pillar: string }> };
 
@@ -19,7 +20,9 @@ export async function POST(_request: Request, { params }: Params) {
   });
   if (!startup) return fail(404, "Startup not found.");
   try {
-    return NextResponse.json(await publishWorkspace(startup, ctx.pillar, ctx.userId));
+    const result = await publishWorkspace(startup, ctx.pillar, ctx.userId);
+    await trackServer("pillar_published", ctx.userId, { pillar: ctx.pillar });
+    return NextResponse.json(result);
   } catch (err) {
     return twinErrorResponse(err);
   }

@@ -26,8 +26,10 @@ Every step ends with a short report. Together they make the **Founder Pack**.
 - All seven steps work, with live goals and a report at the end of each.
 - The Founder Pack report.
 - Sign in with a 6-digit code sent to your email. Your startups are saved to your account and open on any device.
-- Or continue as a guest with just your name and email; sign in later and keep your work.
-- An admin dashboard for the team.
+- Or continue as a guest with just your name, age and email; sign in later and keep your work.
+- The seven-step circle on the Home page: press Start, or try any single step, then Pitch after step 7.
+- Your Idea Book, friends (Collaborate), Consult with the team, and Feedback, from the menu under your name.
+- An admin dashboard for the team, with visitor analytics and where people drop off.
 
 **Coming next:**
 - Deeper versions of each step, starting with Problem Discovery.

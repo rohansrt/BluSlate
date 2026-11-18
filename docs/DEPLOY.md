@@ -24,6 +24,7 @@ BluSlate is a server app with a database, so it can't run on GitHub Pages (stati
 | To switch on | Add in Vercel → Settings → Environment Variables, then redeploy |
 | --- | --- |
 | Admin (`/admin/login`) | `ADMIN_EMAILS=founder@yoppi.in` and `ADMIN_PASSWORD_HASH`, from `pnpm admin:password "a new strong password"`. Don't reuse the development password |
+| Consult emails | `CONSULT_NOTIFY_EMAIL`: where requests from `/consult` are emailed (set it here, never in the repo). Without it, requests still appear in `/admin/consult` |
 | Demo video on Home | `NEXT_PUBLIC_DEMO_VIDEO_URL`: a YouTube link, or `/demo/<file>.mp4` for a file committed to `apps/web/public/demo/` |
 | AI | `ANTHROPIC_API_KEY`, then add a model at `/admin/models` |
 

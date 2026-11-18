@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { AnalyticsOptOut } from "@/components/analytics/opt-out";
 import Link from "next/link";
 import { LegalPage, type LegalSection } from "@/components/legal-page";
 import { site } from "@/lib/site";
@@ -6,7 +7,7 @@ import { site } from "@/lib/site";
 export const metadata: Metadata = {
   title: "Cookie Policy",
   description:
-    "The cookies and browser storage BluSlate uses: only what's needed to sign you in and keep your onboarding draft. No advertising or tracking cookies.",
+    "The cookies and browser storage BluSlate uses: signing you in, keeping your onboarding draft, and our own privacy-friendly analytics. No advertising cookies and no third-party trackers.",
   alternates: { canonical: "/cookies" },
   openGraph: { title: "BluSlate Cookie Policy", url: "/cookies" },
 };
@@ -35,6 +36,32 @@ const ITEMS = [
     kind: "Local storage (essential)",
     purpose: "Keeps the answers you type on the Home page until you sign in and save your startup.",
     duration: "Removed once your startup is saved, or when you clear site data",
+  },
+  {
+    name: "bluslate.vid",
+    kind: "Local storage (analytics)",
+    purpose:
+      "A random ID that lets us count visitors and see which steps they finish. It contains nothing about you.",
+    duration: "Until you clear site data",
+  },
+  {
+    name: "bluslate.sid",
+    kind: "Session storage (analytics)",
+    purpose: "A random ID for this visit, so we can tell one visit from the next.",
+    duration: "Until you close the tab",
+  },
+  {
+    name: "bluslate.utm",
+    kind: "Session storage (analytics)",
+    purpose: "The campaign tag (utm_source and similar) of the link you arrived from.",
+    duration: "Until you close the tab",
+  },
+  {
+    name: "bluslate.no-track",
+    kind: "Local storage (functional)",
+    purpose:
+      "Set when someone tells us they are under 18, so no analytics are sent from this browser.",
+    duration: "Until you clear site data",
   },
   {
     name: "bluslate.last-email",
@@ -102,15 +129,24 @@ const sections: LegalSection[] = [
   },
   {
     id: "no-tracking",
-    title: "No advertising or tracking cookies",
+    title: "Our analytics, and no advertising",
     body: (
-      <p>
-        We don&apos;t use advertising cookies, and we don&apos;t let third parties track you across
-        other websites. If we ever add optional cookies, for example for product analytics, we will
-        update this policy and ask for your consent first. If the demo video on the Home page is
-        hosted on YouTube, it plays in YouTube&apos;s privacy-enhanced mode, which doesn&apos;t
-        store anything in your browser until you press play.
-      </p>
+      <>
+        <p>
+          We don&apos;t use advertising cookies, and we don&apos;t let third parties track you
+          across other websites. Our analytics are our own: a random ID in your browser&apos;s
+          storage (no cookie) tells us how many people visit and which steps they finish, so we can
+          improve BluSlate. They never include what you type, and they are switched off for anyone
+          who tells us they are under 18 and for browsers that send Do Not Track. You can also turn
+          them off here:
+        </p>
+        <AnalyticsOptOut />
+        <p>
+          If the demo video on the Home page is hosted on YouTube, it plays in YouTube&apos;s
+          privacy-enhanced mode, which doesn&apos;t store anything in your browser until you press
+          play.
+        </p>
+      </>
     ),
   },
   {

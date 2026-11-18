@@ -5,6 +5,7 @@ import { ArrowLeft, ArrowRight, Loader2, Mail } from "lucide-react";
 import { Button, Input, Label } from "@bluslate/ui";
 import { sendSignInCode, verifySignInCode, type CodeFormState } from "@/lib/auth-actions";
 import { rememberEmail, useRememberedEmail } from "@/components/auth/remembered-email";
+import { track } from "@/lib/analytics/client";
 
 const RESEND_AFTER_MS = 30_000;
 
@@ -22,6 +23,7 @@ export function EmailCodeForm({
   footer,
   idPrefix = "signin",
   defaultEmail,
+  where = "signin",
 }: {
   /** Where to go once signed in. */
   redirectTo: string;
@@ -36,6 +38,8 @@ export function EmailCodeForm({
   idPrefix?: string;
   /** Pre-filled email, e.g. the one a guest typed. The device's last email wins. */
   defaultEmail?: string | null;
+  /** Which form this is, for analytics. */
+  where?: "signin" | "onboarding";
 }) {
   const [state, dispatch, pending] = useActionState<CodeFormState, FormData>(
     async (prev, formData) => {
@@ -52,8 +56,16 @@ export function EmailCodeForm({
   useEffect(() => {
     if (state.step !== "done") return;
     rememberEmail(state.email);
+    track("code_verified", { isNew: state.isNew, where });
     window.location.assign(state.url);
-  }, [state]);
+  }, [state, where]);
+
+  // Analytics: a code went out, or something went wrong (no email or code is sent).
+  useEffect(() => {
+    if (state.step === "code" && !state.error) track("code_requested", { where });
+    else if (state.step !== "done" && state.error)
+      track("code_failed", { where, stage: state.step === "email" ? "send" : "verify" });
+  }, [state, where]);
 
   // "Send a new code" unlocks 30 seconds after the last one was sent.
   const sentAt = state.step === "code" ? state.sentAt : 0;

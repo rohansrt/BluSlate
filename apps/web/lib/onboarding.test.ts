@@ -120,10 +120,15 @@ describe("onboarding: just one tool", () => {
 });
 
 describe("onboarding: step gating", () => {
-  it("step 1 needs a first name", () => {
+  it("step 1 needs a first name and an age (any age from 5)", () => {
     expect(canContinue(1, {})).toBe(false);
-    expect(canContinue(1, { firstName: "   " })).toBe(false);
-    expect(canContinue(1, { firstName: "Riya" })).toBe(true);
+    expect(canContinue(1, { firstName: "   ", age: "20" })).toBe(false);
+    expect(canContinue(1, { firstName: "Riya" })).toBe(false);
+    expect(canContinue(1, { firstName: "Riya", age: "" })).toBe(false);
+    expect(canContinue(1, { firstName: "Riya", age: "4" })).toBe(false);
+    expect(canContinue(1, { firstName: "Riya", age: "20" })).toBe(true);
+    // Under-18s may use BluSlate (docs/decisions/0011).
+    expect(canContinue(1, { firstName: "Riya", age: "14" })).toBe(true);
   });
 
   it("step 2 needs one of the three paths", () => {

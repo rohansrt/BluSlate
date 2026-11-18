@@ -151,8 +151,8 @@ export default async function PackPage({ params }: { params: Promise<{ id: strin
             detail="Validated items styled apart from assumptions."
           />
           <AiPlaceholder
-            title="Funding shortlist"
-            detail="Verifiable funds and grants, each with a last-checked date."
+            title="Investors and incubators to reach out to"
+            detail="Matched to your startup: 10 in your country and up to 5 global, with their public website, LinkedIn and contact details, each with a last-checked date."
           />
         </div>
       </section>

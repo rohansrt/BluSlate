@@ -60,11 +60,13 @@ export async function onboardAsRiya(page: Page, email = uniqueEmail("riya")): Pr
   const title = page.getByTestId("onboarding-step-title");
   const next = card.getByRole("button", { name: "Continue" });
 
-  // 1. Name
+  // 1. Name and age
   await expect(title).toHaveText("What should we call you?");
   await expect(card.getByText("Step 1 of 4")).toBeVisible();
   await expect(next).toBeDisabled();
   await card.getByLabel("Your first name").fill("Riya");
+  await expect(next).toBeDisabled();
+  await card.getByLabel("Your age").fill("20");
   await next.click();
 
   // 2. Where are you starting?
@@ -102,6 +104,15 @@ export async function expectNoSidewaysScroll(page: Page) {
     client: document.documentElement.clientWidth,
   }));
   expect(scroll, "page should not scroll sideways").toBeLessThanOrEqual(client);
+}
+
+/** A first sign-in asks for name and age on /welcome (docs/decisions/0011). */
+export async function completeWelcome(page: Page, name = "Asha", age = "20") {
+  await expect(page).toHaveURL(/\/welcome/, { timeout: 20_000 });
+  await page.getByLabel("Your first name").fill(name);
+  await page.getByLabel("Your age").fill(age);
+  await page.getByRole("button", { name: "Continue" }).click();
+  await expect(page).not.toHaveURL(/\/welcome/, { timeout: 20_000 });
 }
 
 /** Sign in with an email code from the dev outbox, ending wherever sign-in redirects. */

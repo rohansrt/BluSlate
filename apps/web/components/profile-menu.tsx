@@ -2,21 +2,38 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { ChevronDown, FolderOpen, LogOut, ShieldCheck, UserRound, UserPlus } from "lucide-react";
+import {
+  ChevronDown,
+  FolderOpen,
+  Handshake,
+  LogOut,
+  MessageSquareHeart,
+  NotebookPen,
+  ShieldCheck,
+  UserPlus,
+  UserRound,
+  Users,
+} from "lucide-react";
 import { cn } from "@bluslate/ui";
 import { signOutAction } from "@/lib/auth-actions";
 
-/** The top-right profile menu: who you are, your startups, profile, admin, sign out. */
+/**
+ * The top-right profile menu (docs/decisions/0011): My startups, Collaborate,
+ * Consult, Idea Book, Feedback, then Profile, Admin (admins) and Log out.
+ */
 export function ProfileMenu({
   name,
   email,
   isGuest,
   isAdmin,
+  pendingFriends = 0,
 }: {
   name: string | null;
   email: string | null;
   isGuest: boolean;
   isAdmin: boolean;
+  /** Friend requests waiting for an answer (Collaborate). */
+  pendingFriends?: number;
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -76,6 +93,27 @@ export function ProfileMenu({
           <Link role="menuitem" href="/startups" className={item} onClick={() => setOpen(false)}>
             <FolderOpen className="size-4" aria-hidden /> My startups
           </Link>
+          <Link role="menuitem" href="/collaborate" className={item} onClick={() => setOpen(false)}>
+            <Users className="size-4" aria-hidden /> Collaborate
+            {pendingFriends > 0 && (
+              <span
+                className="ml-auto rounded-full bg-primary px-2 py-0.5 text-xs font-semibold text-primary-foreground"
+                aria-label={`${pendingFriends} new requests`}
+              >
+                {pendingFriends}
+              </span>
+            )}
+          </Link>
+          <Link role="menuitem" href="/consult" className={item} onClick={() => setOpen(false)}>
+            <Handshake className="size-4" aria-hidden /> Consult
+          </Link>
+          <Link role="menuitem" href="/ideas" className={item} onClick={() => setOpen(false)}>
+            <NotebookPen className="size-4" aria-hidden /> Idea Book
+          </Link>
+          <Link role="menuitem" href="/feedback" className={item} onClick={() => setOpen(false)}>
+            <MessageSquareHeart className="size-4" aria-hidden /> Feedback
+          </Link>
+          <div className="my-1 h-px bg-border" />
           <Link role="menuitem" href="/profile" className={item} onClick={() => setOpen(false)}>
             <UserRound className="size-4" aria-hidden /> Profile
           </Link>
@@ -109,7 +147,7 @@ export function ProfileMenu({
             }}
           >
             <button role="menuitem" type="submit" className={item}>
-              <LogOut className="size-4" aria-hidden /> {isGuest ? "End guest session" : "Sign out"}
+              <LogOut className="size-4" aria-hidden /> {isGuest ? "End guest session" : "Log out"}
             </button>
           </form>
         </div>

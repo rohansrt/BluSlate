@@ -1,13 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { UserPlus } from "lucide-react";
-import { Button, Card, Input, Label } from "@bluslate/ui";
+import { Button, Card } from "@bluslate/ui";
 import { isAdminEmail } from "@/lib/admin";
 import { prisma } from "@/lib/db";
 import { signOutAction } from "@/lib/auth-actions";
-import { LIMITS } from "@/lib/onboarding";
 import { requireUser } from "@/lib/require-user";
-import { updateName } from "@/lib/startup-actions";
+import { ProfileForm } from "@/components/auth/profile-form";
 import { listStartupsForUser } from "@/lib/startups";
 
 export const metadata: Metadata = { title: "Profile", robots: { index: false, follow: false } };
@@ -21,6 +20,8 @@ export default async function ProfilePage({
   const params = await searchParams;
   const startups = await listStartupsForUser(user.id);
   const admin = !user.isGuest && isAdminEmail(user.email);
+  const age =
+    (await prisma.user.findUnique({ where: { id: user.id }, select: { age: true } }))?.age ?? null;
   const guestEmail = user.isGuest
     ? (await prisma.user.findUnique({ where: { id: user.id }, select: { guestEmail: true } }))
         ?.guestEmail
@@ -36,21 +37,7 @@ export default async function ProfilePage({
       )}
 
       <Card className="mt-6 p-6">
-        <form action={updateName} className="space-y-2">
-          <Label htmlFor="profile-name">Your first name</Label>
-          <div className="flex gap-2">
-            <Input
-              id="profile-name"
-              name="name"
-              defaultValue={user.name ?? ""}
-              maxLength={LIMITS.firstName}
-              required
-            />
-            <Button type="submit" variant="outline">
-              Save
-            </Button>
-          </div>
-        </form>
+        <ProfileForm name={user.name ?? ""} age={age} />
 
         <div className="mt-6 border-t border-border pt-6">
           <p className="text-sm font-semibold">Account</p>
@@ -94,7 +81,7 @@ export default async function ProfilePage({
 
         <form action={signOutAction} className="mt-6 border-t border-border pt-6">
           <Button type="submit" variant="outline">
-            {user.isGuest ? "End guest session" : "Sign out"}
+            {user.isGuest ? "End guest session" : "Log out"}
           </Button>
         </form>
       </Card>

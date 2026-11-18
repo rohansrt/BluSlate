@@ -1,10 +1,11 @@
 import { z } from "zod";
 import { COUNTRY_CODES, countryByCode } from "@/lib/countries";
 import { PILLAR_IDS, pillarById, type PillarId } from "@/lib/pillars";
+import { ageSchema } from "@/lib/analytics/events";
 
 /**
  * Home-page onboarding (spec §6.0, §2.1): four short steps on one card.
- *   1. "What should we call you?"   first name
+ *   1. "What should we call you?"   first name and age
  *   2. "Where are you starting?"    new idea · existing startup · just one tool
  *   3. The one input that path needs
  *   4. "Save your startup"          sign in with email
@@ -68,10 +69,28 @@ export const oneToolSchema = z.object({
   country,
 });
 
+/** Age is asked with the name in step 1 (docs/decisions/0011); signed-in founders skip it. */
+const age = ageSchema.optional();
+
 export const onboardingSchema = z.discriminatedUnion("path", [
-  z.object({ path: z.literal("new-idea"), firstName: firstNameSchema, details: newIdeaSchema }),
-  z.object({ path: z.literal("existing"), firstName: firstNameSchema, details: existingSchema }),
-  z.object({ path: z.literal("one-tool"), firstName: firstNameSchema, details: oneToolSchema }),
+  z.object({
+    path: z.literal("new-idea"),
+    firstName: firstNameSchema,
+    age,
+    details: newIdeaSchema,
+  }),
+  z.object({
+    path: z.literal("existing"),
+    firstName: firstNameSchema,
+    age,
+    details: existingSchema,
+  }),
+  z.object({
+    path: z.literal("one-tool"),
+    firstName: firstNameSchema,
+    age,
+    details: oneToolSchema,
+  }),
 ]);
 
 export type Onboarding = z.infer<typeof onboardingSchema>;
@@ -160,6 +179,8 @@ export function toStartupCreate(input: Onboarding): StartupCreate {
 export interface OnboardingDraft {
   step?: 1 | 2 | 3 | 4;
   firstName?: string;
+  /** Typed as text; validated with ageSchema. */
+  age?: string;
   path?: EntryPathId;
   newIdeaMode?: "idea" | "discover";
   idea?: string;
@@ -174,7 +195,11 @@ export interface OnboardingDraft {
 
 /** Build the structured onboarding from a flat draft (does not validate). */
 export function draftToOnboarding(draft: OnboardingDraft): unknown {
-  const base = { path: draft.path, firstName: draft.firstName };
+  const base = {
+    path: draft.path,
+    firstName: draft.firstName,
+    age: draft.age?.trim() ? draft.age.trim() : undefined,
+  };
   switch (draft.path) {
     case "new-idea":
       return {
@@ -217,7 +242,11 @@ export function parseDraft(draft: OnboardingDraft) {
 
 /** Whether the founder may move past `step` with the current draft. */
 export function canContinue(step: 1 | 2 | 3, draft: OnboardingDraft): boolean {
-  if (step === 1) return firstNameSchema.safeParse(draft.firstName ?? "").success;
+  if (step === 1)
+    return (
+      firstNameSchema.safeParse(draft.firstName ?? "").success &&
+      ageSchema.safeParse(draft.age ?? "").success
+    );
   if (step === 2) return ENTRY_PATHS.includes(draft.path as EntryPathId);
   return parseDraft(draft).success;
 }

@@ -2,6 +2,7 @@ import { expect, test } from "@playwright/test";
 import {
   PILLAR_NAMES,
   codeFor,
+  completeWelcome,
   enterEmailCode,
   expectNoSidewaysScroll,
   onboardAsRiya,
@@ -68,7 +69,7 @@ test.describe("Home onboarding and sign-in with an email code (S1 exit gate)", (
       await otherPage.getByRole("button", { name: /Account menu for Riya/ }).click();
       await otherPage
         .getByRole("menu", { name: "Account" })
-        .getByRole("menuitem", { name: "Sign out" })
+        .getByRole("menuitem", { name: "Log out" })
         .click({ timeout: 5_000 });
       await expect(
         otherPage.getByRole("banner").getByRole("link", { name: "Sign in" }),
@@ -79,12 +80,20 @@ test.describe("Home onboarding and sign-in with an email code (S1 exit gate)", (
     await other.close();
   });
 
-  test("a new person who signs in first starts onboarding on Home", async ({ page }, testInfo) => {
+  test("a new person who signs in first gives name and age, then starts a 2-step onboarding", async ({
+    page,
+  }, testInfo) => {
     await page.goto("/signin");
     await enterEmailCode(page, uniqueEmail(`first-${testInfo.project.name}`));
+    await expect(page.getByRole("heading", { name: "Welcome to BluSlate" })).toBeVisible({
+      timeout: 20_000,
+    });
+    await completeWelcome(page, "Meera", "15");
     await expect(page).toHaveURL(/\/$/, { timeout: 20_000 });
-    await expect(page.getByTestId("onboarding-step-title")).toHaveText("What should we call you?");
-    await expect(page.getByTestId("onboarding-card").getByText("Step 1 of 3")).toBeVisible();
+    const card = page.getByTestId("onboarding-card");
+    await expect(page.getByTestId("onboarding-step-title")).toHaveText("Where are you starting?");
+    await expect(card.getByText("Step 1 of 2")).toBeVisible();
+    await expect(page.getByRole("button", { name: /Account menu for Meera/ })).toBeVisible();
   });
 
   test("a wrong code is refused, and the right one still works", async ({ page }, testInfo) => {
@@ -101,7 +110,8 @@ test.describe("Home onboarding and sign-in with an email code (S1 exit gate)", (
     ).toBeVisible();
     await page.getByLabel(/6.digit code/).fill(code);
     await page.getByRole("button", { name: "Sign in" }).click();
-    await expect(page).toHaveURL(/\/$/, { timeout: 20_000 });
+    // A new account is asked for name and age first.
+    await expect(page).toHaveURL(/\/welcome$/, { timeout: 20_000 });
     await expect(page.getByRole("banner").getByRole("link", { name: "Sign in" })).toHaveCount(0);
   });
 

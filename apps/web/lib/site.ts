@@ -11,6 +11,8 @@ export const site = {
       : "http://localhost:3000")
   ).replace(/\/$/, ""),
   contactEmail: "founder@yoppi.in",
+  /** "Reach out on WhatsApp" on the Consult page (docs/decisions/0011). */
+  whatsapp: { number: "918979484758", display: "+91-8979484758" },
   ecosystem: { name: "YOPPI", url: "https://yoppi.in" },
   legalUpdated: "18 November 2026",
   /**

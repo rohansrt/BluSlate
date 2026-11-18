@@ -27,10 +27,10 @@ export interface StartedSession {
  */
 export async function createGuest(
   tx: Prisma.TransactionClient,
-  contact: { name: string; email: string },
+  contact: { name: string; email: string; age: number },
 ): Promise<StartedSession> {
   const user = await tx.user.create({
-    data: { name: contact.name, guestEmail: contact.email, isGuest: true },
+    data: { name: contact.name, guestEmail: contact.email, age: contact.age, isGuest: true },
     select: { id: true },
   });
   return createSessionFor(tx, user.id);

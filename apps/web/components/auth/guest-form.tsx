@@ -5,6 +5,7 @@ import { Loader2, UserRound } from "lucide-react";
 import { Button, Input, Label } from "@bluslate/ui";
 import { continueAsGuest, type GuestFormState } from "@/lib/auth-actions";
 import { rememberEmail, useRememberedEmail } from "@/components/auth/remembered-email";
+import { setNoTrack, track } from "@/lib/analytics/client";
 
 /**
  * "Continue as guest" (docs/decisions/0010): a first name and an email, no
@@ -15,20 +16,26 @@ export function GuestForm({ redirectTo }: { redirectTo: string }) {
   const remembered = useRememberedEmail();
   const nameError = state.field === "name" ? state.error : undefined;
   const emailError = state.field === "email" ? state.error : undefined;
+  const ageError = state.field === "age" ? state.error : undefined;
   const formError = state.error && !state.field ? state.error : undefined;
 
   return (
     <form
       action={action}
       onSubmit={(e) => {
-        const email = new FormData(e.currentTarget).get("email");
+        const data = new FormData(e.currentTarget);
+        const email = data.get("email");
         if (typeof email === "string" && email.trim()) rememberEmail(email.trim().toLowerCase());
+        // Under-18s are never tracked (docs/decisions/0011).
+        const age = Number(data.get("age"));
+        setNoTrack(Number.isFinite(age) && age < 18);
+        track("guest_started");
       }}
       className="space-y-4"
       data-testid="guest-form"
     >
       <input type="hidden" name="redirectTo" value={redirectTo} />
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_7rem]">
         <div className="space-y-2">
           <Label htmlFor="guest-name">Your first name</Label>
           <Input
@@ -48,6 +55,25 @@ export function GuestForm({ redirectTo }: { redirectTo: string }) {
           )}
         </div>
         <div className="space-y-2">
+          <Label htmlFor="guest-age">Your age</Label>
+          <Input
+            id="guest-age"
+            name="age"
+            inputMode="numeric"
+            pattern="[0-9]*"
+            maxLength={3}
+            required
+            placeholder="20"
+            aria-invalid={ageError ? true : undefined}
+            aria-describedby={ageError ? "guest-age-error" : undefined}
+          />
+          {ageError && (
+            <p id="guest-age-error" role="alert" className="text-sm text-danger">
+              {ageError}
+            </p>
+          )}
+        </div>
+        <div className="space-y-2 sm:col-span-2">
           <Label htmlFor="guest-email">Your email</Label>
           <Input
             key={remembered}

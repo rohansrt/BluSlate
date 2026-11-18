@@ -1,15 +1,16 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Clock, PlayCircle, ShieldCheck, Tags } from "lucide-react";
+import { Clock, ShieldCheck, Tags } from "lucide-react";
 import { auth } from "@/auth";
 import { HeroArt } from "@/components/home/hero-art";
 import { StepsCycle } from "@/components/home/steps-cycle";
 import { OnboardingCard } from "@/components/onboarding/onboarding-card";
 import { ContinueCard } from "@/components/home/continue-card";
-import { DemoVideoSection } from "@/components/home/demo-video";
+import { DemoVideoSection, WatchDemoLink } from "@/components/home/demo-video";
 import { parseDemoVideo } from "@/lib/demo-video";
 import { site, absoluteUrl } from "@/lib/site";
 import { listStartupsForUser } from "@/lib/startups";
+import { isPillarId } from "@/lib/pillars";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/" },
@@ -25,7 +26,20 @@ const PROMISES = [
   { icon: Clock, title: "Time matters", body: "A clock runs, and every week costs money." },
 ];
 
-export default async function HomePage() {
+export default async function HomePage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const params = await searchParams;
+  const tryParam = typeof params.try === "string" ? params.try : undefined;
+  // ?start=1 or ?try=<pillar> (from About's Product Overview) opens the card beside the circle.
+  const initialAction =
+    tryParam && isPillarId(tryParam)
+      ? { tryPillar: tryParam }
+      : params.start === "1"
+        ? ({ start: true } as const)
+        : null;
   const session = await auth();
   const user = session?.user;
   const startups = user?.id ? await listStartupsForUser(user.id) : [];
@@ -56,16 +70,10 @@ export default async function HomePage() {
             <ContinueCard name={user.name ?? null} startups={startups} />
           ) : (
             <div className="lg:self-center">
-              <OnboardingCard signedIn={Boolean(user)} knownName={user?.name} />
+              <OnboardingCard signedIn={Boolean(user)} knownName={user?.name} placement="hero" />
               {demo && !user && (
                 <p className="mt-3 text-center text-sm text-muted-foreground">
-                  Want to see it first?{" "}
-                  <a
-                    href="#demo"
-                    className="inline-flex items-center gap-1 font-medium text-primary underline underline-offset-4"
-                  >
-                    <PlayCircle className="size-4" aria-hidden /> Watch the demo
-                  </a>
+                  Want to see it first? <WatchDemoLink />
                 </p>
               )}
             </div>
@@ -75,14 +83,25 @@ export default async function HomePage() {
 
       {demo && <DemoVideoSection video={demo} />}
 
-      <section aria-labelledby="steps-heading" className="border-t border-border/70 bg-card/40">
+      <section
+        id="journey"
+        aria-labelledby="steps-heading"
+        className="scroll-mt-16 border-t border-border/70 bg-card/40"
+      >
         <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
           <h2 id="steps-heading" className="text-2xl font-bold tracking-tight sm:text-3xl">
             Seven steps, one loop
           </h2>
-          <p className="mt-2 text-muted-foreground">Tap a step to see what it does.</p>
+          <p className="mt-2 text-muted-foreground">
+            Tap a step to see what it does, or press Start.
+          </p>
           <div className="mt-10">
-            <StepsCycle />
+            <StepsCycle
+              signedIn={Boolean(user)}
+              knownName={user?.name}
+              latestStartupId={startups[0]?.id ?? null}
+              initialAction={initialAction}
+            />
           </div>
         </div>
       </section>

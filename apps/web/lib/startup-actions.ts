@@ -4,7 +4,6 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { auth } from "@/auth";
-import { prisma } from "@/lib/db";
 import { LIMITS } from "@/lib/onboarding";
 import { deleteStartupForOwner, renameStartupForOwner } from "@/lib/startups";
 
@@ -33,16 +32,4 @@ export async function deleteStartup(formData: FormData) {
   revalidatePath("/startups");
   revalidatePath("/");
   redirect("/startups?deleted=1");
-}
-
-const nameSchema = z.string().trim().min(1).max(LIMITS.firstName);
-
-export async function updateName(formData: FormData) {
-  const session = await auth();
-  if (!session?.user?.id) redirect("/");
-  const parsed = nameSchema.safeParse(formData.get("name"));
-  if (!parsed.success) return;
-  await prisma.user.update({ where: { id: session.user.id }, data: { name: parsed.data } });
-  revalidatePath("/", "layout");
-  redirect("/profile?saved=1");
 }

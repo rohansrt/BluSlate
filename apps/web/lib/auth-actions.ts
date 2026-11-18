@@ -7,6 +7,7 @@ import { auth, signIn, signOut } from "@/auth";
 import { prisma } from "@/lib/db";
 import { MERGE_COOKIE, mergeToken } from "@/lib/guest-merge";
 import { firstNameSchema } from "@/lib/onboarding";
+import { ageSchema } from "@/lib/analytics/events";
 import { createGuest, sessionCookieName } from "@/lib/sessions";
 import { hit } from "@/lib/rate-limit";
 import { SEND_LIMITS, normalizeCode, normalizeEmail } from "@/lib/sign-in-code";
@@ -37,7 +38,7 @@ async function isSecure() {
 export type CodeFormState =
   | { step: "email"; error?: string }
   | { step: "code"; email: string; sentAt: number; error?: string; resent?: boolean }
-  | { step: "done"; email: string; url: string };
+  | { step: "done"; email: string; url: string; isNew: boolean };
 
 function sentAtOf(state: CodeFormState): number {
   return state.step === "code" ? state.sentAt : 0;
@@ -116,15 +117,16 @@ export async function verifySignInCode(
     return retry("Too many wrong codes. Wait 15 minutes, then ask for a new code.");
 
   const callbackUrl = safeRedirect(formData.get("redirectTo"), "/signin/continue");
+  const existing = await prisma.user.findUnique({ where: { email }, select: { id: true } });
   const params = new URLSearchParams({ callbackUrl, token: code, email });
   // A full page load, so Auth.js can set the session cookie and redirect.
-  return { step: "done", email, url: `/api/auth/callback/resend?${params}` };
+  return { step: "done", email, url: `/api/auth/callback/resend?${params}`, isNew: !existing };
 }
 
 export interface GuestFormState {
   error?: string;
   /** Which field the error is about. */
-  field?: "name" | "email";
+  field?: "name" | "email" | "age";
 }
 
 /** Guest workspaces a single IP may start per hour (production only). */
@@ -132,7 +134,7 @@ const GUESTS_PER_IP_PER_HOUR = 10;
 
 /**
  * "Continue as guest" (docs/decisions/0010): a private workspace in this
- * browser. The guest gives a first name and an email so we know who used
+ * browser. The guest gives a first name, age and an email so we know who used
  * BluSlate. The email isn't verified, so it is stored as `guestEmail` and can
  * never sign anyone in; signing in with a code later keeps the guest's work.
  */
@@ -142,6 +144,8 @@ export async function continueAsGuest(
 ): Promise<GuestFormState> {
   const name = firstNameSchema.safeParse(String(formData.get("name") ?? ""));
   if (!name.success) return { error: "Enter your first name.", field: "name" };
+  const age = ageSchema.safeParse(String(formData.get("age") ?? "").trim());
+  if (!age.success) return { error: "Enter your age in years.", field: "age" };
   const email = emailSchema.safeParse(normalizeEmail(formData.get("email")));
   if (!email.success) return { error: "Enter a valid email address.", field: "email" };
 
@@ -160,7 +164,7 @@ export async function continueAsGuest(
   }
 
   const guest = await prisma.$transaction((tx) =>
-    createGuest(tx, { name: name.data, email: email.data }),
+    createGuest(tx, { name: name.data, email: email.data, age: age.data }),
   );
   const secure = await isSecure();
   (await cookies()).set(sessionCookieName(secure), guest.sessionToken, {

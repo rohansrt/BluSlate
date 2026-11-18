@@ -107,6 +107,7 @@ AI_DAILY_COST_CAP_USD=        # optional per-startup daily AI spend cap (USD)
 ADMIN_EMAILS=                 # comma-separated emails allowed into /admin
 ADMIN_PASSWORD_HASH=          # admin sign-in password, as a hash: pnpm admin:password "..."
 NEXT_PUBLIC_DEMO_VIDEO_URL=   # Home demo video: a YouTube link or /demo/<file>.mp4; hidden when empty
+CONSULT_NOTIFY_EMAIL=         # where consult requests are emailed (kept out of the public repo)
 NEXT_PUBLIC_SITE_URL=
 AUTH_RESEND_KEY=              # production sign-in email
 EMAIL_FROM=

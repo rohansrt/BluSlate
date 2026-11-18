@@ -4,11 +4,19 @@ import { auth } from "@/auth";
 import { Logo } from "@/components/logo";
 import { ProfileMenu } from "@/components/profile-menu";
 import { isAdminEmail } from "@/lib/admin";
+import { prisma } from "@/lib/db";
 
 /** The logo always goes to Home; your account lives in the top-right menu. */
 export async function SiteHeader() {
   const session = await auth();
   const user = session?.user;
+  // Friend requests waiting for this (verified) email, shown on Collaborate in the menu.
+  const pendingFriends =
+    user?.email && !user.isGuest
+      ? await prisma.friendRequest.count({
+          where: { toEmail: user.email.toLowerCase(), status: "pending" },
+        })
+      : 0;
 
   return (
     <header className="sticky top-0 z-40 border-b border-border/70 bg-background/85 backdrop-blur">
@@ -24,6 +32,7 @@ export async function SiteHeader() {
               email={user.email ?? null}
               isGuest={Boolean(user.isGuest)}
               isAdmin={!user.isGuest && isAdminEmail(user.email)}
+              pendingFriends={pendingFriends}
             />
           ) : (
             // Sign in and sign up are the same email-code flow (docs/decisions/0009).

@@ -20,13 +20,14 @@ test.describe("Accounts", () => {
     await expect(page.getByRole("button", { name: "Email me a code" })).toBeVisible();
     const guest = page.getByTestId("guest-form");
     await guest.getByLabel("Your first name").fill("Asha");
+    await guest.getByLabel("Your age").fill("22");
     await guest.getByLabel("Your email").fill(email);
     await guest.getByRole("button", { name: "Continue as guest" }).click();
 
-    // Home's onboarding already knows the name, so it starts at step 2 of 3.
+    // Home's onboarding already knows the name and age, so it has two steps.
     await expect(page).toHaveURL(/\/$/, { timeout: 20_000 });
     const card = page.getByTestId("onboarding-card");
-    await expect(card.getByText("Step 2 of 3")).toBeVisible();
+    await expect(card.getByText("Step 1 of 2")).toBeVisible();
     await card.getByText("I have a new idea").click();
     await card.getByRole("button", { name: "Continue" }).click();
     await card.getByLabel("Your idea in one sentence").fill("Tiffin delivery for hostels");
@@ -59,7 +60,7 @@ test.describe("Accounts", () => {
     const menu = page.getByRole("menu", { name: "Account" });
     await expect(menu.getByText(email)).toBeVisible();
     await expect(menu.getByRole("menuitem", { name: "My startups" })).toBeVisible();
-    await expect(menu.getByRole("menuitem", { name: "Sign out" })).toBeVisible();
+    await expect(menu.getByRole("menuitem", { name: "Log out" })).toBeVisible();
     await expect(menu.getByRole("menuitem", { name: "Sign up to keep your work" })).toHaveCount(0);
     await menu.getByRole("menuitem", { name: "Profile" }).click();
     await expect(page).toHaveURL(/\/profile$/);

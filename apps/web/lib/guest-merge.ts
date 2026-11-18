@@ -52,9 +52,15 @@ export async function mergeGuestInto(guestUserId: string, userId: string): Promi
       else await tx.member.update({ where: { id: m.id }, data: { userId } });
     }
     await tx.startup.updateMany({ where: { ownerId: guestUserId }, data: { ownerId: userId } });
-    const target = await tx.user.findUnique({ where: { id: userId }, select: { name: true } });
-    if (!target?.name && guest.name)
-      await tx.user.update({ where: { id: userId }, data: { name: guest.name } });
+    // Keep what the guest told us (name and age) unless the account already has it.
+    const target = await tx.user.findUnique({
+      where: { id: userId },
+      select: { name: true, age: true },
+    });
+    const keep: { name?: string; age?: number } = {};
+    if (!target?.name && guest.name) keep.name = guest.name;
+    if (target?.age == null && guest.age != null) keep.age = guest.age;
+    if (Object.keys(keep).length) await tx.user.update({ where: { id: userId }, data: keep });
     await tx.user.delete({ where: { id: guestUserId } });
     return guest.memberships.length;
   });

@@ -413,3 +413,56 @@ The PM asked for guest login again, below the code sign-in, asking only for a na
 - After restarting `pnpm dev`, the full end-to-end suite (one worker) passes on desktop and mobile: 52 tests, 2 skipped (the admin model test without `E2E_ADMIN_PASSWORD`). A rerun tripped the admin login throttle as usual.
 - **Fix found by the guest test:** a visitor who opened Home, then continued as a guest, came back to step 1 with their name filled in. A known name now always skips step 1.
 
+---
+
+## 18 November 2026 — Live admin and analytics; Start, Try and Pitch on the circle; Product Overview; name and age; account pages (decision 0011)
+
+**Built**
+
+- **Analytics** (`lib/analytics/*`, `POST /api/events`, `AnalyticsEvent` table):
+  - first-party product events: page views, onboarding steps and starting point, code requested/verified/failed, guest started, startup created, circle views/tries/start, demo plays, account-page actions;
+  - pillar publishes recorded on the server;
+  - no IP, no full user agent, nothing typed;
+  - skipped for under-18s, Do Not Track, automated browsers and bots;
+  - an opt-out on the Cookies page; 13-month retention.
+- **Admin:**
+  - **Analytics** (`/admin/analytics`, 7/30/90 days): headline tiles, visitors per day, funnels for Home sign-up, code sign-in and guests with drop-off per step, sources/campaigns/landing pages, countries/devices/browsers/systems/ages, pillars opened and published, circle use, code health, account pages;
+  - **Consult requests**, with status;
+  - **Feedback**: tallies, NPS and comments.
+- **Circle** (`components/home/steps-cycle.tsx`):
+  - Start in the centre;
+  - Try this pillar on each card;
+  - Pitch as the eighth stop after step 7, with investors and incubators coming soon;
+  - the onboarding card opens beside the circle and shares one store with the hero card (`lib/onboarding-store.ts`);
+  - About shows it as **Product Overview**, linking to Home's `?start=1` and `?try=<pillar>`.
+- **Name and age:**
+  - asked in onboarding step 1, the guest form, and `/welcome` after a first sign-in by code; editable on Profile;
+  - all ages allowed; under-18s are not tracked;
+  - signed-in founders get a two-step onboarding.
+- **Profile menu:** My startups · Collaborate (with a badge for new requests) · Consult · Idea Book · Feedback · Profile · Admin · Log out.
+- **Account pages:**
+  - Idea Book: memos, 12 suggestions, "Start with this";
+  - Collaborate: friend requests by email; verified accounts only; the reply never reveals whether an email has an account;
+  - Consult: a form emailed to `CONSULT_NOTIFY_EMAIL` and shown in admin, plus the WhatsApp link;
+  - Feedback: five questions and a note.
+- **Founder Pack:** the funding placeholder becomes "Investors and incubators to reach out to" (coming soon).
+- **Privacy and Cookie policies:** analytics, age, the account pages, retention, and young founders.
+
+**Tests**
+
+- Unit: 178 pass, with new tests for analytics parsing, cleaning, the under-18 rule, the event schema, funnels and NPS.
+- End-to-end: new `tests/e2e/account-pages.spec.ts` (circle Start and shared draft, Try this pillar, Pitch, Product Overview, menu order, Idea Book, friend requests between two accounts, Consult, Feedback). The onboarding and guest tests now cover name and age, `/welcome` and the two-step signed-in card.
+- Checked by hand:
+  - a real-user-agent visitor's events reach the admin funnel;
+  - the bot filter works;
+  - paths and referrers are cleaned;
+  - Home's circle on desktop and phone, with no sideways scroll.
+
+**Fixes found by the tests**
+
+- A visitor who opened Home, then signed in as a guest through in-app navigation, saw step 1 again. The shared onboarding store now re-checks its step when the signed-in state changes.
+- A guest who later signed in with a code kept their name but lost their age, and was asked again on `/welcome`. The merge now keeps the age too.
+- Leaving `/welcome` stuck on `/signin/continue`, because a server action can't follow a route handler's redirect. The landing page is now worked out on the server (`lib/landing.ts`).
+
+**Waiting on the PM:** `ADMIN_EMAILS`, `ADMIN_PASSWORD_HASH` and `CONSULT_NOTIFY_EMAIL` in Vercel, and a legal view on under-18 consent and EU analytics consent.
+

@@ -91,3 +91,41 @@ function emailHtml(code: string): string {
   </table>
 </body></html>`;
 }
+
+/**
+ * A plain email to the BluSlate team, e.g. a new consult request
+ * (docs/decisions/0011). Same delivery rules as sign-in codes: Resend in
+ * production, the local outbox in development.
+ */
+export async function sendTeamEmail({
+  to,
+  subject,
+  text,
+  replyTo,
+}: {
+  to: string;
+  subject: string;
+  text: string;
+  replyTo?: string;
+}): Promise<void> {
+  const apiKey = process.env.AUTH_RESEND_KEY;
+  const from = process.env.EMAIL_FROM;
+  if (apiKey && from) {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ from, to, subject, text, ...(replyTo ? { reply_to: replyTo } : {}) }),
+    });
+    if (!res.ok) throw new Error(`Resend rejected the team email (HTTP ${res.status}).`);
+    return;
+  }
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("Email is not configured: set AUTH_RESEND_KEY and EMAIL_FROM.");
+  }
+  await mkdir(DEV_OUTBOX_DIR, { recursive: true });
+  await writeFile(
+    path.join(DEV_OUTBOX_DIR, `team-${to.toLowerCase().replace(/[^a-z0-9@._-]/g, "_")}.json`),
+    JSON.stringify({ to, subject, text, replyTo, sentAt: new Date().toISOString() }, null, 2),
+  );
+  console.info(`\n[dev mail] To ${to}: ${subject}\n${text}\n`);
+}

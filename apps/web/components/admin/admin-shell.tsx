@@ -1,9 +1,20 @@
 import Link from "next/link";
-import { BarChart3, Bot, ScrollText, ShieldCheck } from "lucide-react";
+import {
+  BarChart3,
+  Bot,
+  Handshake,
+  LineChart,
+  MessageSquareHeart,
+  ScrollText,
+  ShieldCheck,
+} from "lucide-react";
 import { cn } from "@bluslate/ui";
 
 const NAV = [
   { href: "/admin", label: "Overview", icon: BarChart3 },
+  { href: "/admin/analytics", label: "Analytics", icon: LineChart },
+  { href: "/admin/consult", label: "Consult requests", icon: Handshake },
+  { href: "/admin/feedback", label: "Feedback", icon: MessageSquareHeart },
   { href: "/admin/models", label: "AI models", icon: Bot },
   { href: "/admin/audit", label: "Audit log", icon: ScrollText },
 ] as const;
@@ -30,7 +41,7 @@ export function AdminShell({
         <p className="flex items-center gap-1.5">
           <ShieldCheck className="size-4 text-primary" aria-hidden /> Admin · {adminEmail}
         </p>
-        <p>Aggregate data only. Founders&apos; ideas are never shown here.</p>
+        <p>Founders&apos; ideas and answers are never shown here.</p>
       </div>
       <nav aria-label="Admin" className="mt-4 flex gap-1 overflow-x-auto border-b border-border">
         {NAV.map(({ href, label, icon: Icon }) => (
