@@ -12,13 +12,13 @@ export const site = {
   ).replace(/\/$/, ""),
   contactEmail: "founder@yoppi.in",
   ecosystem: { name: "YOPPI", url: "https://yoppi.in" },
-  legalUpdated: "17 November 2026",
+  legalUpdated: "18 November 2026",
   /**
-   * Email sign-in is switched off for now (docs/decisions/0002): onboarding
-   * creates a private guest workspace in this browser instead. Set
-   * NEXT_PUBLIC_REQUIRE_SIGN_IN=true to bring back step 4, "Save your startup".
+   * The demo video on Home (docs/decisions/0009): a YouTube link, or a video
+   * file such as /demo/bluslate-demo.mp4 in apps/web/public. Home hides the
+   * section until this is set.
    */
-  signInRequired: process.env.NEXT_PUBLIC_REQUIRE_SIGN_IN === "true",
+  demoVideoUrl: process.env.NEXT_PUBLIC_DEMO_VIDEO_URL?.trim() || null,
 } as const;
 
 export function absoluteUrl(path = "/"): string {

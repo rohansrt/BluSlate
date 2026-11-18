@@ -26,14 +26,10 @@ export async function SiteHeader() {
               isAdmin={!user.isGuest && isAdminEmail(user.email)}
             />
           ) : (
-            <>
-              <Button asChild variant="ghost" size="sm">
-                <Link href="/signin">Sign in</Link>
-              </Button>
-              <Button asChild size="sm">
-                <Link href="/signin?mode=signup">Sign up</Link>
-              </Button>
-            </>
+            // Sign in and sign up are the same email-code flow (docs/decisions/0009).
+            <Button asChild size="sm">
+              <Link href="/signin">Sign in</Link>
+            </Button>
           )}
         </nav>
       </div>

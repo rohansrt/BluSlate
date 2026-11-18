@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { onboardAsRiya, signInByEmail, uniqueEmail } from "./helpers";
+import { codeFor, onboardAsRiya, signInByEmail, uniqueEmail } from "./helpers";
 
 /**
  * Admin sign-in uses a password, which is never stored in the repo. CI sets a
@@ -9,35 +9,61 @@ const ADMIN_EMAIL = process.env.E2E_ADMIN_EMAIL ?? "admin@example.test";
 const ADMIN_PASSWORD = process.env.E2E_ADMIN_PASSWORD;
 
 test.describe("Accounts", () => {
-  test("visitors can continue as a guest from the sign-in page", async ({ page }) => {
+  test("a guest gives a name and email, onboards, then signs in with a code and keeps the work", async ({
+    page,
+  }, testInfo) => {
+    const email = uniqueEmail(`guest-${testInfo.project.name}`);
     await page.goto("/");
-    await page.getByRole("banner").getByRole("link", { name: "Sign up" }).click();
-    await expect(page.getByRole("heading", { name: "Create your BluSlate account" })).toBeVisible();
-    await page.getByRole("button", { name: "Continue as guest" }).click();
-    await expect(page).toHaveURL(/\/startups\/new$/);
-    await expect(page.getByTestId("onboarding-step-title")).toHaveText("What should we call you?");
-    await expect(page.getByRole("button", { name: /Account menu for Guest/ })).toBeVisible();
+    await page.getByRole("banner").getByRole("link", { name: "Sign in" }).click();
+    await expect(page.getByRole("heading", { name: "Sign in to BluSlate" })).toBeVisible();
+    // The code form comes first; the guest option sits below it.
+    await expect(page.getByRole("button", { name: "Email me a code" })).toBeVisible();
+    const guest = page.getByTestId("guest-form");
+    await guest.getByLabel("Your first name").fill("Asha");
+    await guest.getByLabel("Your email").fill(email);
+    await guest.getByRole("button", { name: "Continue as guest" }).click();
+
+    // Home's onboarding already knows the name, so it starts at step 2 of 3.
+    await expect(page).toHaveURL(/\/$/, { timeout: 20_000 });
+    const card = page.getByTestId("onboarding-card");
+    await expect(card.getByText("Step 2 of 3")).toBeVisible();
+    await card.getByText("I have a new idea").click();
+    await card.getByRole("button", { name: "Continue" }).click();
+    await card.getByLabel("Your idea in one sentence").fill("Tiffin delivery for hostels");
+    await card.getByLabel("City").fill("Indore");
+    await card.getByRole("button", { name: "Open my city" }).click();
+    await expect(page).toHaveURL(/\/startups\/(?!new$)[a-z0-9]+$/, { timeout: 30_000 });
+    await expect(page.getByTestId("city-title")).toHaveText("Asha's idea");
+    await expect(page.getByText("This is a guest workspace")).toBeVisible();
+
+    await page.goto("/profile");
+    await expect(page.getByTestId("profile-guest-email")).toContainText(email);
+
+    // Signing in with a code keeps the guest's startup; the email is pre-filled.
+    await page.goto("/signin?mode=signup");
+    await expect(page.getByRole("heading", { name: "Keep your startups" })).toBeVisible();
+    await expect(page.getByTestId("guest-form")).toHaveCount(0);
+    await expect(page.getByLabel("Email", { exact: true })).toHaveValue(email);
+    await page.getByRole("button", { name: "Email me a code" }).click();
+    await page.getByLabel(/6.digit code/).fill(await codeFor(email));
+    await page.getByRole("button", { name: "Sign in" }).click();
+    await expect(page.getByTestId("city-title")).toHaveText("Asha's idea", { timeout: 20_000 });
+    await expect(page.getByText("This is a guest workspace")).toHaveCount(0);
+    await page.goto("/profile");
+    await expect(page.getByTestId("profile-email")).toContainText(email);
   });
 
   test("the profile menu sits at the top right", async ({ page }) => {
-    await onboardAsRiya(page);
+    const email = await onboardAsRiya(page);
     await page.getByRole("button", { name: /Account menu for Riya/ }).click();
     const menu = page.getByRole("menu", { name: "Account" });
+    await expect(menu.getByText(email)).toBeVisible();
     await expect(menu.getByRole("menuitem", { name: "My startups" })).toBeVisible();
-    await expect(menu.getByRole("menuitem", { name: "Sign up to keep your work" })).toBeVisible();
-    await expect(menu.getByRole("menuitem", { name: "End guest session" })).toBeVisible();
+    await expect(menu.getByRole("menuitem", { name: "Sign out" })).toBeVisible();
+    await expect(menu.getByRole("menuitem", { name: "Sign up to keep your work" })).toHaveCount(0);
     await menu.getByRole("menuitem", { name: "Profile" }).click();
     await expect(page).toHaveURL(/\/profile$/);
     await expect(page.getByLabel("Your first name")).toHaveValue("Riya");
-  });
-
-  test("a guest who signs up keeps their startups", async ({ page }, testInfo) => {
-    await onboardAsRiya(page);
-    const email = uniqueEmail(`upgrade-${testInfo.project.name}`);
-    await signInByEmail(page, email, "/signin?mode=signup");
-    await expect(page).toHaveURL(/\/startups$/, { timeout: 20_000 });
-    await expect(page.getByRole("link", { name: /Riya's idea/ })).toBeVisible();
-    await page.goto("/profile");
     await expect(page.getByTestId("profile-email")).toContainText(email);
   });
 

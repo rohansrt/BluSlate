@@ -3,6 +3,7 @@ import Link from "next/link";
 import { UserPlus } from "lucide-react";
 import { Button, Card, Input, Label } from "@bluslate/ui";
 import { isAdminEmail } from "@/lib/admin";
+import { prisma } from "@/lib/db";
 import { signOutAction } from "@/lib/auth-actions";
 import { LIMITS } from "@/lib/onboarding";
 import { requireUser } from "@/lib/require-user";
@@ -20,6 +21,10 @@ export default async function ProfilePage({
   const params = await searchParams;
   const startups = await listStartupsForUser(user.id);
   const admin = !user.isGuest && isAdminEmail(user.email);
+  const guestEmail = user.isGuest
+    ? (await prisma.user.findUnique({ where: { id: user.id }, select: { guestEmail: true } }))
+        ?.guestEmail
+    : null;
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-10 sm:px-6 sm:py-14">
@@ -54,9 +59,15 @@ export default async function ProfilePage({
               <p className="text-muted-foreground">
                 You&apos;re using BluSlate as a guest. Your startups are saved in this browser only.
               </p>
+              {guestEmail && (
+                <p className="text-muted-foreground" data-testid="profile-guest-email">
+                  Email you gave: <span className="font-medium text-foreground">{guestEmail}</span>{" "}
+                  (not verified yet)
+                </p>
+              )}
               <Button asChild>
                 <Link href="/signin?mode=signup">
-                  <UserPlus aria-hidden /> Sign up to keep your work
+                  <UserPlus aria-hidden /> Sign in with a code to keep your work
                 </Link>
               </Button>
             </div>

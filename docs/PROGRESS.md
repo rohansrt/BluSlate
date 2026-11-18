@@ -344,3 +344,72 @@ The PM added the custom domain and asked to make the site live. GitHub Pages can
 The PM asked for a much shorter, product-focused README. `README.md` is now 44 lines: what BluSlate does, the seven steps, what's ready, what's coming. Developer detail, accounts, setup and the embedded spec moved to `docs/HANDOVER.md`; `pnpm docs:readme` became `pnpm docs:handover`, and the drift test checks the handover file.
 
 - **Fix: push deploys failed with a cached build.** From the second successful build on, Vercel restored its build cache, `pnpm install` had nothing to do and skipped `postinstall` (`prisma generate`), so `next build` couldn't find `@/lib/generated/prisma/client` (gitignored). Dashboard redeploys without the cache worked. `scripts/vercel-build.sh` now runs `prisma generate` itself on every build. Checked locally by deleting the generated client and running the script.
+
+---
+
+## 18 November 2026 — Sign in with an email code; guests end; demo video slot (decision 0009) ✅
+
+The PM chose email codes for sign-in, asked that an account remember its email and past work, ended guest login, and asked for a demo video of the user journey instead.
+
+**Built**
+
+- **6-digit email codes.**
+  - Auth.js's Resend provider generates the code (`lib/sign-in-code.ts`).
+  - The code form checks the code, then opens Auth.js's email callback; the callback route is guarded by the same check.
+  - Codes work for 10 minutes and once, and a new code cancels the old one.
+  - Five wrong codes cancel an email's codes. Code requests are limited per email and per IP.
+  - The new `RateLimit` table (migration `sign_in_codes`) holds the counters.
+  - The email subject carries the code.
+- **One form, two places** (`components/auth/email-code-form.tsx`): onboarding's new step 4 ("Save your startup") and `/signin`. It remembers the last email on the device, has "Use a different email", and unlocks "Send a new code" after 30 seconds.
+- **Where sign-in lands:** `/signin/continue` opens the only startup, My startups when there are several, and Home's onboarding when there are none.
+- **Guests end:**
+  - `POST /api/startups` needs a session, and private pages send signed-out visitors to `/signin`.
+  - "Continue as guest", `NEXT_PUBLIC_REQUIRE_SIGN_IN`, the check-email page and the guest-creation helpers are gone (`lib/guest.ts` became `lib/sessions.ts`).
+  - Legacy guests see a notice and can still merge into an account.
+- **Header:** one Sign in button.
+- **Demo video:** `NEXT_PUBLIC_DEMO_VIDEO_URL` (a YouTube link in privacy-enhanced mode, or a file in `apps/web/public/demo/`) shows a "See a founder's journey" section on Home and a "Watch the demo" link under the onboarding card. It is hidden until set.
+- **Fix:** a failed save right after sign-in now reopens step 3 with the error, instead of step 1 with the error hidden.
+- **Legal pages:** Privacy, Terms and Cookies now describe codes and accounts (no guest use), list the new local storage item and the YouTube note, and are dated 18 November 2026.
+
+**Tests**
+
+- **Unit:** `lib/sign-in-code.test.ts` covers the code format, normalising, and the hash matching Auth.js's exactly; `lib/demo-video.test.ts` covers the video URL parsing. All 169 unit tests pass (10 of them new).
+- **End-to-end:**
+  - The onboarding helper now signs up by code.
+  - New tests: a returning founder on another device lands straight in their startup; the device remembers the email; a new person who signs in first starts onboarding; a wrong code is refused; guessing against the Auth.js callback is cut off after five tries; private pages and `POST /api/startups` need an account; the sign-in page has no guest option.
+  - Run one at a time, all sign-in tests pass on desktop and mobile. With parallel workers the Mac's load average was around 100, and timing tests flaked (pillar navigation, delete, a menu click during a dev recompile). They passed on rerun.
+  - The admin password test tripped its 15-minute throttle after repeated runs, as before.
+
+**Not done**
+
+- Not deployed. Production needs Resend first (`docs/DEPLOY.md`), or nobody can sign up.
+- Google sign-in, phone OTP, and removing legacy guest accounts are left for later.
+
+---
+
+## 18 November 2026 — Guest login with a name and an email (decision 0010)
+
+The PM asked for guest login again, below the code sign-in, asking only for a name and an email so the team knows who the guests were.
+
+**Built**
+
+- **The guest form** (`components/auth/guest-form.tsx`) sits on `/signin` under "or continue as a guest". It asks for a first name and an email, with no code.
+- **`continueAsGuest`** (`lib/auth-actions.ts`):
+  - creates a guest `User`, with the email in the new `guestEmail` column (migration `guest_contact`); it never goes in `email`, so it can't sign anyone in;
+  - starts a session cookie for this browser;
+  - lands on Home's onboarding at step 2 of 3, because the name is known;
+  - caps guest creation at 10 per IP per hour in production.
+- **Guests keep their work:**
+  - the city and My startups show a notice;
+  - the profile shows the email they gave;
+  - on `/signin` that email is pre-filled, and signing in with a code merges their startups into the verified account.
+- The remembered-email helper moved to `components/auth/remembered-email.ts`, shared by both forms.
+- Privacy and Cookies describe the guest name and email.
+
+**Tests**
+
+- Lint, typecheck and the 169 unit tests pass.
+- New end-to-end test: guest sign-up → onboarding at step 2 → city → profile shows the guest email → sign in with a code, the email pre-filled → the startup is kept.
+- After restarting `pnpm dev`, the full end-to-end suite (one worker) passes on desktop and mobile: 52 tests, 2 skipped (the admin model test without `E2E_ADMIN_PASSWORD`). A rerun tripped the admin login throttle as usual.
+- **Fix found by the guest test:** a visitor who opened Home, then continued as a guest, came back to step 1 with their name filled in. A known name now always skips step 1.
+

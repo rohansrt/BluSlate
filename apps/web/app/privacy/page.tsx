@@ -39,9 +39,11 @@ const sections: LegalSection[] = [
         <h3>Information you give us</h3>
         <ul>
           <li>
-            <strong>Account details:</strong> the first name you tell us, and your email address if
-            you choose to sign in by email. You can use BluSlate without an email address: your
-            startups are then linked to a private session in your browser.
+            <strong>Account details:</strong> the first name you tell us, and the email address you
+            sign in with. Your startups are linked to your account, so you can open them on any
+            device. If you continue as a guest, we keep the first name and email you give us (we
+            don&apos;t check the email) so we know who used BluSlate, and your startups are linked
+            to a private session in your browser.
           </li>
           <li>
             <strong>Your startup content:</strong> your idea, onboarding answers, decisions, notes,
@@ -78,15 +80,15 @@ const sections: LegalSection[] = [
       <>
         <ul>
           <li>
-            to create your workspace, keep it private to you, and sign you in by email link if you
-            use it;
+            to create your account and workspace, keep it private to you, and sign you in with a
+            code sent to your email;
           </li>
           <li>to save your startups and show them only to you and the people you invite;</li>
           <li>
             to run the features you ask for, including research, explanations, simulated customers
             and the simulated market;
           </li>
-          <li>to send you service emails, such as sign-in links and important changes;</li>
+          <li>to send you service emails, such as sign-in codes and important changes;</li>
           <li>to keep the service safe, prevent abuse and fix problems;</li>
           <li>
             to understand, in aggregate, how the service is used so we can improve it, without using
@@ -220,7 +222,10 @@ const sections: LegalSection[] = [
         <li>
           Server logs are kept for up to 90 days, unless we need them longer to investigate abuse.
         </li>
-        <li>Sign-in links expire after 24 hours and can be used only once.</li>
+        <li>
+          Sign-in codes expire after 10 minutes, work only once, and stop working after five wrong
+          tries.
+        </li>
         <li>We keep information longer only where the law requires it.</li>
       </ul>
     ),

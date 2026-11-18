@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 };
 
 /**
- * Where the magic link lands after Home onboarding: a complete draft kept in
+ * Where the email code lands after Home onboarding: a complete draft kept in
  * this browser is saved straight away. Otherwise the card starts fresh
  * ("Start another").
  */

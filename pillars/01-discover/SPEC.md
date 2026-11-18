@@ -867,7 +867,7 @@ _Note:_ the research plan groups H4 (campus facilities) with the student intervi
 
 **End-to-end (Playwright, desktop + mobile):**
 
-18. **Standalone:** a new guest with the idea "Affordable e-bike rental for college students" lands on the dashboard. It shows the first question, and the idea is offered as a parked solution.
+18. **Standalone:** a new founder with the idea "Affordable e-bike rental for college students" lands on the dashboard. It shows the first question, and the idea is offered as a parked solution.
 19. Filling the canvas from the fixture shows 6 of 6 checks, and the composed statement equals the fixture.
 20. Adding B and C with their fixture ratings shows bars of 3.9 / 3.6 / 2.4 and "Clear winner". The ★ is on A.
 21. Accepting and editing six hypotheses places H2, H4 and H3 in the Test first quadrant.

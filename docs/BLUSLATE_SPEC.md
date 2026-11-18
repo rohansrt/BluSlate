@@ -1,6 +1,6 @@
 # BluSlate — Master Specification
 
-**Version 2.5 · 17 November 2026 · One file for VS Code and Claude Code**
+**Version 2.7 · 18 November 2026 · One file for VS Code and Claude Code**
 
 *BluSlate was developed under the working name "Startup City".*
 
@@ -20,6 +20,23 @@ This single file holds everything needed to build BluSlate: the rules Claude Cod
 
 **Which part wins.** The PM's instructions win over this document: when they differ, the instruction is implemented, recorded in `docs/decisions/`, and this file is updated to match. Within the document, Parts A and C are authoritative; Part B explains them in plain words. If anything differs, Part C wins. Inside Part C the order is: Guardrails (§9) → Contracts (§3–§5) → everything else. All § numbers refer to Part C.
 
+**What changed in v2.7** (PM decision, recorded in `docs/decisions/0010`)
+
+| Change | Where |
+| --- | --- |
+| Guest login is back, on the Sign in page below the email-code form: the guest gives a first name and an email (not verified, stored as `User.guestEmail`), and the work is kept in a private session in that browser. Signing in with a code later keeps it | §6.0, §8.3, B3 |
+| Home onboarding stays four steps (the last signs in by code); guests who start from Sign in see three | §6.0, B3 |
+
+**What changed in v2.6** (PM decision, recorded in `docs/decisions/0009`)
+
+| Change | Where |
+| --- | --- |
+| Sign-in is a 6-digit code sent by email (no links, no password). Codes work for 10 minutes and once; five wrong codes cancel them; code requests are rate-limited per email and IP | §6.0, §8.3, B3 |
+| Guest workspaces end: onboarding is four steps, the fourth saves the startup to an account by email code. Existing pilot guests can still add an email and keep their startups | §1.4, §2.1, §6.0, B2, B3 |
+| One **Sign in** button at the top right (sign up is the same flow). After sign-in, a founder with one startup lands in it, with several on My startups, with none on Home's onboarding. The device remembers the last email | §6.0, B3 |
+| A demo video of the founder journey on Home, set by `NEXT_PUBLIC_DEMO_VIDEO_URL` (hidden until set) | §6.0, B3, Part A |
+| `RateLimit` table for sign-in code limits | §8.3 |
+
 **What changed in v2.5** (PM decision, recorded in `docs/decisions/0006`)
 
 | Change | Where |
@@ -36,7 +53,7 @@ This single file holds everything needed to build BluSlate: the rules Claude Cod
 | --- | --- |
 | The PM's instructions take precedence over the spec; the spec is updated to match | This header, Part A |
 | Pillars renamed for clarity: Problem Discovery, Customer Discovery, Market Research, Product Design, Operations Setup, Go-to-Market Plan, Launch & Growth (ids and folders unchanged) | Everywhere |
-| No sign-in required for now: onboarding is three steps and creates a private guest workspace; Sign in / Sign up / Continue as guest at the top right; guests who sign up keep their startups | §1.4, §6.0, B3 |
+| No sign-in required for now: onboarding is three steps and creates a private guest workspace; Sign in / Sign up / Continue as guest at the top right; guests who sign up keep their startups *(replaced in v2.6: sign-in by email code, no new guests)* | §1.4, §6.0, B3 |
 | A profile menu at the top right; the logo always goes to Home; founders can delete a startup | §6.0, B3 |
 | An admin back end (`/admin`): aggregate statistics, audit log, and the AI model registry where models are added and assigned to pillars; API keys stay in env. Admins sign in with email and password | §5.8, §5.11, §6.0, §11.2, Part A |
 | Twin workspace tables (Draft, StaleMark), each pillar's first question, and other schema additions | §5.1, §8.3 |
@@ -159,7 +176,7 @@ ANTHROPIC_API_KEY=            # the app's own key; never commit it. Models are a
 AI_DAILY_COST_CAP_USD=        # optional per-startup daily AI spend cap (USD)
 ADMIN_EMAILS=                 # comma-separated emails allowed into /admin
 ADMIN_PASSWORD_HASH=          # admin sign-in password, as a hash: pnpm admin:password "..."
-NEXT_PUBLIC_REQUIRE_SIGN_IN=  # "true" brings back email sign-in as onboarding step 4
+NEXT_PUBLIC_DEMO_VIDEO_URL=   # Home demo video: a YouTube link or /demo/<file>.mp4; hidden when empty
 NEXT_PUBLIC_SITE_URL=
 AUTH_RESEND_KEY=              # production sign-in email
 EMAIL_FROM=
@@ -226,7 +243,7 @@ Not a business-plan writer, not a prediction of success, and not a replacement f
 
 > **Riya**, a second-year student, thinks students in her city need cheaper e-bike rentals.
 >
-> She opens BluSlate. The **Home page** asks her name, where she's starting ("a new idea"), and her idea in one line. She signs in with her email and lands in her own **city** — seven hubs, one for each step.
+> She opens BluSlate. The **Home page** asks her name, where she's starting ("a new idea"), and her idea in one line. She types her email, enters the 6-digit code BluSlate sends her, and lands in her own **city** — seven hubs, one for each step.
 >
 > In **Problem Discovery**, the AI helps her turn "cheap e-bikes for students" into a clear problem: *students who live a few kilometres from campus lose time and money getting to class*. It lists the riskiest assumptions she should test.
 >
@@ -248,9 +265,9 @@ Not a business-plan writer, not a prediction of success, and not a replacement f
 
 | Page | What it does |
 | --- | --- |
-| **Home** | Opens with the hook ("Got a business idea? Will it work?"), a hero image and the seven steps as a clickable loop, and starts onboarding **right on the page**. Signed-in founders see a "continue" card instead. The logo always leads here |
+| **Home** | Opens with the hook ("Got a business idea? Will it work?"), a hero image and the seven steps as a clickable loop, and starts onboarding **right on the page**. A demo video shows a founder's journey. Signed-in founders see a "continue" card instead. The logo always leads here |
 | **About** | Explains what BluSlate is, who it's for, how it works, how AI is used, and how we keep ideas private |
-| **Sign in / Sign up** | Top right. Email link (Google optional later), or **Continue as guest** |
+| **Sign in** | Top right. Type your email, then the 6-digit code we email you. New and returning founders use the same button. Below it, **Continue as guest** asks only for a first name and an email. Google may be added later |
 | **Profile** | Top-right menu: My startups, Profile, Admin (admins only), Sign out |
 | **My startups** | All your startups: open, rename or delete one, or start another |
 | **City** | Your startup's home: seven hubs, what's done, and the suggested next step |
@@ -259,13 +276,14 @@ Not a business-plan writer, not a prediction of success, and not a replacement f
 | **Founder Pack** | Your reports, investor shortlist and consultant booking |
 | **Admin** | For the BluSlate team: usage statistics (no founders' ideas), the AI models used by each step, and an audit log |
 
-#### B3.2 Home page onboarding — three short steps on one card
+#### B3.2 Home page onboarding — four short steps on one card
 
 1. **"What should we call you?"** — your first name.
 2. **"Where are you starting?"** — *I have a new idea* · *I already run a business* · *I just want one tool*.
-3. **The one thing that path needs** — your idea in a sentence (or "help me find a problem") and your city and country; or your business name, stage and industry; or which tool to open. **"Open my city"** takes you straight in.
+3. **The one thing that path needs** — your idea in a sentence (or "help me find a problem") and your city and country; or your business name, stage and industry; or which tool to open.
+4. **"Save your startup"** — your email, then the 6-digit code we send to it. **"Open my city"** takes you straight in.
 
-No sign-up is needed for now: your startup is kept in a private guest workspace in this browser. You can sign up at any time (top right) and keep everything. People who come back see "Welcome back" and a "Continue" card.
+Your startup is kept in your account, so you can open it on any device: sign in with the same email and you land straight in it. People who come back on the same device stay signed in and see "Welcome back" and a "Continue" card. Visitors who want to look first can watch the demo video on Home, or continue as a guest from Sign in: they give their first name and email (no code), and their work is kept in that browser until they sign in with a code.
 
 #### B3.3 About page
 
@@ -410,7 +428,7 @@ The first fully playable business type will be a **digital subscription** (like 
 **Decisions to confirm**
 
 - [x] The seven pillar names and their order (renamed in v2.4)
-- [x] Home page onboarding: three steps, no sign-in needed for now (guest workspace)
+- [x] Home page onboarding: four steps, the last signs in with a 6-digit email code (guest mode ended in v2.6)
 - [ ] First playable business type: digital subscription, then local service
 - [ ] How BluSlate itself will charge (for example, a free first run for students and a paid Founder Pack)
 - [ ] Which consultants and partner programmes we list at launch
@@ -630,7 +648,7 @@ Not a questionnaire, not an AI business-plan writer, not a prediction of success
 | Website entry | Product name and onboarding directly on the Home page; a separate About page | The first visit starts the journey, with no separate marketing page |
 | Precedence (v2.4) | The PM's instructions win over this spec; the spec is updated to match | The PM owns the product |
 | Pillar names (v2.4) | Problem Discovery, Customer Discovery, Market Research, Product Design, Operations Setup, Go-to-Market Plan, Launch & Growth | Clearer to founders; ids unchanged |
-| Sign-in (v2.4) | Not required for now: onboarding creates a guest workspace (Auth.js session, no email); email sign-in and sign-up stay available; a guest who signs up keeps their startups | Lowest-friction first visit |
+| Sign-in (v2.7) | A 6-digit code sent by email, as onboarding's fourth step or from Sign in; no password. Guests (first name and email, unverified) can start from Sign in and keep their work by signing in later | Works on phones (no link opening in another browser) and keeps every founder's work in an account; guests still tell us who they are |
 | Model choice (v2.4) | An admin model registry with per-pillar, per-tier assignments replaces the `AI_MODEL_*` env tiers | Plug-and-play models without redeploys |
 | Twin workspace (v2.4) | Drafts and "may be outdated" marks live in their own tables; `Entity` holds only published versions | Keeps history strictly append-only |
 | Pillar v1 (v2.5) | All seven pillars get a working v1 at once: own screen, live Goals column, Report out, AI as placeholders; publishing turns the autosaved workspace into the pillar's entities | The PM wants every pillar usable end to end before going deep on any one |
@@ -647,7 +665,7 @@ Not a questionnaire, not an AI business-plan writer, not a prediction of success
 | Bring an existing startup | Name, stage, industry, geography, any data or a brief | Business Twin import, then a gap map across all pillars |
 | Use one tool | That pillar's essential input only | That pillar, standalone |
 
-All three paths start from the onboarding card on the Home page (§6.0). None needs an account for now: the first startup creates a private guest workspace.
+All three paths start from the onboarding card on the Home page (§6.0). The last step saves the startup to the founder's account with an email code.
 
 #### 2.2 The core loop
 
@@ -1114,10 +1132,10 @@ Each registry is versioned on its own, so a method, tool list, model or formula 
 
 | Page | Route | Purpose |
 | --- | --- | --- |
-| Home | `/` | The hook question, hero image, seven-step loop and onboarding right on the page; a "continue" card for signed-in founders. The logo always links here |
+| Home | `/` | The hook question, hero image, seven-step loop and onboarding right on the page; a demo video (`#demo`) when `NEXT_PUBLIC_DEMO_VIDEO_URL` is set; a "continue" card for signed-in founders. The logo always links here |
 | About | `/about` | What BluSlate is, who it is for, how it works, how AI is used, real vs simulated, privacy |
-| Sign in / Sign up | `/signin`, `/signin?mode=signup` | Email magic link (Google optional), or Continue as guest |
-| Profile | `/profile` | Name, account (email or guest, with sign-up), sign out; reached from the top-right menu |
+| Sign in | `/signin` (`?mode=signup` only changes the heading) | Email, then a 6-digit code. Afterwards `/signin/continue` opens the founder's only startup, My startups when there are several, or Home's onboarding when there are none. Below it, **Continue as guest** (first name and email) |
+| Profile | `/profile` | Name, account email, sign out; reached from the top-right menu |
 | My startups | `/startups` | The user's startups: open, rename, delete (owner, with confirmation), start another |
 | City | `/startups/[id]` | The seven hubs with status and next best action (§6.2) |
 | Pillar | `/startups/[id]/[pillar]` | The pillar workspace (§6.3) |
@@ -1126,15 +1144,20 @@ Each registry is versioned on its own, so a method, tool list, model or formula 
 | Legal | `/privacy`, `/terms`, `/cookies` | Policies |
 | Admin | `/admin`, `/admin/models`, `/admin/models/new`, `/admin/audit`, `/admin/login` | Aggregate statistics; the AI model registry (empty state, add-a-model workflow, pillar × tier assignments); audit log. Admins sign in with **email and password**: the email must be in `ADMIN_EMAILS`, and the password is checked against `ADMIN_PASSWORD_HASH` (scrypt; the password itself is never stored). A wrong email or password gives the same message, and repeated failures are throttled |
 
-**Home onboarding — three short steps on one card:**
+**Home onboarding — four short steps on one card:**
 
 1. **"What should we call you?"** — first name.
 2. **"Where are you starting?"** — New idea · Existing startup · Just one tool (the entry paths in §2.1).
-3. **The one input that path needs** — an idea in one line (or "Help me discover") plus city and country; or startup name, stage and industry; or the tool to open (with country). **"Open my city"** creates the startup and lands the founder in their city with the right pillar highlighted.
+3. **The one input that path needs** — an idea in one line (or "Help me discover") plus city and country; or startup name, stage and industry; or the tool to open (with country).
+4. **"Save your startup"** — email, then the 6-digit code. **"Open my city"** signs in, creates the startup (via `/startups/new`, which saves the browser draft) and lands the founder in their city with the right pillar highlighted. Signed-in founders skip this step (three steps).
 
-The draft is kept in the browser while the founder types. Without a session, the first startup creates a **guest workspace**: a `User` with `isGuest = true` and no email, plus an Auth.js database session cookie, so every page and tenant check works unchanged. Setting `NEXT_PUBLIC_REQUIRE_SIGN_IN=true` restores a fourth step, "Save your startup", which signs in by email first.
+The draft is kept in the browser while the founder types. `POST /api/startups` needs a session (a signed-in account or a guest).
 
-**Accounts (top right):** visitors see **Sign in** and **Sign up** (the same email-link flow) and, on the sign-in page, **Continue as guest**. Signed-in people and guests see a **profile menu** (My startups, Profile, Admin for admins, Sign out; guests see "Sign up to keep your work" and "End guest session"). When a guest requests an email link, a signed httpOnly cookie records the guest account; when the link is opened in the same browser, the guest's startups move into the verified account and the guest is removed. Startups only ever move *into* the account whose email was just verified. Signed-in visitors see "Welcome back, *name*" and a "Continue" card on Home.
+**Sign-in codes (decision 0009):** Auth.js's email provider (Resend) with `generateVerificationToken` returning a random 6-digit code; Auth.js stores only `sha256(code + AUTH_SECRET)`. The code form checks the code, then opens Auth.js's normal email callback, which signs the founder in. Codes work for **10 minutes** and **once**; asking for a new code cancels the old one. **Five wrong codes** in 15 minutes cancel the email's codes; every request to `/api/auth/callback/resend` is checked the same way, so guessing can't skip the limit. Code requests are limited to 5 per hour and 10 per day per email, and 30 per 15 minutes per IP in production. The email's subject carries the code so it can be read from a phone notification. Sessions last 30 days from the last visit. The browser remembers the last email used to sign in.
+
+**Accounts (top right):** visitors see one **Sign in** button (new and returning founders use the same flow). Signed-in people and guests see a **profile menu** (My startups, Profile, Admin for admins, Sign out; guests see "Sign up to keep your work" and "End guest session"). Signed-in visitors see "Welcome back, *name*" and a "Continue" card on Home.
+
+**Guests (decision 0010):** below the code form on `/signin`, **Continue as guest** asks for a first name and an email. It creates a `User` with `isGuest = true`, `name`, and the typed email in `guestEmail` (never in `email`: it isn't verified and can't sign anyone in), plus an Auth.js database session cookie for this browser. Guests land on Home's onboarding (three steps; the name is known) or on the `callbackUrl`. In production one IP may start 10 guest workspaces per hour. Guests see a notice in My startups and the city, and their profile shows the email they gave. When a guest signs in with a code in the same browser (the guest email is pre-filled), a signed httpOnly cookie moves their startups into the verified account and the guest is removed. Startups only ever move *into* the account whose email was just verified.
 
 **About page sections:** what BluSlate is · who it is for · the seven pillars · how a journey works (time, simulated market, Founder Pack) · how AI is used and what it never does · real vs simulated labels · privacy (ideas are private by default) · part of the YOPPI ecosystem · contact.
 
@@ -1622,7 +1645,8 @@ model AiCall {
 
 | Table or field | Purpose |
 | --- | --- |
-| `User`, `Account`, `Session`, `VerificationToken` | Auth.js. `User.email` is optional and `User.isGuest` marks guest workspaces |
+| `User`, `Account`, `Session`, `VerificationToken` | Auth.js. `VerificationToken.token` holds the hash of a 6-digit sign-in code. `User.email` is optional (guests have none); `User.isGuest` marks guest workspaces, and `User.guestEmail` holds the unverified email a guest typed |
+| `RateLimit` | Fixed-window counters for sign-in codes (requests per email and IP, wrong codes per email), in Postgres so limits hold across serverless instances |
 | `Startup.entryPath`, `Startup.onboarding` | The onboarding answers, kept as the founder typed them (not Twin entities) |
 | `Draft` | Unpublished work, editable; publishing turns it into the next `Entity` version and deletes it |
 | `StaleMark` | Append-only "may be outdated" marks for a specific entity version; a newer version clears it |
@@ -1722,8 +1746,8 @@ Paste one prompt per new conversation, in Plan mode. Each ends by updating `docs
 ```
 Read CLAUDE.md and @docs/BLUSLATE_SPEC.md §6.0, §6.5 and §7.
 Scaffold the monorepo exactly as §7.3 with pnpm workspaces (apps/web, packages/*, worker/; leave pillars/ empty for now). apps/web: Next.js App Router, strict TypeScript, Tailwind, shadcn/ui, and the §6.5 design tokens as CSS variables (light and dark).
-Add docker-compose.yml (Postgres 16), Prisma with Startup, Member, Entity, Dependency and DecisionEvent from §8.1, Auth.js with email magic link, ESLint, Prettier, Vitest, Playwright, and a GitHub Actions workflow for lint, typecheck and test.
-Build the §6.0 public pages: Home (product name, one-line promise, and the onboarding card that lands in the city — three steps with a guest workspace, four when sign-in is required) and About (the listed sections). Add sign-in and sign-up (with Continue as guest), the top-right profile menu, and My startups.
+Add docker-compose.yml (Postgres 16), Prisma with Startup, Member, Entity, Dependency and DecisionEvent from §8.1, Auth.js with 6-digit email codes, ESLint, Prettier, Vitest, Playwright, and a GitHub Actions workflow for lint, typecheck and test.
+Build the §6.0 public pages: Home (product name, one-line promise, and the onboarding card that lands in the city — four steps, the last signing in with an email code) and About (the listed sections). Add sign-in, the top-right profile menu, and My startups.
 Done when a Playwright test completes the Home onboarding and lands in an empty city, and About renders.
 ```
 

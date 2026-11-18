@@ -2,7 +2,7 @@
 
 - **Date:** 17 November 2026
 - **Requested by:** the PM ("Don't ask for sign in for now")
-- **Status:** Accepted. This overrides §6.0 step 4 while `NEXT_PUBLIC_REQUIRE_SIGN_IN` is not `true`.
+- **Status:** Superseded by decision 0009 (18 November 2026): sign-in is by email code and no new guest workspaces are created. Existing guests can still add an email and keep their startups.
 
 ## Decision
 

@@ -38,8 +38,8 @@ const sections: LegalSection[] = [
           these terms for it.
         </li>
         <li>
-          Keep access to your email account secure: anyone who can open your sign-in links can open
-          your BluSlate account. Tell us at once if you think someone else has used it.
+          Keep access to your email account secure: anyone who can read your email can get a sign-in
+          code for your BluSlate account. Tell us at once if you think someone else has used it.
         </li>
       </ul>
     ),

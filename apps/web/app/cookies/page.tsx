@@ -15,8 +15,7 @@ const ITEMS = [
   {
     name: "authjs.session-token",
     kind: "Cookie (essential)",
-    purpose:
-      "Keeps you signed in, or connects this browser to your startups if you use BluSlate without an account.",
+    purpose: "Keeps you signed in, or connects this browser to your guest workspace.",
     duration: "30 days, renewed while you use BluSlate",
   },
   {
@@ -36,6 +35,19 @@ const ITEMS = [
     kind: "Local storage (essential)",
     purpose: "Keeps the answers you type on the Home page until you sign in and save your startup.",
     duration: "Removed once your startup is saved, or when you clear site data",
+  },
+  {
+    name: "bluslate.last-email",
+    kind: "Local storage (functional)",
+    purpose: "Fills in the email you last signed in with on this device, so you don't retype it.",
+    duration: "Until you clear site data",
+  },
+  {
+    name: "bluslate.merge-guest",
+    kind: "Cookie (essential)",
+    purpose:
+      "Only for guests: moves your guest startups into your account when you sign in with a code in the same browser.",
+    duration: "24 hours",
   },
 ];
 
@@ -95,7 +107,9 @@ const sections: LegalSection[] = [
       <p>
         We don&apos;t use advertising cookies, and we don&apos;t let third parties track you across
         other websites. If we ever add optional cookies, for example for product analytics, we will
-        update this policy and ask for your consent first.
+        update this policy and ask for your consent first. If the demo video on the Home page is
+        hosted on YouTube, it plays in YouTube&apos;s privacy-enhanced mode, which doesn&apos;t
+        store anything in your browser until you press play.
       </p>
     ),
   },
@@ -105,9 +119,10 @@ const sections: LegalSection[] = [
     body: (
       <p>
         You can block or delete cookies in your browser settings. If you block essential cookies you
-        won&apos;t be able to use BluSlate. If you use BluSlate without an account and clear this
-        site&apos;s cookies, you will lose access to your startups. Clearing local storage before
-        you open your city loses your onboarding answers.
+        won&apos;t be able to sign in. Your startups are kept in your account, so clearing cookies
+        only signs you out: sign in again with your email to get back to them. Guest workspaces live
+        only in this browser: if you clear cookies before signing in with a code, you lose access to
+        them. Clearing local storage before you save your startup loses your onboarding answers.
       </p>
     ),
   },

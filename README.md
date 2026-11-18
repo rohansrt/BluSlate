@@ -4,7 +4,7 @@
 
 BluSlate walks a founder from a rough idea to a tested plan. You answer guided questions, see the numbers update as you go (market size, unit cost, runway), and finish with a Founder Pack you can print or share.
 
-👉 **Try it:** https://bluslate.yoppi.in (pilot, free, no account needed)
+👉 **Try it:** https://bluslate.yoppi.in (pilot, free; sign in with your email, or try it as a guest)
 
 ## How it works
 
@@ -25,13 +25,15 @@ Every step ends with a short report. Together they make the **Founder Pack**.
 **Ready now (pilot):**
 - All seven steps work, with live goals and a report at the end of each.
 - The Founder Pack report.
-- Start as a guest; sign up later and keep your work.
+- Sign in with a 6-digit code sent to your email. Your startups are saved to your account and open on any device.
+- Or continue as a guest with just your name and email; sign in later and keep your work.
 - An admin dashboard for the team.
 
 **Coming next:**
 - Deeper versions of each step, starting with Problem Discovery.
 - AI helpers inside each step (the spaces are already marked "coming soon").
-- Email sign-in and admin access on the live site.
+- A demo video of a founder's journey on the Home page.
+- Admin access on the live site.
 - A market simulation that plays your plan forward over time.
 - More Founder Pack exports: pitch deck, workbook, funding plan.
 

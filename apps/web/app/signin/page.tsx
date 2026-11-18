@@ -1,22 +1,22 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { UserRound } from "lucide-react";
-import { Button, Card } from "@bluslate/ui";
+import { Card } from "@bluslate/ui";
 import { auth } from "@/auth";
-import { SignInForm } from "@/components/auth/sign-in-form";
-import { continueAsGuest } from "@/lib/auth-actions";
+import { EmailCodeForm } from "@/components/auth/email-code-form";
+import { GuestForm } from "@/components/auth/guest-form";
+import { prisma } from "@/lib/db";
 
 export const metadata: Metadata = {
   title: "Sign in",
-  description:
-    "Sign in or sign up to BluSlate with a link sent to your email, or continue as a guest.",
+  description: "Sign in or sign up to BluSlate with a 6-digit code sent to your email.",
   alternates: { canonical: "/signin" },
   robots: { index: false, follow: true },
 };
 
 const ERRORS: Record<string, string> = {
-  Verification: "That sign-in link has expired or was already used. Ask for a new one below.",
+  Verification: "That code has expired or was already used. Ask for a new one below.",
+  TooManyCodes: "Too many wrong codes. Wait 15 minutes, then ask for a new code.",
   Configuration: "Sign-in isn't working right now. Please try again in a few minutes.",
   AccessDenied: "That email can't sign in.",
 };
@@ -26,7 +26,11 @@ function safePath(value: string | string[] | undefined, fallback: string) {
   return v.startsWith("/") && !v.startsWith("//") ? v : fallback;
 }
 
-/** Sign in and sign up are the same email-link flow; guests can continue without an email. */
+/**
+ * Sign in and sign up are the same 6-digit email-code flow (docs/decisions/0009).
+ * Afterwards, /signin/continue opens the founder's work. Below it, visitors can
+ * continue as a guest with a first name and an email (docs/decisions/0010).
+ */
 export default async function SignInPage({
   searchParams,
 }: {
@@ -34,11 +38,19 @@ export default async function SignInPage({
 }) {
   const params = await searchParams;
   const signup = params.mode === "signup";
-  const redirectTo = safePath(params.callbackUrl ?? params.next, "/startups");
+  const redirectTo = safePath(params.callbackUrl ?? params.next, "/signin/continue");
   const session = await auth();
   const isGuest = Boolean(session?.user?.isGuest);
-  // Signed-in people don't need this page; guests may use it to sign up.
+  // Signed-in people don't need this page; guests use it to sign in and keep their work.
   if (session?.user && !isGuest) redirect(redirectTo);
+  const guestEmail = isGuest
+    ? (
+        await prisma.user.findUnique({
+          where: { id: session!.user.id },
+          select: { guestEmail: true },
+        })
+      )?.guestEmail
+    : null;
 
   const errorKey = typeof params.error === "string" ? params.error : undefined;
   const error = errorKey
@@ -49,12 +61,16 @@ export default async function SignInPage({
     <div className="mx-auto max-w-md px-4 py-14 sm:py-20">
       <Card className="p-6 sm:p-8">
         <h1 className="text-2xl font-bold tracking-tight">
-          {signup ? "Create your BluSlate account" : "Sign in to BluSlate"}
+          {isGuest
+            ? "Keep your startups"
+            : signup
+              ? "Create your BluSlate account"
+              : "Sign in to BluSlate"}
         </h1>
         <p className="mt-2 text-muted-foreground">
           {isGuest
-            ? "Add your email to keep your startups and open them from any device."
-            : "We'll email you a link. No password needed."}
+            ? "Sign in with a code to keep your startups and open them from any device."
+            : "New or returning, enter your email and we'll send you a 6‑digit code. No password."}
         </p>
         {error && (
           <p role="alert" className="mt-5 rounded-lg bg-danger-soft px-3 py-2 text-sm text-danger">
@@ -62,58 +78,33 @@ export default async function SignInPage({
           </p>
         )}
         <div className="mt-6">
-          <SignInForm
-            redirectTo={redirectTo}
-            submitLabel={signup ? "Email me a sign-up link" : undefined}
-          />
+          <EmailCodeForm redirectTo={redirectTo} defaultEmail={guestEmail} />
         </div>
         {isGuest && (
           <p className="mt-3 text-xs text-muted-foreground">
-            Open the link in this browser and your guest startups move to your account.
+            Type the code in this browser and your guest startups move to your account.
           </p>
         )}
-
         {!isGuest && (
           <>
             <div className="my-6 flex items-center gap-3 text-xs uppercase tracking-wider text-muted-foreground">
-              <span className="h-px flex-1 bg-border" /> or{" "}
+              <span className="h-px flex-1 bg-border" /> or continue as a guest{" "}
               <span className="h-px flex-1 bg-border" />
             </div>
-            <form action={continueAsGuest}>
-              <input type="hidden" name="redirectTo" value="/startups/new" />
-              <Button type="submit" variant="outline" className="w-full">
-                <UserRound aria-hidden /> Continue as guest
-              </Button>
-            </form>
-            <p className="mt-2 text-center text-xs text-muted-foreground">
-              Guest work is saved in this browser only. You can sign up later and keep it.
+            <GuestForm redirectTo={redirectTo} />
+            <p className="mt-6 text-xs leading-5 text-muted-foreground">
+              By continuing you agree to the{" "}
+              <Link href="/terms" className="underline underline-offset-2">
+                Terms
+              </Link>{" "}
+              and{" "}
+              <Link href="/privacy" className="underline underline-offset-2">
+                Privacy Policy
+              </Link>
+              .
             </p>
           </>
         )}
-
-        <p className="mt-6 text-sm text-muted-foreground">
-          {signup ? (
-            <>
-              Already have an account?{" "}
-              <Link
-                href="/signin"
-                className="font-medium text-primary underline underline-offset-4"
-              >
-                Sign in
-              </Link>
-            </>
-          ) : (
-            <>
-              New here?{" "}
-              <Link
-                href="/signin?mode=signup"
-                className="font-medium text-primary underline underline-offset-4"
-              >
-                Create an account
-              </Link>
-            </>
-          )}
-        </p>
       </Card>
     </div>
   );

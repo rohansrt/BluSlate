@@ -1,9 +1,9 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, ArrowRight, Lightbulb, Building2, Wrench, Mail, Loader2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, Lightbulb, Building2, Wrench, Loader2 } from "lucide-react";
 import { Button, Card, Input, Label, PillarIcon, Select, Textarea, cn } from "@bluslate/ui";
 import { COUNTRY_OPTIONS } from "@/lib/countries";
 import {
@@ -16,8 +16,7 @@ import {
 } from "@/lib/onboarding";
 import { clearDraft, loadDraft, saveDraft } from "@/lib/onboarding-draft";
 import { PILLARS } from "@/lib/pillars";
-import { sendSignInLink, type SignInState } from "@/lib/auth-actions";
-import { site } from "@/lib/site";
+import { EmailCodeForm } from "@/components/auth/email-code-form";
 
 type Step = 1 | 2 | 3 | 4;
 
@@ -76,18 +75,22 @@ interface InitialState {
   step: Step;
 }
 
-/** Four steps when the founder must sign in to save; otherwise three. */
+/** Four steps for visitors (the last one signs in with an email code); three when signed in. */
 function totalStepsFor(signedIn: boolean): 3 | 4 {
-  return site.signInRequired && !signedIn ? 4 : 3;
+  return signedIn ? 3 : 4;
 }
 
 function initialState(knownName: string | null | undefined, total: 3 | 4): InitialState {
   const stored = loadDraft() ?? {};
   const draft: OnboardingDraft = { country: "IN", newIdeaMode: "idea", ...stored };
   if (!draft.firstName && knownName) draft.firstName = knownName;
-  const storedStep = draft.step && draft.step >= 1 && draft.step <= total ? draft.step : null;
-  // Signed-in founders we already know skip the name question.
-  return { draft, step: storedStep ?? (knownName ? 2 : 1) };
+  // A draft saved at step 4 (the email step) reopens at step 3 once signed in,
+  // so a failed save after sign-in shows its error next to "Open my city".
+  const storedStep = draft.step && draft.step >= 1 ? (Math.min(draft.step, total) as Step) : null;
+  // Founders (and guests) whose name we know skip the name question, even if
+  // the card was left at step 1 before they signed in.
+  const step = storedStep ?? 1;
+  return { draft, step: knownName && step === 1 ? 2 : step };
 }
 
 type SaveResult = { ok: true; id: string } | { ok: false; error: string };
@@ -114,14 +117,14 @@ async function postStartup(current: OnboardingDraft): Promise<SaveResult> {
 export function OnboardingCard(props: OnboardingCardProps) {
   const isClient = useIsClient();
   // Server render and first paint: the first step, inert until the draft loads.
-  if (!isClient) return <PlaceholderCard className={props.className} />;
+  if (!isClient) return <PlaceholderCard signedIn={props.signedIn} className={props.className} />;
   return <OnboardingCardInner {...props} />;
 }
 
-function PlaceholderCard({ className }: { className?: string }) {
+function PlaceholderCard({ signedIn, className }: { signedIn: boolean; className?: string }) {
   return (
     <Card className={cn("p-6 sm:p-8", className)} aria-busy="true">
-      <ProgressDots step={1} total={totalStepsFor(false)} />
+      <ProgressDots step={1} total={totalStepsFor(signedIn)} />
       <h2 className="mt-5 text-2xl font-bold tracking-tight">{stepTitle(1, undefined)}</h2>
       <div className="mt-5 space-y-2">
         <Label htmlFor="ob-first-name-placeholder">Your first name</Label>
@@ -296,26 +299,37 @@ function OnboardingCardInner({
             busy={saving}
             label={total === 3 ? "Open my city" : undefined}
           />
-          {total === 3 && !signedIn && (
-            <p className="text-xs leading-5 text-muted-foreground">
-              No sign-up needed. Your startup is saved privately to this browser. By continuing you
-              agree to the{" "}
-              <Link href="/terms" className="underline underline-offset-2">
-                Terms
-              </Link>{" "}
-              and{" "}
-              <Link href="/privacy" className="underline underline-offset-2">
-                Privacy Policy
-              </Link>
-              .
-            </p>
-          )}
         </form>
       )}
 
       {step === 4 && total === 4 && (
-        <div className="mt-5 space-y-5">
-          <EmailStep onBack={() => go(3)} />
+        <div className="mt-5">
+          <EmailCodeForm
+            intro={
+              <p className="text-muted-foreground">
+                Enter your email and we&apos;ll send you a 6‑digit code. No password. Your startup
+                is kept in your account, so you can open it on any device.
+              </p>
+            }
+            idPrefix="ob"
+            // After the code, /startups/new saves the draft kept in this browser.
+            redirectTo="/startups/new"
+            verifyLabel="Open my city"
+            onBack={() => go(3)}
+            footer={
+              <p className="text-xs leading-5 text-muted-foreground">
+                By continuing you agree to the{" "}
+                <Link href="/terms" className="underline underline-offset-2">
+                  Terms
+                </Link>{" "}
+                and{" "}
+                <Link href="/privacy" className="underline underline-offset-2">
+                  Privacy Policy
+                </Link>
+                . Your idea stays private.
+              </p>
+            }
+          />
         </div>
       )}
     </Card>
@@ -563,56 +577,5 @@ function OneToolFields({ draft, update }: FieldProps) {
       </fieldset>
       <PlaceFields draft={draft} update={update} cityOptional />
     </>
-  );
-}
-
-function EmailStep({ onBack }: { onBack: () => void }) {
-  const [state, action, pending] = useActionState<SignInState, FormData>(sendSignInLink, {});
-  return (
-    <form action={action} className="space-y-5">
-      <p className="text-muted-foreground">
-        Sign in with your email to keep your startup. We&apos;ll send you a link, so there&apos;s no
-        password to remember.
-      </p>
-      <input type="hidden" name="redirectTo" value="/startups/new" />
-      <div className="space-y-2">
-        <Label htmlFor="ob-email">Email</Label>
-        <Input
-          id="ob-email"
-          name="email"
-          type="email"
-          autoComplete="email"
-          required
-          placeholder="you@example.com"
-          aria-invalid={state.error ? true : undefined}
-          aria-describedby={state.error ? "ob-email-error" : undefined}
-        />
-        {state.error && (
-          <p id="ob-email-error" role="alert" className="text-sm text-danger">
-            {state.error}
-          </p>
-        )}
-      </div>
-      <div className="flex items-center justify-between gap-3">
-        <Button type="button" variant="ghost" onClick={onBack}>
-          <ArrowLeft aria-hidden /> Back
-        </Button>
-        <Button type="submit" disabled={pending}>
-          {pending ? <Loader2 className="animate-spin" aria-hidden /> : <Mail aria-hidden />}
-          Email me a sign-in link
-        </Button>
-      </div>
-      <p className="text-xs leading-5 text-muted-foreground">
-        By continuing you agree to the{" "}
-        <Link href="/terms" className="underline underline-offset-2">
-          Terms
-        </Link>{" "}
-        and{" "}
-        <Link href="/privacy" className="underline underline-offset-2">
-          Privacy Policy
-        </Link>
-        . Your idea stays private.
-      </p>
-    </form>
   );
 }

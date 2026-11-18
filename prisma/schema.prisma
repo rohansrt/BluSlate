@@ -55,10 +55,14 @@ enum EntryPath {
 model User {
   id            String    @id @default(cuid())
   name          String?
-  // Optional while BluSlate runs without sign-in (docs/decisions/0002).
+  // Optional only for legacy guest accounts (docs/decisions/0002, ended by 0009).
   email         String?   @unique
-  // A browser-only account created at onboarding, with no email yet.
+  // A browser-only guest account (docs/decisions/0010). Guests give a first
+  // name and an email; they can sign in with a code later and keep their work.
   isGuest       Boolean   @default(false)
+  // The email a guest typed. Not verified, so it is kept apart from `email`
+  // (which only a sign-in code can set) and never signs anyone in.
+  guestEmail    String?
   emailVerified DateTime?
   image         String?
   createdAt     DateTime  @default(now())
@@ -106,6 +110,15 @@ model VerificationToken {
   expires    DateTime
 
   @@id([identifier, token])
+}
+
+// Fixed-window counters for sign-in codes (docs/decisions/0009): how many codes
+// an email or IP may request, and how many wrong codes an email may enter.
+// Kept in Postgres so the limit holds across serverless instances.
+model RateLimit {
+  key         String   @id
+  count       Int
+  windowStart DateTime
 }
 
 // ─── Business Twin core (§8.1) ───────────────────────────────────────────────

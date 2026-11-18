@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Clock, ShieldCheck, Tags } from "lucide-react";
+import { Clock, PlayCircle, ShieldCheck, Tags } from "lucide-react";
 import { auth } from "@/auth";
 import { HeroArt } from "@/components/home/hero-art";
 import { StepsCycle } from "@/components/home/steps-cycle";
 import { OnboardingCard } from "@/components/onboarding/onboarding-card";
 import { ContinueCard } from "@/components/home/continue-card";
+import { DemoVideoSection } from "@/components/home/demo-video";
+import { parseDemoVideo } from "@/lib/demo-video";
 import { site, absoluteUrl } from "@/lib/site";
 import { listStartupsForUser } from "@/lib/startups";
 
@@ -27,6 +29,7 @@ export default async function HomePage() {
   const session = await auth();
   const user = session?.user;
   const startups = user?.id ? await listStartupsForUser(user.id) : [];
+  const demo = parseDemoVideo(site.demoVideoUrl);
 
   return (
     <>
@@ -52,14 +55,25 @@ export default async function HomePage() {
           {user && startups.length > 0 ? (
             <ContinueCard name={user.name ?? null} startups={startups} />
           ) : (
-            <OnboardingCard
-              signedIn={Boolean(user)}
-              knownName={user?.name}
-              className="lg:self-center"
-            />
+            <div className="lg:self-center">
+              <OnboardingCard signedIn={Boolean(user)} knownName={user?.name} />
+              {demo && !user && (
+                <p className="mt-3 text-center text-sm text-muted-foreground">
+                  Want to see it first?{" "}
+                  <a
+                    href="#demo"
+                    className="inline-flex items-center gap-1 font-medium text-primary underline underline-offset-4"
+                  >
+                    <PlayCircle className="size-4" aria-hidden /> Watch the demo
+                  </a>
+                </p>
+              )}
+            </div>
           )}
         </div>
       </section>
+
+      {demo && <DemoVideoSection video={demo} />}
 
       <section aria-labelledby="steps-heading" className="border-t border-border/70 bg-card/40">
         <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6">

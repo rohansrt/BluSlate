@@ -2,7 +2,7 @@
 
 - **Date:** 17 November 2026
 - **Requested by:** the PM
-- **Status:** Accepted. The edits below were **applied in spec v2.4** (PM: "the instructions here are superior to spec").
+- **Status:** Accepted. The edits below were **applied in spec v2.4** (PM: "the instructions here are superior to spec"). Section 1 (sign-in and guests) is superseded by decision 0009: one Sign in button, 6-digit email codes, no new guests.
 
 ## 1. Sign in, sign up, guests
 

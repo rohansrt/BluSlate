@@ -24,10 +24,19 @@ BluSlate is a server app with a database, so it can't run on GitHub Pages (stati
 | To switch on | Add in Vercel → Settings → Environment Variables, then redeploy |
 | --- | --- |
 | Admin (`/admin/login`) | `ADMIN_EMAILS=founder@yoppi.in` and `ADMIN_PASSWORD_HASH`, from `pnpm admin:password "a new strong password"`. Don't reuse the development password |
-| Email sign-in | `AUTH_RESEND_KEY` and `EMAIL_FROM` (e.g. `BluSlate <signin@yoppi.in>`), after verifying `yoppi.in` at resend.com |
+| Demo video on Home | `NEXT_PUBLIC_DEMO_VIDEO_URL`: a YouTube link, or `/demo/<file>.mp4` for a file committed to `apps/web/public/demo/` |
 | AI | `ANTHROPIC_API_KEY`, then add a model at `/admin/models` |
 
-Without these, visitors still use BluSlate as guests.
+## Required: email for sign-in codes
+
+Since decision 0009, founders sign in with a 6-digit code sent by email. **Without these two variables nobody can sign in or finish Home's onboarding on the live site**; only "Continue as guest" on the Sign in page works (decision 0010). Set them before or right after deploying that change.
+
+1. Create an account at [resend.com](https://resend.com) (the free plan sends 100 emails a day and 3,000 a month).
+2. In Resend, open **Domains → Add Domain** and enter `yoppi.in`. Resend shows a few DNS records (an MX and a TXT for the `send` subdomain, and a DKIM TXT record).
+3. In **Namecheap → Domain List → yoppi.in → Manage → Advanced DNS**, add those records exactly as shown. Leave the existing records alone. Wait until Resend shows the domain as **Verified** (usually minutes, at most a few hours).
+4. In Resend, open **API Keys → Create API Key** with **Sending access** for `yoppi.in` only.
+5. In Vercel → **Settings → Environment Variables** (Production), add `AUTH_RESEND_KEY` (the key) and `EMAIL_FROM` = `BluSlate <signin@yoppi.in>`. Redeploy.
+6. Check: open https://bluslate.yoppi.in/signin, enter your own email, and type the code you receive.
 
 ## Notes
 

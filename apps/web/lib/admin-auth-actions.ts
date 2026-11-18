@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { audit, isAdminEmail } from "@/lib/admin";
 import { prisma } from "@/lib/db";
-import { createSessionFor, sessionCookieName } from "@/lib/guest";
+import { createSessionFor, sessionCookieName } from "@/lib/sessions";
 import { verifyPassword } from "@/lib/password";
 
 export interface AdminLoginState {
