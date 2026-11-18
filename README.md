@@ -101,7 +101,7 @@ In development no email is sent. Sign-in links are printed in the `pnpm dev` ter
 
 ### Deploying
 
-Production is https://bluslate.yoppi.in on Vercel (project `blu-slate-pf3t`). Pushing to `main` deploys it: `scripts/vercel-build.sh` applies migrations to the Neon database, then builds. CI runs on GitHub separately, so check it's green. One-time setup, env vars, rollback: `docs/DEPLOY.md`.
+Production is https://bluslate.yoppi.in on Vercel (project `blu-slate`). Pushing to `main` deploys it: `scripts/vercel-build.sh` applies migrations to the Neon database, then builds. CI runs on GitHub separately, so check it's green. One-time setup, env vars, rollback: `docs/DEPLOY.md`.
 
 ### Environment (`apps/web/.env.local`, never committed)
 

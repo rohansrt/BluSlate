@@ -18,7 +18,7 @@ and all of those need Postgres. So a Pages build could only have shown the home 
 ## Decision
 
 - **Hosting:**
-  - the app runs on Vercel (project `blu-slate-pf3t`, Root Directory `apps/web`), with its functions in Singapore (`sin1`), next to the database;
+  - the app runs on Vercel (project `blu-slate`, Root Directory `apps/web`), with its functions in Singapore (`sin1`), next to the database;
   - the database is Neon Postgres in Singapore (`aws-ap-southeast-1`), added through Vercel Storage. Neon has no Mumbai region, so both moved from the first plan (Mumbai) to Singapore, the closest region it offers.
 - **Deploys come from Vercel's Git integration:** every push to `main` goes to production.
   - **First attempt:** a GitHub Actions deploy workflow (Vercel token plus four repository secrets). The PM found the setup too complicated, so it was removed the same day.

@@ -1,6 +1,6 @@
 # Deploying BluSlate to bluslate.yoppi.in
 
-BluSlate is a server app with a database, so it can't run on GitHub Pages (static files only). It runs on **Vercel** (project `blu-slate-pf3t`, team "JoyBoy's projects"), with a **Neon** Postgres database in Singapore (decision 0007).
+BluSlate is a server app with a database, so it can't run on GitHub Pages (static files only). It runs on **Vercel** (project `blu-slate`, team "JoyBoy's projects"), with a **Neon** Postgres database in Singapore (decision 0007).
 
 **How deploys work:** Vercel is connected to the GitHub repo, and every push to `main` deploys to production.
 
