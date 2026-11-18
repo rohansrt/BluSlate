@@ -50,6 +50,7 @@ Open this folder in VS Code with Claude Code (or attach this README to any Claud
 | P1 Define | 📝 proposed | `pillars/01-discover/SPEC.md` rewritten in depth (dashboard, every question, formulas, fixture, 30 acceptance tests, open questions). Awaiting PM sign-off; it guides P1 v2 |
 | **Pillars v1 (all seven)** | ✅ | Decision 0006. Each pillar has its own screen with structured inputs, works alone, pre-fills from upstream, shows live **Goals** on the right (TAM/SAM/SOM, unit cost, runway…), ends with a **Report out**, autosaves, and publishes to the Twin with approval. AI is placeholders |
 | **Founder Pack report** | ✅ v1 | `/startups/[id]/pack`: every pillar's report out, status and goals; print or save as PDF. Other exports are placeholders |
+| **Hosting** | ⚙️ set up | Decision 0007. `bluslate.yoppi.in` on Vercel + Neon (Mumbai), deployed by the GitHub Actions **Deploy** workflow after CI passes. Goes live once the one-time setup in `docs/DEPLOY.md` is done |
 | Pillars v2, F1 exports, L1 | — | Not started |
 
 **Current behaviour, briefly:**
@@ -98,6 +99,10 @@ In development no email is sent. Sign-in links are printed in the `pnpm dev` ter
 | `pnpm admin:password "…"` | Print the hash to put in `ADMIN_PASSWORD_HASH` |
 | `pnpm worker`, `pnpm eval` | Stubs until later steps |
 
+### Deploying
+
+Production is https://bluslate.yoppi.in. Pushing to `main` deploys it: CI runs, then the **Deploy** workflow migrates the Neon database and ships the build to Vercel. Run it by hand from GitHub → Actions → Deploy. One-time setup, secrets, rollback: `docs/DEPLOY.md`.
+
 ### Environment (`apps/web/.env.local`, never committed)
 
 | Variable | Purpose |
@@ -138,7 +143,7 @@ packages/sim-kernel, reports   placeholders (P7, F1)
 prisma/                   schema + migrations
 tests/e2e, tests/architecture  Playwright; import-boundary and README-sync tests
 docs/                     BLUSLATE_SPEC.md (source of truth), PM review PDF (v2.3, outdated),
-                          PROGRESS.md, decisions/0001–0004, brand/
+                          PROGRESS.md, DEPLOY.md, decisions/0001–0007, brand/
 ```
 
 **Key mechanics:**
@@ -158,10 +163,11 @@ docs/                     BLUSLATE_SPEC.md (source of truth), PM review PDF (v2.
 - **0004:** accounts and profile menu, guest sign-up, deleting startups, the admin dashboard, the AI model registry, new pillar names.
 - **0005:** admin sign-in with email and password (a hash in env, failed attempts throttled).
 - **0006:** v1 of all seven pillars at once: own screens, live Goals, Report out, the Founder Pack report, AI as placeholders, the `PillarWorkspace` table.
+- **0007:** production on Vercel (Mumbai) with Neon, at `bluslate.yoppi.in`; GitHub Actions is the only deploy path, and runs migrations first.
 
 ### Open issues
 
-- **Not on GitHub yet.** github.com was unreachable from the dev network, so the local commits haven't been pushed. Run `git push origin main`.
+- **Going live:** finish the one-time setup in `docs/DEPLOY.md` (Vercel project, Neon, DNS in Namecheap, four GitHub secrets). Email sign-in in production also needs Resend (`AUTH_RESEND_KEY`, `EMAIL_FROM`).
 - **AI is off until set up:** add a model at `/admin/models` and set `ANTHROPIC_API_KEY`.
 - **Before public launch:**
   - a legal review of Privacy, Terms and Cookies;

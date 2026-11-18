@@ -303,3 +303,23 @@ The PM asked for a working v1 of every pillar at once (decision 0006, spec v2.5)
   - unit: 159 passing, including P1, P3, P6 and P7 calculators, plus cross-pillar checks that every pillar works alone and publishes only valid entities it owns;
   - end-to-end: 46 passing (2 admin tests skipped without the password), including new v1 flows: P1 → P2 pre-fill, live TAM, the P7 control room and the Founder Pack.
 - **Note:** after pulling, run `pnpm db:migrate` and restart `pnpm dev`.
+
+---
+
+## 18 November 2026 — Hosting: bluslate.yoppi.in on Vercel, deployed by GitHub Actions ⚙️
+
+The PM added the custom domain and asked to make the site live. GitHub Pages can't run BluSlate (it needs a server and Postgres), so the PM chose the full app on Vercel (decision 0007).
+
+- **`.github/workflows/deploy.yml`:**
+  - runs after CI passes on `main`, or by hand;
+  - order: `prisma migrate deploy` → `vercel pull` → `vercel build --prod` → `vercel deploy --prebuilt --prod` → a live-site check;
+  - skips with a warning until its four secrets exist.
+- **`apps/web/vercel.json`:** functions in Mumbai (`bom1`), and Vercel's own Git deploys off.
+- **`docs/DEPLOY.md`:** the one-time setup:
+  - the Vercel project (Root Directory `apps/web`);
+  - Neon in Mumbai;
+  - the Namecheap CNAME and removing the GitHub Pages domain;
+  - tokens and secrets;
+  - Resend and rollback.
+- **Checked:** `vercel build --prod` (CLI 65.9.0) succeeds locally on the monorepo. pnpm workspaces, the Prisma 7 client and every route end up in the output.
+- **Waiting on the PM:** the one-time setup. The site goes live on the first Deploy run after it.
