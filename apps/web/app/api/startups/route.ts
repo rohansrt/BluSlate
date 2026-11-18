@@ -42,13 +42,9 @@ export async function POST(request: Request) {
         businessType: create.businessType,
         geography: create.geography,
         currency: create.currency,
+        marketCountry: create.marketCountry,
         entryPath: create.entryPath,
-        // Age belongs to the account, not the startup's answers.
-        onboarding: {
-          ...create.onboarding,
-          age: undefined,
-          highlightPillar: create.highlightPillar,
-        },
+        onboarding: { ...create.onboarding, highlightPillar: create.highlightPillar },
         ownerId: userId,
         members: { create: { userId, role: "owner" } },
       },
@@ -59,12 +55,6 @@ export async function POST(request: Request) {
       where: { id: userId, name: null },
       data: { name: parsed.data.firstName },
     });
-    if (parsed.data.age != null) {
-      await tx.user.updateMany({
-        where: { id: userId, age: null },
-        data: { age: parsed.data.age },
-      });
-    }
     return created;
   });
 

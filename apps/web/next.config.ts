@@ -16,6 +16,8 @@ const nextConfig: NextConfig = {
     "@bluslate/pillar-gtm",
     "@bluslate/pillar-run-grow",
   ],
+  // Pitch docs render PDFs and spreadsheets on the server (decision 0012).
+  serverExternalPackages: ["@react-pdf/renderer", "exceljs"],
   turbopack: { root: path.join(import.meta.dirname, "../..") },
   poweredByHeader: false,
   // The floating dev-tools bubble covers bottom-left buttons on phones (and in tests).

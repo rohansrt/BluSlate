@@ -4,7 +4,6 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
-import { ageSchema } from "@/lib/analytics/events";
 import { firstNameSchema } from "@/lib/onboarding";
 import { landingPathFor } from "@/lib/landing";
 
@@ -21,14 +20,12 @@ function safeNext(value: FormDataEntryValue | null, fallback: string): string {
 function readProfile(formData: FormData) {
   const name = firstNameSchema.safeParse(String(formData.get("name") ?? ""));
   if (!name.success) return { error: "Enter your first name." } as const;
-  const age = ageSchema.safeParse(String(formData.get("age") ?? "").trim());
-  if (!age.success) return { error: "Enter your age in years." } as const;
-  return { name: name.data, age: age.data } as const;
+  return { name: name.data } as const;
 }
 
 /**
- * Name and age, asked once after a first sign-in (docs/decisions/0011) and
- * editable on Profile. All ages may use BluSlate; under-18s are not tracked.
+ * The first name, asked once after a first sign-in (docs/decisions/0011) and
+ * editable on Profile. Age isn't asked any more (decision 0012).
  */
 export async function saveProfile(
   _prev: ProfileFormState,
@@ -40,7 +37,7 @@ export async function saveProfile(
   if ("error" in profile) return { error: profile.error };
   await prisma.user.update({
     where: { id: session.user.id },
-    data: { name: profile.name, age: profile.age },
+    data: { name: profile.name },
   });
   revalidatePath("/", "layout");
   const next = safeNext(formData.get("next"), "/profile?saved=1");

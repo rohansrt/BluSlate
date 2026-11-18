@@ -1,10 +1,11 @@
 import { z } from "zod";
-import type {
-  Goal,
-  PillarWorkspaceDef,
-  ReportBlock,
-  WorkspaceContext,
-  WorkspaceEntity,
+import {
+  follow,
+  type Goal,
+  type PillarWorkspaceDef,
+  type ReportBlock,
+  type WorkspaceContext,
+  type WorkspaceEntity,
 } from "@bluslate/contracts";
 
 /**
@@ -436,6 +437,19 @@ export const discoverWorkspace: PillarWorkspaceDef<DiscoverState> = {
     "Challenge my problem",
   ],
 
+  shared: {
+    read: (s) => ({
+      ...(s.pain.trim() ? { problem: s.pain.trim() } : {}),
+      ...(s.who.trim() ? { segment: s.who.trim() } : {}),
+      alternatives: s.alternatives.map((a) => a.name.trim()).filter(Boolean),
+    }),
+    write: (s, next, prev) => ({
+      ...s,
+      pain: follow(s.pain, next.problem?.slice(0, 280), prev.problem?.slice(0, 280)),
+      who: follow(s.who, next.segment?.slice(0, 140), prev.segment?.slice(0, 140)),
+    }),
+  },
+
   initial(ctx: WorkspaceContext) {
     const s = discoverStateSchema.parse({});
     const idea = ctx.startup.idea?.trim() ?? "";
@@ -476,6 +490,7 @@ export const discoverWorkspace: PillarWorkspaceDef<DiscoverState> = {
               ? `Close call: depends on ${robust.closeOn}`
               : "Rate at least one framing",
         evidence: "ESTIMATE",
+        done: focusScore !== null,
       },
       {
         id: "testable",
@@ -490,13 +505,15 @@ export const discoverWorkspace: PillarWorkspaceDef<DiscoverState> = {
         value: top ? `H${s.hypotheses.indexOf(top.h) + 1} · priority ${top.p}` : null,
         detail: top ? top.h.statement.slice(0, 90) : "Risk × uncertainty, 1–25",
         evidence: "ESTIMATE",
+        done: Boolean(top),
       },
       {
         id: "time",
         title: "Discovery sprint",
         value: s.pain.trim() ? `${timeCostDays(s)} simulated days` : null,
-        detail: "Appendix C: 2–5 days",
+        detail: s.frequencyBand ? "Appendix C: 2–5 days" : "Say how often the problem happens",
         evidence: "ESTIMATE",
+        done: Boolean(s.pain.trim() && s.frequencyBand),
       },
       {
         id: "ready",

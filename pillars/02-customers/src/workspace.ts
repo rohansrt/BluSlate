@@ -1,5 +1,6 @@
 import { z } from "zod";
 import {
+  follow,
   formatMoney,
   known,
   type Goal,
@@ -75,6 +76,7 @@ const belief = z.object({ id: z.string(), statement: str(240), support: num, aga
 export const customersStateSchema = z.object({
   problem: str(600),
   segments: z.array(segment).max(5).default([]),
+  /** Not asked any more (decision 0012): outreach uses the segments' channels. Kept for old saves. */
   outreachChannels: z.array(z.enum(CHANNELS)).default([]),
   contacts: num,
   replyRatePct: z.number().min(0).max(100).nullable().default(null),
@@ -111,11 +113,25 @@ export function expectedReplies(s: CustomersState): number | null {
     : null;
 }
 
+/** Where you'll reach out: every segment's "where to find them", once each (decision 0012). */
+export function outreachChannels(s: CustomersState): (typeof CHANNELS)[number][] {
+  return [...new Set(s.segments.flatMap((g) => g.channels))];
+}
+
 export function rankedNeeds(s: CustomersState) {
   return s.needs
     .map((n) => ({ n, score: needScore(n) }))
     .filter((x) => x.n.statement.trim())
     .sort((a, b) => (b.score ?? -1) - (a.score ?? -1));
+}
+
+/** What the first segment would pay a year: the middle of its monthly range × 12. */
+export function yearlyValue(s: CustomersState): number | null {
+  const g = s.segments[0];
+  if (!g) return null;
+  const vals = [g.wtpLow, g.wtpHigh].filter(known);
+  if (!vals.length) return null;
+  return Math.round((vals.reduce((a, b) => a + b, 0) / vals.length) * 12);
 }
 
 const segName = (s: CustomersState, id: string) => s.segments.find((x) => x.id === id)?.name ?? "";
@@ -131,6 +147,42 @@ export const customersWorkspace: PillarWorkspaceDef<CustomersState> = {
     "Tag and cluster quotes",
     "Coach my questions",
   ],
+
+  shared: {
+    read: (s) => {
+      const top = rankedNeeds(s)[0];
+      const value = yearlyValue(s);
+      const seg = s.segments[0]?.name.trim();
+      return {
+        ...(s.problem.trim() ? { problem: s.problem.trim() } : {}),
+        ...(seg ? { segment: seg } : {}),
+        needs: s.needs.map((n) => n.statement.trim()).filter(Boolean),
+        ...(top ? { topNeed: top.n.statement.trim() } : {}),
+        ...(value !== null ? { yearlyValue: value } : {}),
+      };
+    },
+    write: (s, next, prev) => {
+      const out = { ...s, problem: follow(s.problem, next.problem?.slice(0, 600), prev.problem) };
+      const name = next.segment?.slice(0, 80);
+      if (name !== undefined) {
+        const [first, ...rest] = out.segments;
+        out.segments = first
+          ? [{ ...first, name: follow(first.name, name, prev.segment?.slice(0, 80)) }, ...rest]
+          : [
+              {
+                id: "seg1",
+                name,
+                kind: "b2c",
+                roles: ["user"],
+                channels: [],
+                wtpLow: null,
+                wtpHigh: null,
+              },
+            ];
+      }
+      return out;
+    },
+  },
 
   initial(ctx) {
     const s = customersStateSchema.parse({});
@@ -185,7 +237,7 @@ export const customersWorkspace: PillarWorkspaceDef<CustomersState> = {
         title: "Segments interviewed",
         value: s.segments.length ? `${segsHit} of 2` : null,
         detail: `${s.segments.length} segment${s.segments.length === 1 ? "" : "s"} defined`,
-        done: segsHit >= 2,
+        done: s.segments.length > 0 && segsHit >= Math.min(2, s.segments.length),
       },
       {
         id: "topNeed",
@@ -193,6 +245,7 @@ export const customersWorkspace: PillarWorkspaceDef<CustomersState> = {
         value: top && top.score !== null ? `${top.n.statement.slice(0, 40)} · ${top.score}` : null,
         detail: "frequency × severity × evidence (0–25)",
         evidence: "ESTIMATE",
+        done: Boolean(top && top.score !== null),
       },
       {
         id: "backed",
@@ -207,6 +260,7 @@ export const customersWorkspace: PillarWorkspaceDef<CustomersState> = {
           ? `${st.filter((x) => x === "supported").length} ✓ · ${st.filter((x) => x === "against").length} ✗ · ${st.filter((x) => x === "unclear").length} ?`
           : null,
         detail: "supported · against · unclear",
+        done: s.beliefs.length > 0 && st.every((x) => x !== "unclear"),
       },
       {
         id: "replies",
@@ -214,6 +268,7 @@ export const customersWorkspace: PillarWorkspaceDef<CustomersState> = {
         value: replies === null ? null : `${replies} people`,
         detail: "contacts × reply rate; outreach takes 3–10 simulated days",
         evidence: "ASSUMED",
+        done: replies !== null,
       },
       {
         id: "wtp",
@@ -223,6 +278,7 @@ export const customersWorkspace: PillarWorkspaceDef<CustomersState> = {
           : null,
         detail: wtp ? wtp.name : "Per segment, per month",
         evidence: "ASSUMED",
+        done: Boolean(wtp),
       },
     ];
     return goals;

@@ -1,5 +1,7 @@
 import { z } from "zod";
 import {
+  follow,
+  followList,
   formatCount,
   formatMoney,
   known,
@@ -117,6 +119,14 @@ export function sourcesCited(s: MarketState): number {
   ].filter((x) => x.trim()).length;
 }
 
+/**
+ * The market's place: the shared target market chosen in Customer Discovery
+ * or here (decision 0012). `state.geography` is only kept for old workspaces.
+ */
+export function boundaryPlace(s: MarketState, startupGeography: string): string {
+  return startupGeography.trim() || s.geography.trim();
+}
+
 const range = (x: Size, cur: string) => `${formatMoney(x.low, cur)}–${formatMoney(x.high, cur)}`;
 
 // ─── Workspace ───────────────────────────────────────────────────────────────
@@ -131,9 +141,47 @@ export const marketWorkspace: PillarWorkspaceDef<MarketState> = {
     "Sensitivity tornado",
   ],
 
+  shared: {
+    read: (s) => {
+      const z = sizing(s);
+      return {
+        ...(s.segment.trim() ? { segment: s.segment.trim() } : {}),
+        ...(z.somCustomers !== null ? { marketCustomers: Math.round(z.somCustomers) } : {}),
+      };
+    },
+    write: (s, next, prev) => {
+      const names = followList(
+        s.competitors.map((c) => c.name),
+        next.alternatives,
+        prev.alternatives,
+      ).slice(0, 12);
+      const byName = new Map(s.competitors.map((c) => [c.name.trim().toLowerCase(), c] as const));
+      return {
+        ...s,
+        segment: follow(s.segment, next.segment?.slice(0, 140), prev.segment?.slice(0, 140)),
+        valuePerCustomer: follow(s.valuePerCustomer, next.yearlyValue, prev.yearlyValue),
+        competitors: names.map(
+          (name, i) =>
+            byName.get(name.trim().toLowerCase()) ?? {
+              id: `alt-${name
+                .toLowerCase()
+                .replace(/[^a-z0-9]+/g, "-")
+                .slice(0, 24)}-${i}`,
+              name: name.slice(0, 80),
+              kind: "indirect" as const,
+              price: null,
+              pricePeriod: "per month" as const,
+              priceLevel: null,
+              quality: null,
+              url: "",
+            },
+        ),
+      };
+    },
+  },
+
   initial(ctx) {
     const s = marketStateSchema.parse({});
-    s.geography = ctx.startup.geography.slice(0, 80);
     const seg = ctx.upstream.Segment?.[0];
     const p = ctx.upstream.Problem?.at(-1);
     s.segment = String(seg?.name ?? p?.who ?? "").slice(0, 140);
@@ -166,6 +214,7 @@ export const marketWorkspace: PillarWorkspaceDef<MarketState> = {
         value: z.tam ? formatMoney(z.tam.base, cur) : null,
         detail: z.tam ? `${range(z.tam, cur)} a year` : "Customers × yearly value per customer",
         evidence: "ESTIMATE",
+        done: z.tam !== null,
       },
       {
         id: "sam",
@@ -175,6 +224,7 @@ export const marketWorkspace: PillarWorkspaceDef<MarketState> = {
           ? `${range(z.sam, cur)} · ${s.reachPct}% of TAM`
           : "TAM × share you can reach",
         evidence: "ESTIMATE",
+        done: z.sam !== null,
       },
       {
         id: "som",
@@ -184,6 +234,7 @@ export const marketWorkspace: PillarWorkspaceDef<MarketState> = {
           ? `${range(z.som, cur)} · ${s.winPct}% of SAM in 3 years`
           : "SAM × share you could win",
         evidence: "ESTIMATE",
+        done: z.som !== null,
       },
       {
         id: "somCustomers",
@@ -191,6 +242,7 @@ export const marketWorkspace: PillarWorkspaceDef<MarketState> = {
         value: z.somCustomers === null ? null : formatCount(z.somCustomers),
         detail: "Customers × reach × win",
         evidence: "ESTIMATE",
+        done: z.somCustomers !== null,
       },
       {
         id: "crosscheck",
@@ -202,7 +254,7 @@ export const marketWorkspace: PillarWorkspaceDef<MarketState> = {
             : Math.abs(td.gapPct) <= 50
               ? "Bottom-up and top-down roughly agree"
               : "Big gap: check your definitions",
-        done: td.gapPct !== null && Math.abs(td.gapPct) <= 50,
+        done: td.gapPct !== null,
       },
       {
         id: "competitors",
@@ -261,7 +313,7 @@ export const marketWorkspace: PillarWorkspaceDef<MarketState> = {
     lines.push({ label: "Sources cited", value: String(sourcesCited(s)) });
     return {
       headline: z.som
-        ? `${s.segment || "The market"} in ${s.geography || "your area"}: about ${formatMoney(z.sam!.base, cur)} a year is reachable, and ${formatMoney(z.som.base, cur)} is winnable.`
+        ? `${s.segment || "The market"} in ${boundaryPlace(s, ctx.startup.geography) || "your area"}: about ${formatMoney(z.sam!.base, cur)} a year is reachable, and ${formatMoney(z.som.base, cur)} is winnable.`
         : null,
       lines,
     };
@@ -281,7 +333,7 @@ export const marketWorkspace: PillarWorkspaceDef<MarketState> = {
         evidenceLabel: "ESTIMATE",
         data: {
           boundary: {
-            geography: s.geography,
+            geography: boundaryPlace(s, ctx.startup.geography),
             segment: s.segment,
             period: "per year",
             currency: cur,

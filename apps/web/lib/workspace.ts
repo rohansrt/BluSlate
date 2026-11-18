@@ -1,7 +1,9 @@
 import "server-only";
 import {
   ENTITY_SCHEMAS,
+  goalProgress,
   isPillarEntityType,
+  type GoalProgress,
   type PillarEntityType,
   type StartupContext,
   type UpstreamData,
@@ -9,8 +11,9 @@ import {
 } from "@bluslate/contracts";
 import { prisma } from "@/lib/db";
 import { PILLAR_MODULES } from "@/lib/pillar-modules";
+import { changedFacts, stable } from "@/lib/shared-facts";
 import { PILLAR_WORKSPACES } from "@/lib/pillar-workspaces";
-import type { PillarId } from "@/lib/pillars";
+import { PILLAR_IDS, type PillarId } from "@/lib/pillars";
 import { approvalFromSession, twin } from "@/lib/twin";
 
 interface StartupRow {
@@ -21,7 +24,7 @@ interface StartupRow {
   onboarding: unknown;
 }
 
-function startupContext(s: StartupRow): StartupContext {
+export function startupContext(s: StartupRow): StartupContext {
   // Onboarding answers are { firstName, path, details: { idea | interest | industry, … } }.
   const raw = (s.onboarding ?? {}) as Record<string, unknown>;
   const o = (raw.details && typeof raw.details === "object" ? raw.details : raw) as Record<
@@ -33,20 +36,30 @@ function startupContext(s: StartupRow): StartupContext {
   return { name: s.name, geography: s.geography, currency: s.currency, idea };
 }
 
-/** Approved upstream entities this pillar reads (§3.1), and their logical ids. */
-async function upstreamFor(startupId: string, pillar: PillarId) {
-  const types = PILLAR_MODULES[pillar].reads.filter((t): t is PillarEntityType =>
-    isPillarEntityType(t),
-  );
+type ApprovedVersion = Awaited<ReturnType<typeof twin.approved>>[number];
+
+function readsOf(pillar: PillarId): PillarEntityType[] {
+  return PILLAR_MODULES[pillar].reads.filter((t): t is PillarEntityType => isPillarEntityType(t));
+}
+
+/** Group approved versions into the upstream data one pillar reads. */
+function upstreamFromVersions(versions: ApprovedVersion[], pillar: PillarId) {
+  const types = new Set<string>(readsOf(pillar));
   const upstream: UpstreamData = {};
   const ids: string[] = [];
-  if (types.length === 0) return { upstream, ids };
-  const versions = await twin.approved(startupId, types);
-  for (const v of versions.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())) {
+  for (const v of [...versions].sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())) {
+    if (!types.has(v.type)) continue;
     (upstream[v.type] ??= []).push(v.data);
     ids.push(v.logicalId);
   }
   return { upstream, ids };
+}
+
+/** Approved upstream entities this pillar reads (§3.1), and their logical ids. */
+async function upstreamFor(startupId: string, pillar: PillarId) {
+  const types = readsOf(pillar);
+  if (types.length === 0) return { upstream: {} as UpstreamData, ids: [] as string[] };
+  return upstreamFromVersions(await twin.approved(startupId, types), pillar);
 }
 
 export async function workspaceContext(startup: StartupRow, pillar: PillarId) {
@@ -74,15 +87,98 @@ export async function loadWorkspace(startup: StartupRow, pillar: PillarId) {
   };
 }
 
-export async function saveWorkspace(startupId: string, pillar: PillarId, data: unknown) {
-  const parsed = PILLAR_WORKSPACES[pillar].schema.safeParse(data);
+export interface PillarProgress extends GoalProgress {
+  /** The founder has saved work in this pillar (or it was autofilled). */
+  saved: boolean;
+}
+
+/**
+ * Every pillar's goal progress (decision 0012), for the step list, the
+ * Passport and the Pitch docs. One query for workspaces and one for the Twin.
+ */
+export async function journeyProgress(startup: StartupRow) {
+  const [rows, versions] = await Promise.all([
+    prisma.pillarWorkspace.findMany({ where: { startupId: startup.id } }),
+    twin.approved(startup.id),
+  ]);
+  const base = startupContext(startup);
+  const out = {} as Record<PillarId, PillarProgress>;
+  const states = {} as Record<PillarId, { state: unknown; ctx: WorkspaceContext; saved: boolean }>;
+  for (const pillar of PILLAR_IDS) {
+    const def = PILLAR_WORKSPACES[pillar];
+    const ctx: WorkspaceContext = {
+      startup: base,
+      upstream: upstreamFromVersions(versions, pillar).upstream,
+    };
+    const row = rows.find((r) => r.pillar === pillar);
+    const parsed = row ? def.schema.safeParse(row.data) : null;
+    const state: unknown = parsed?.success ? parsed.data : def.initial(ctx);
+    out[pillar] = { ...goalProgress(def.goals(state, ctx)), saved: Boolean(row) };
+    states[pillar] = { state, ctx, saved: Boolean(row) };
+  }
+  return { progress: out, states };
+}
+
+export async function saveWorkspace(startup: StartupRow, pillar: PillarId, data: unknown) {
+  const def = PILLAR_WORKSPACES[pillar];
+  const parsed = def.schema.safeParse(data);
   if (!parsed.success) return { ok: false as const, issues: parsed.error.issues.slice(0, 5) };
+  const before = def.shared ? (await loadWorkspace(startup, pillar)).state : null;
   const row = await prisma.pillarWorkspace.upsert({
-    where: { startupId_pillar: { startupId, pillar } },
-    create: { startupId, pillar, data: parsed.data as object },
+    where: { startupId_pillar: { startupId: startup.id, pillar } },
+    create: { startupId: startup.id, pillar, data: parsed.data as object },
     update: { data: parsed.data as object },
   });
-  return { ok: true as const, updatedAt: row.updatedAt.toISOString() };
+  const linked = before === null ? [] : await shareFacts(startup, pillar, before, parsed.data);
+  return { ok: true as const, updatedAt: row.updatedAt.toISOString(), linked };
+}
+
+/**
+ * Copy changed shared facts into the linked fields of other steps (decision
+ * 0012): a linked field follows its source while it's empty or still matches
+ * what the source said before. Returns the steps that changed.
+ */
+export async function shareFacts(
+  startup: StartupRow,
+  pillar: PillarId,
+  before: unknown,
+  after: unknown,
+): Promise<PillarId[]> {
+  const source = PILLAR_WORKSPACES[pillar].shared;
+  if (!source) return [];
+  const bare: WorkspaceContext = { startup: startupContext(startup), upstream: {} };
+  const { next, prev } = changedFacts(source.read(before, bare), source.read(after, bare));
+  if (Object.keys(next).length === 0) return [];
+
+  const targets = PILLAR_IDS.filter((p) => p !== pillar && PILLAR_WORKSPACES[p].shared?.write);
+  const rows = await prisma.pillarWorkspace.findMany({
+    where: { startupId: startup.id, pillar: { in: targets } },
+  });
+  let versions: ApprovedVersion[] | null = null;
+  const changed: PillarId[] = [];
+  for (const target of targets) {
+    const def = PILLAR_WORKSPACES[target];
+    const row = rows.find((r) => r.pillar === target);
+    const saved = row ? def.schema.safeParse(row.data) : null;
+    let state: unknown;
+    if (saved?.success) state = saved.data;
+    else {
+      versions ??= await twin.approved(startup.id);
+      state = def.initial({
+        startup: bare.startup,
+        upstream: upstreamFromVersions(versions, target).upstream,
+      });
+    }
+    const updated = def.schema.safeParse(def.shared!.write!(state, next, prev));
+    if (!updated.success || stable(updated.data) === stable(state)) continue;
+    await prisma.pillarWorkspace.upsert({
+      where: { startupId_pillar: { startupId: startup.id, pillar: target } },
+      create: { startupId: startup.id, pillar: target, data: updated.data as object },
+      update: { data: updated.data as object },
+    });
+    changed.push(target);
+  }
+  return changed;
 }
 
 /**
@@ -132,17 +228,4 @@ export async function publishWorkspace(startup: StartupRow, pillar: PillarId, us
     update: { published },
   });
   return { changed, unchanged, total: entities.length };
-}
-
-/** JSON with sorted keys: Postgres jsonb doesn't keep key order. */
-function stable(v: unknown): string {
-  if (Array.isArray(v)) return `[${v.map(stable).join(",")}]`;
-  if (v && typeof v === "object") {
-    return `{${Object.keys(v)
-      .filter((k) => (v as Record<string, unknown>)[k] !== undefined)
-      .sort()
-      .map((k) => `${JSON.stringify(k)}:${stable((v as Record<string, unknown>)[k])}`)
-      .join(",")}}`;
-  }
-  return JSON.stringify(v);
 }

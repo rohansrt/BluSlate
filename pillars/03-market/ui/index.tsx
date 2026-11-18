@@ -20,6 +20,7 @@ import {
   COMPETITOR_KINDS,
   PRICE_PERIODS,
   TRENDS,
+  boundaryPlace,
   sizing,
   topDown,
   type MarketState,
@@ -46,15 +47,18 @@ export function MarketScreen({ state: s, update, ctx }: PillarScreenProps<Market
         hint="A market size only means something for a place, a group and a period."
       >
         <div className="grid gap-3 sm:grid-cols-2">
-          <Field label="Where">
-            <TextField
-              label="Geography"
-              value={s.geography}
-              maxLength={80}
-              onChange={(geography) => set({ geography })}
-            />
+          <Field label="Where" hint="Set in “Where will you launch?” above.">
+            <p
+              className="rounded-lg border border-border bg-muted/40 px-3 py-2 text-sm"
+              data-testid="market-place"
+            >
+              {boundaryPlace(s, ctx.startup.geography) || "Choose a country above"}
+            </p>
           </Field>
-          <Field label="Who">
+          <Field
+            label="Who"
+            hint="Filled in from your first customer segment; edit it here if the market is wider."
+          >
             <TextField
               label="Segment"
               value={s.segment}
@@ -87,7 +91,10 @@ export function MarketScreen({ state: s, update, ctx }: PillarScreenProps<Market
               placeholder="Source link or note (optional)"
             />
           </Field>
-          <Field label="What one customer spends a year">
+          <Field
+            label="What one customer spends a year"
+            hint="Filled in from willingness to pay in Customer Discovery (monthly × 12) until you change it."
+          >
             <NumberField
               label="Yearly value per customer"
               prefix={sym}

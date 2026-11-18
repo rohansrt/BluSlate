@@ -6,19 +6,19 @@ import { landingPathFor } from "@/lib/landing";
 /**
  * Where sign-in lands by default (docs/decisions/0009): straight into the
  * founder's only startup, My startups when there are several, and the Home
- * onboarding card when there are none yet. A first sign-in asks for name and
- * age on /welcome first.
+ * onboarding card when there are none yet. A first sign-in asks for a first
+ * name on /welcome when we don't have one yet.
  */
 export async function GET(request: Request) {
   const to = (path: string) => NextResponse.redirect(new URL(path, request.url));
   const session = await auth();
   const userId = session?.user?.id;
   if (!userId) return to("/signin");
-  // First sign-in: ask name and age once (docs/decisions/0011).
+  // First sign-in: ask the name once (docs/decisions/0011, 0012).
   const profile = await prisma.user.findUnique({
     where: { id: userId },
-    select: { name: true, age: true },
+    select: { name: true },
   });
-  if (!profile?.name || profile.age == null) return to("/welcome");
+  if (!profile?.name) return to("/welcome");
   return to(await landingPathFor(userId));
 }

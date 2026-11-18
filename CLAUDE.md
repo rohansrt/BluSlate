@@ -73,6 +73,8 @@ Implement and test every guardrail in §9 (G1–G12). Most important: real vs sy
 - Every empty state offers the three input modes.
 - The bottom TimeStrip is visible whenever a scenario exists.
 - Each pillar has its own screen (`pillars/<NN-id>/ui`) built from `packages/ui` workbench pieces, a live Goals column, and a Report out block; its logic lives in `pillars/<NN-id>/src/workspace.ts` (pure, tested).
+- Every step renders inside the shared step frame (decision 0012): the step list (seven pillars + Pitch docs) on the left, the Passport at the top right, Skip / Back / Next. Every `Goal` sets `done`; progress is grey (none), amber (some), green (all).
+- A fact more than one pillar asks for is declared once in `SharedFacts` (a pillar's `shared.read` / `shared.write`) and copied by the app, never by importing another pillar.
 - AI slots that aren't switched on are `AiPlaceholder` cards: visible, disabled, never fake output.
 
 ## Build order (§10)

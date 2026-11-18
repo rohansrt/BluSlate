@@ -134,6 +134,16 @@ export const setupWorkspace: PillarWorkspaceDef<SetupState> = {
     "Spot operating risks",
   ],
 
+  shared: {
+    read: (s) => {
+      const u = unitEconomics(s);
+      return {
+        ...(u.variablePerUnit !== null ? { variableCost: u.variablePerUnit } : {}),
+        ...(u.monthlyFixed !== null ? { fixedMonthly: u.monthlyFixed } : {}),
+      };
+    },
+  },
+
   initial(ctx) {
     const s = setupStateSchema.parse({});
     const features = (ctx.upstream.Feature ?? []).filter((f) => f.inScope);
@@ -162,6 +172,7 @@ export const setupWorkspace: PillarWorkspaceDef<SetupState> = {
           ? `incl. ${formatMoney(u.payroll, cur)} team pay`
           : "Rent, tools, salaries…",
         evidence: "ESTIMATE",
+        done: u.monthlyFixed !== null,
       },
       {
         id: "unitCost",
@@ -169,6 +180,7 @@ export const setupWorkspace: PillarWorkspaceDef<SetupState> = {
         value: u.variablePerUnit === null ? null : formatMoney(u.variablePerUnit, cur),
         detail: "Sum of per-unit costs",
         evidence: "ESTIMATE",
+        done: u.variablePerUnit !== null,
       },
       {
         id: "capacity",
@@ -178,6 +190,7 @@ export const setupWorkspace: PillarWorkspaceDef<SetupState> = {
           ? `≈ ${cap.perMonth} a month · bottleneck: ${cap.bottleneck}`
           : "Slowest step sets the pace",
         evidence: "ASSUMED",
+        done: Boolean(cap),
       },
       {
         id: "team",
@@ -185,7 +198,8 @@ export const setupWorkspace: PillarWorkspaceDef<SetupState> = {
         value: s.team.length
           ? `${s.team.length} ${s.team.length === 1 ? "person" : "people"}`
           : null,
-        detail: u.payroll ? `${formatMoney(u.payroll, cur)} a month` : undefined,
+        detail: u.payroll ? `${formatMoney(u.payroll, cur)} a month` : "Who does the work",
+        done: s.team.length > 0,
       },
       {
         id: "lead",
@@ -193,18 +207,21 @@ export const setupWorkspace: PillarWorkspaceDef<SetupState> = {
         value: lead === null ? null : `${lead} days`,
         detail: "Longest provider lead time + set-up",
         evidence: "ESTIMATE",
+        done: lead !== null,
       },
       {
         id: "providers",
         title: "Providers lined up",
         value: String(s.enablers.filter((e) => e.name.trim()).length),
-        done: s.enablers.length >= 2,
+        detail: "Line up at least 2",
+        done: s.enablers.filter((e) => e.name.trim()).length >= 2,
       },
       {
         id: "risk",
         title: "Top risk",
         value: risk ? risk.r.risk.slice(0, 40) : null,
         detail: risk ? `likelihood × impact = ${risk.score}` : "Likelihood × impact",
+        done: Boolean(risk),
       },
     ];
     return goals;

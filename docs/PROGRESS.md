@@ -466,3 +466,49 @@ The PM asked for guest login again, below the code sign-in, asking only for a na
 
 **Waiting on the PM:** `ADMIN_EMAILS`, `ADMIN_PASSWORD_HASH` and `CONSULT_NOTIFY_EMAIL` in Vercel, and a legal view on under-18 consent and EU analytics consent.
 
+
+## 19 November 2026 — Straight into the steps, the Passport, clear goals, Pitch docs, shared facts (decision 0012)
+
+**Built**
+
+- **No city page.** Onboarding lands in a step. `/startups/[id]` redirects to the chosen tool, or to the first incomplete step, or to Pitch docs when everything is complete. The city map is removed.
+- **Step frame** (`components/journey/journey-frame.tsx`):
+  - all seven steps plus **8 Pitch docs** on the left, with goals met out of total;
+  - the **Passport** at the top right: seven clickable stamps, green when a step's goals are all complete;
+  - **Skip this step** in the header, and Back / Skip / Next at the bottom;
+  - the guest notice in every step.
+- **Clear goals.** `Goal.done` is required. Every goal in all seven pillars now has a completion rule. `goalProgress()` gives empty / partial / complete, shown as a grey circle, an amber half circle or a green tick. The Goals panel shows "x of y complete" and ticks each completed goal green.
+- **Pitch docs** (`/startups/[id]/pack`):
+  - five documents: one-page summary, pitch deck, business plan and Business Model Canvas (PDF, `@react-pdf/renderer`), and the financial model (XLSX with formulas, `exceljs`);
+  - per-document Generate and Download, plus Generate all;
+  - snapshots kept in `PitchDoc` until the founder generates again;
+  - sections only for steps with work in them;
+  - a gap dialog: AI predictions (`core.pitch-fill`, prose only, SYNTHETIC, boxed) or own work only. The AI option is disabled until a model is connected.
+- **Onboarding:**
+  - no age, here or anywhere else (guest form, `/welcome`, Profile);
+  - no city or country;
+  - "Continue as guest" on the last step;
+  - "Start building".
+- **Launch market:** the card "Where will you launch?", shared by Customer Discovery and Market Research, stored once on the startup (`marketCountry`, `marketRegion`). Geography and currency follow it. Market Research's own "Where" field is gone.
+- **MECE:**
+  - `SharedFacts` with per-pillar `shared.read` / `shared.write`; the save route copies changed facts into linked fields that are still empty or unchanged, and the save line names the steps it filled;
+  - Customer Discovery's duplicate outreach-channel picker is gone.
+- **Dev:** `lib/db.ts` makes a new Prisma client after `prisma generate`, so a migration no longer needs a `pnpm dev` restart.
+
+**Tests**
+
+- Unit: 212 pass. New:
+  - goal progress and `follow` / `followList`;
+  - every goal has a boolean `done`;
+  - shared facts between steps (segment, problem, willingness to pay → yearly value, alternatives → competitors, costs, price; edited fields are kept);
+  - Pitch docs content (left-out steps, AI predictions only when asked, canvas, financials) and rendering every document to PDF / XLSX.
+- End-to-end, rewritten for the new flow:
+  - onboarding lands in step 1 with no age or country, and the guest option on the last step;
+  - step-list navigation, Skip / Next and Passport stamps;
+  - goals turning a step amber and green;
+  - the shared launch market (GBP);
+  - autofill into Market Research before publishing;
+  - Pitch docs generate → gap dialog → PDF and XLSX download.
+  - All pass on desktop and mobile, except Consult, which hit its own rate limit after repeated local runs against one dev server.
+
+**Open:** the PM may want the AI predictions switched on (add a model in `/admin/models` and set `ANTHROPIC_API_KEY` in Vercel). PDFs use Helvetica, so ₹ prints as "Rs" and non-Latin text is dropped; a Unicode font is a follow-up. Without an age, under-18s who sign up now can't be excluded from analytics; the legal view on consent is still open.

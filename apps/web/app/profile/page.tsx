@@ -20,8 +20,6 @@ export default async function ProfilePage({
   const params = await searchParams;
   const startups = await listStartupsForUser(user.id);
   const admin = !user.isGuest && isAdminEmail(user.email);
-  const age =
-    (await prisma.user.findUnique({ where: { id: user.id }, select: { age: true } }))?.age ?? null;
   const guestEmail = user.isGuest
     ? (await prisma.user.findUnique({ where: { id: user.id }, select: { guestEmail: true } }))
         ?.guestEmail
@@ -37,7 +35,7 @@ export default async function ProfilePage({
       )}
 
       <Card className="mt-6 p-6">
-        <ProfileForm name={user.name ?? ""} age={age} />
+        <ProfileForm name={user.name ?? ""} />
 
         <div className="mt-6 border-t border-border pt-6">
           <p className="text-sm font-semibold">Account</p>

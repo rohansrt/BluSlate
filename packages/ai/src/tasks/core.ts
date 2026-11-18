@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { ALL_PILLAR_ENTITY_TYPES, PILLAR_IDS } from "@bluslate/contracts";
 import { defineTask } from "../task";
+import { pitchFillTask } from "./pitch";
 
 /**
  * "Guide me" for any question (spec §5.3, Appendix A.0 `<pillar>.explain`):
@@ -44,4 +45,4 @@ export const explainTask = defineTask({
   effort: "low",
 });
 
-export const CORE_TASKS = [explainTask] as const;
+export const CORE_TASKS = [explainTask, pitchFillTask] as const;

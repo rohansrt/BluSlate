@@ -243,6 +243,11 @@ model Startup {
   // entities: Discover turns the idea into a Problem in its own step.
   entryPath    EntryPath
   onboarding   Json
+  // The market the founder wants to launch in (docs/decisions/0012), chosen in
+  // Customer Discovery or Market Research. `geography` and `currency` follow it.
+  // Null until chosen; then geography is "" and currency INR.
+  marketCountry String?
+  marketRegion  String?
   createdAt    DateTime  @default(now())
 
   owner     User       @relation(fields: [ownerId], references: [id])
@@ -250,6 +255,7 @@ model Startup {
   entities  Entity[]
   scenarios Scenario[]
   workspaces PillarWorkspace[]
+  pitchDocs  PitchDoc[]
 
   @@index([ownerId])
 }
@@ -458,6 +464,24 @@ model Report {
   type       String // pitch | workbook | analysis | bmc | funding
   fileKey    String
   createdAt  DateTime @default(now())
+}
+
+// A generated pitch document (docs/decisions/0012): a frozen snapshot of the
+// startup's work, kept until the founder generates that document again.
+// Downloads render this snapshot, so they never change on their own.
+model PitchDoc {
+  id        String   @id @default(cuid())
+  startupId String
+  // summary | deck | plan | canvas | financials
+  kind      String
+  content   Json
+  // Gaps were filled with AI predictions at the founder's request.
+  aiFilled  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  startup   Startup  @relation(fields: [startupId], references: [id], onDelete: Cascade)
+
+  @@unique([startupId, kind])
 }
 
 model AiCall {

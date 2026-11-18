@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { onboardAsRiya } from "./helpers";
+import { onboardAsRiya, startupIdOf } from "./helpers";
 
 test.describe("Shared core (S3 exit gate)", () => {
   test("the Twin can't be written without a session, or across startups", async ({
@@ -8,7 +8,7 @@ test.describe("Shared core (S3 exit gate)", () => {
     browser,
   }) => {
     await onboardAsRiya(page);
-    const startupId = new URL(page.url()).pathname.split("/").pop()!;
+    const startupId = startupIdOf(page);
 
     // No session at all: refused.
     const anon = await request.put(`/api/startups/${startupId}/pillars/discover/draft`, {

@@ -12,7 +12,7 @@ function safeNext(value: string | string[] | undefined): string {
   return v.startsWith("/") && !v.startsWith("//") ? v : "/signin/continue";
 }
 
-/** After a first sign-in: name and age, once (docs/decisions/0011). */
+/** After a first sign-in: the first name, once (docs/decisions/0011, 0012). */
 export default async function WelcomePage({
   searchParams,
 }: {
@@ -22,24 +22,19 @@ export default async function WelcomePage({
   const next = safeNext((await searchParams).next);
   const profile = await prisma.user.findUnique({
     where: { id: user.id },
-    select: { name: true, age: true },
+    select: { name: true },
   });
-  if (profile?.name && profile.age != null) redirect(next);
+  if (profile?.name) redirect(next);
 
   return (
     <div className="mx-auto max-w-md px-4 py-14 sm:py-20">
       <Card className="p-6 sm:p-8">
         <h1 className="text-2xl font-bold tracking-tight">Welcome to BluSlate</h1>
         <p className="mt-2 text-muted-foreground">
-          Tell us your name and age. Founders of every age are welcome.
+          What should we call you? Founders of every age are welcome.
         </p>
         <div className="mt-6">
-          <ProfileForm
-            name={profile?.name ?? ""}
-            age={profile?.age ?? null}
-            next={next}
-            submitLabel="Continue"
-          />
+          <ProfileForm name={profile?.name ?? ""} next={next} submitLabel="Continue" />
         </div>
       </Card>
     </div>

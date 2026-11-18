@@ -9,8 +9,8 @@ import { clearDraft, loadDraft, saveDraft } from "@/lib/onboarding-draft";
  * Start or "Try this pillar"); both read and write this store, so answers
  * typed in either carry over. It is kept in local storage as before.
  *
- * Steps: 1 name and age · 2 where you're starting · 3 the details · 4 save
- * (email code). Signed-in founders skip steps 1 and 4.
+ * Steps: 1 name · 2 where you're starting · 3 the details · 4 save (email
+ * code, or as a guest). Signed-in founders skip steps 1 and 4.
  */
 
 export type Step = 1 | 2 | 3 | 4;
@@ -51,7 +51,7 @@ export function initOnboarding(signedIn: boolean, knownName?: string | null) {
   }
   stateSignedIn = signedIn;
   const stored = loadDraft() ?? {};
-  const draft: OnboardingDraft = { country: "IN", newIdeaMode: "idea", ...stored };
+  const draft: OnboardingDraft = { newIdeaMode: "idea", ...stored };
   if (!draft.firstName && knownName) draft.firstName = knownName;
   const storedStep = (draft.step && draft.step >= 1 && draft.step <= 4 ? draft.step : 1) as Step;
   state = { draft, step: clampStep(storedStep, signedIn) };
@@ -89,7 +89,7 @@ export function presetOnboarding({
   initOnboarding(signedIn, knownName);
   setOnboarding(({ draft, step }) => {
     const nextDraft = tool ? { ...draft, path: "one-tool" as const, tool } : draft;
-    const knowsYou = signedIn || Boolean(draft.firstName && draft.age);
+    const knowsYou = signedIn || Boolean(draft.firstName?.trim());
     let nextStep: Step = knowsYou ? 2 : 1;
     if (tool && knowsYou) nextStep = 3;
     if (!tool && step > nextStep) nextStep = clampStep(step, signedIn);

@@ -40,3 +40,4 @@ export {
   ReportBody,
   FromUpstream,
 } from "./components/workbench";
+export { PROGRESS_INFO, ProgressIcon, PassportStamp } from "./components/progress";

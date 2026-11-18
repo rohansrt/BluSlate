@@ -1,6 +1,7 @@
 import { z } from "zod";
 import {
   formatMoney,
+  follow,
   formatPct,
   known,
   type Goal,
@@ -154,6 +155,37 @@ export const gtmWorkspace: PillarWorkspaceDef<GtmState> = {
     "Draft a campaign",
   ],
 
+  shared: {
+    read: (s) => {
+      const f = funnel(s);
+      return {
+        ...(s.category.trim() ? { category: s.category.trim() } : {}),
+        ...(s.benefit.trim() ? { benefit: s.benefit.trim() } : {}),
+        ...(s.alternative.trim() ? { alternative: s.alternative.trim() } : {}),
+        ...(known(s.price) ? { price: s.price } : {}),
+        ...(known(s.variableCost) ? { variableCost: s.variableCost } : {}),
+        ...(known(s.fixedMonthly) ? { fixedMonthly: s.fixedMonthly } : {}),
+        ...(f.budget > 0 ? { marketingBudget: f.budget } : {}),
+        ...(f.blendedCac !== null ? { cac: Math.round(f.blendedCac) } : {}),
+      };
+    },
+    write: (s, next, prev) => ({
+      ...s,
+      beachhead: follow(s.beachhead, next.segment?.slice(0, 140), prev.segment?.slice(0, 140)),
+      need: follow(s.need, next.topNeed?.slice(0, 160), prev.topNeed?.slice(0, 160)),
+      category: follow(s.category, next.category?.slice(0, 80), prev.category?.slice(0, 80)),
+      benefit: follow(s.benefit, next.benefit?.slice(0, 160), prev.benefit?.slice(0, 160)),
+      alternative: follow(
+        s.alternative,
+        next.alternative?.slice(0, 80),
+        prev.alternative?.slice(0, 80),
+      ),
+      price: follow(s.price, next.price, prev.price),
+      variableCost: follow(s.variableCost, next.variableCost, prev.variableCost),
+      fixedMonthly: follow(s.fixedMonthly, next.fixedMonthly, prev.fixedMonthly),
+    }),
+  },
+
   initial(ctx) {
     const s = gtmStateSchema.parse({});
     const u = ctx.upstream;
@@ -186,6 +218,7 @@ export const gtmWorkspace: PillarWorkspaceDef<GtmState> = {
         value: known(s.price) ? `${formatMoney(s.price, cur)} ${s.period}` : null,
         detail: s.method ? `${s.method} pricing` : "Pick a method",
         evidence: "ASSUMED",
+        done: known(s.price),
       },
       {
         id: "contribution",
@@ -193,13 +226,20 @@ export const gtmWorkspace: PillarWorkspaceDef<GtmState> = {
         value: w ? formatMoney(w.contribution, cur) : null,
         detail: w && !w.costKnown ? "Add variable cost" : "Net price − variable cost",
         evidence: "ESTIMATE",
+        done: Boolean(w && w.costKnown),
       },
       {
         id: "margin",
         title: "Margin",
         value: w?.marginPct != null ? formatPct(w.marginPct) : null,
+        detail:
+          w?.marginPct == null
+            ? "Aim for 30% or more"
+            : w.marginPct >= 30
+              ? "At or above the 30% aim"
+              : "Below the 30% aim: check price and costs",
         evidence: "ESTIMATE",
-        done: (w?.marginPct ?? 0) >= 30,
+        done: w?.marginPct != null,
       },
       {
         id: "cac",
@@ -207,13 +247,15 @@ export const gtmWorkspace: PillarWorkspaceDef<GtmState> = {
         value: f.blendedCac === null ? null : formatMoney(f.blendedCac, cur),
         detail: "Budget ÷ customers won",
         evidence: "ASSUMED",
+        done: f.blendedCac !== null,
       },
       {
         id: "customers",
         title: "New customers a month",
         value: f.customers === null ? null : String(Math.round(f.customers)),
-        detail: f.budget ? `from ${formatMoney(f.budget, cur)} a month` : undefined,
+        detail: f.budget ? `from ${formatMoney(f.budget, cur)} a month` : "Set a channel budget",
         evidence: "ESTIMATE",
+        done: f.customers !== null,
       },
       {
         id: "breakeven",
@@ -221,14 +263,18 @@ export const gtmWorkspace: PillarWorkspaceDef<GtmState> = {
         value: b.units === null ? null : `${b.units} units/month`,
         detail: "(fixed + marketing) ÷ contribution",
         evidence: "ESTIMATE",
+        done: b.units !== null,
       },
       {
         id: "payback",
         title: "CAC payback",
         value: b.payback === null ? null : `${b.payback.toFixed(1)} units`,
-        detail: "Purchases needed to earn back CAC",
+        detail:
+          b.payback === null || b.payback <= 3
+            ? "Purchases needed to earn back CAC (aim: 3 or fewer)"
+            : "More than 3 purchases to earn back CAC: a risk",
         evidence: "ESTIMATE",
-        done: b.payback !== null && b.payback <= 3,
+        done: b.payback !== null,
       },
       {
         id: "launch",

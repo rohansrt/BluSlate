@@ -1,6 +1,6 @@
 # BluSlate — Master Specification
 
-**Version 2.8 · 18 November 2026 · One file for VS Code and Claude Code**
+**Version 2.9 · 19 November 2026 · One file for VS Code and Claude Code**
 
 *BluSlate was developed under the working name "Startup City".*
 
@@ -19,6 +19,17 @@ This single file holds everything needed to build BluSlate: the rules Claude Cod
 3. Claude moves both files into `docs/`, creates `CLAUDE.md` from Part A, and begins step S1.
 
 **Which part wins.** The PM's instructions win over this document: when they differ, the instruction is implemented, recorded in `docs/decisions/`, and this file is updated to match. Within the document, Parts A and C are authoritative; Part B explains them in plain words. If anything differs, Part C wins. Inside Part C the order is: Guardrails (§9) → Contracts (§3–§5) → everything else. All § numbers refer to Part C.
+
+**What changed in v2.9** (PM decision, recorded in `docs/decisions/0012`)
+
+| Change | Where |
+| --- | --- |
+| No city page: after onboarding the founder lands straight in a step; `/startups/[id]` opens the first step that isn't complete | §6.0, §6.2, B3 |
+| Every step sits in one frame: all seven steps plus **Pitch docs** listed on the left, the **Passport** (one clickable stamp per step) at the top right, and **Skip** / Back / Next on every step | §6.1, §6.3, B3.4 |
+| Every goal says when it is complete. Grey empty circle = no goals met, amber = some, green tick = all; the same rule colours the Goals column, the step list and the stamps | §6.1, §6.3 |
+| **Pitch docs** replaces the Founder Pack report page. Five documents (one-page summary, pitch deck, business plan, Business Model Canvas as PDFs; financial model as XLSX), each with Generate and Download, plus Generate all. Each download is the last generated snapshot. Sections exist only for steps with work in them. If steps are incomplete, the founder chooses AI predictions (marked, prose only) or only their own work | §6.0, §6.3, B6, §8.3 |
+| Age is no longer asked, nor the founder's own city or country. The launch market (country, optional region) is asked once, in Customer Discovery and Market Research, and drives geography and currency. The onboarding's last step offers **Continue as guest** | §6.0, B3.2, §8.3 |
+| MECE: facts used by several steps are answered once and copied into linked fields while those are empty or unchanged (`SharedFacts`); Customer Discovery's duplicate outreach-channel picker is gone | §3, §6.3 |
 
 **What changed in v2.8** (PM decision, recorded in `docs/decisions/0011`)
 
@@ -154,6 +165,8 @@ Implement and test every guardrail in §9 (G1–G12). Most important: real vs sy
 - Every empty state offers the three input modes.
 - The bottom TimeStrip is visible whenever a scenario exists.
 - Each pillar has its own screen (`pillars/<NN-id>/ui`) built from `packages/ui` workbench pieces, a live Goals column, and a Report out block; its logic lives in `pillars/<NN-id>/src/workspace.ts` (pure, tested).
+- Every step renders inside the shared step frame (decision 0012): the step list (seven pillars + Pitch docs) on the left, the Passport at the top right, Skip / Back / Next. Every `Goal` sets `done`; progress is grey (none), amber (some), green (all).
+- A fact more than one pillar asks for is declared once in `SharedFacts` (a pillar's `shared.read` / `shared.write`) and copied by the app, never by importing another pillar.
 - AI slots that aren't switched on are `AiPlaceholder` cards: visible, disabled, never fake output.
 
 ## Build order (§10)
@@ -294,10 +307,10 @@ Not a business-plan writer, not a prediction of success, and not a replacement f
 
 #### B3.2 Home page onboarding — four short steps on one card
 
-1. **"What should we call you?"** — your first name and age. Founders of every age are welcome.
+1. **"What should we call you?"** — your first name. Founders of every age are welcome, and we don't ask your age.
 2. **"Where are you starting?"** — *I have a new idea* · *I already run a business* · *I just want one tool*.
-3. **The one thing that path needs** — your idea in a sentence (or "help me find a problem") and your city and country; or your business name, stage and industry; or which tool to open.
-4. **"Save your startup"** — your email, then the 6-digit code we send to it. **"Open my city"** takes you straight in.
+3. **The one thing that path needs** — your idea in a sentence (or "help me find a problem"); or your business name, stage and industry; or which tool to open. Where you'll launch is asked later, in Customer Discovery and Market Research.
+4. **"Save your startup"** — your email, then the 6-digit code we send to it, or **Continue as guest** with just your email. **"Start building"** takes you straight into the first step.
 
 Signed-in founders see just steps 2 and 3. The same card also opens beside the seven-step circle when you press **Start** in its centre or **Try this pillar** on a step's card (that pillar is then preselected as your one tool); both cards share your answers. After step 7, the circle's **Pitch** stop explains the Founder Pack and the investor matches that are coming.
 
@@ -356,6 +369,8 @@ Each pillar answers **one question**, works **on its own**, and **owns its own i
 ---
 
 ### B6. What the founder gets at the end — the Founder Pack
+
+*Today (v2.9):* the **Pitch docs** step makes five documents from whatever the founder has done so far: a one-page summary, a pitch deck, a business plan, a Business Model Canvas and a financial model. Each can be generated and downloaded on its own. If some steps aren't complete, the founder chooses to fill the gaps with clearly marked AI predictions or to use only their own work. The table below is the full Founder Pack this grows into.
 
 | Document | What's in it |
 | --- | --- |
@@ -1152,27 +1167,27 @@ Each registry is versioned on its own, so a method, tool list, model or formula 
 | --- | --- | --- |
 | Home | `/` | The hook question, hero image, seven-step loop and onboarding right on the page; a demo video (`#demo`) when `NEXT_PUBLIC_DEMO_VIDEO_URL` is set; a "continue" card for signed-in founders. The logo always links here |
 | About | `/about` | **Product Overview** (the Home circle; Start and Try link to Home's `?start=1` / `?try=<pillar>`), what BluSlate is, who it is for, how it works, how AI is used, real vs simulated, privacy |
-| Welcome | `/welcome` | After a first sign-in by code: name and age, once |
+| Welcome | `/welcome` | After a first sign-in by code: the first name, once (no age, v2.9) |
 | Idea Book | `/ideas` | Idea memos saved to the account, ideas to pick from, "Start with this" (opens `/startups/new?fresh=1` with the idea filled in) |
 | Collaborate | `/collaborate` | Friend requests by email. Only verified accounts send or receive them; the reply never reveals whether an email has an account |
 | Consult | `/consult` | Request form (name, email, phone, message): stored for admin and emailed to `CONSULT_NOTIFY_EMAIL`; "Reach out on WhatsApp" link |
 | Feedback | `/feedback` | Five multiple-choice questions (works well, needs work, usefulness, wanted next, 0–10 recommend) and an optional note |
 | Sign in | `/signin` (`?mode=signup` only changes the heading) | Email, then a 6-digit code. Afterwards `/signin/continue` opens the founder's only startup, My startups when there are several, or Home's onboarding when there are none. Below it, **Continue as guest** (first name and email) |
-| Profile | `/profile` | Name and age, account email, log out; reached from the top-right menu |
+| Profile | `/profile` | Name, account email, log out; reached from the top-right menu |
 | My startups | `/startups` | The user's startups: open, rename, delete (owner, with confirmation), start another |
-| City | `/startups/[id]` | The seven hubs with status and next best action (§6.2) |
-| Pillar | `/startups/[id]/[pillar]` | The pillar workspace (§6.3) |
+| Startup | `/startups/[id]` | Opens the startup in a step (v2.9): the chosen tool for "Just one tool", otherwise the first step that isn't complete, or Pitch docs when all are |
+| Pillar | `/startups/[id]/[pillar]` | The pillar workspace in the step frame (§6.1, §6.3) |
 | Launch & Growth | `/startups/[id]/run-grow` | The control room |
-| Founder Pack | `/startups/[id]/pack` | The report: every pillar's Report out block with its status and goals, printable as PDF. Pitch, workbook, canvas and "Investors and incubators to reach out to" (10 in the founder's country, up to 5 global, from public sources) arrive with AI |
+| Pitch docs | `/startups/[id]/pack` | Step 8 (v2.9, §6.3): one-page summary, pitch deck, business plan, Business Model Canvas (PDF) and financial model (XLSX), each with Generate and Download, plus Generate all. "Investors and incubators to reach out to" (10 in the founder's country, up to 5 global, from public sources) arrives with AI |
 | Legal | `/privacy`, `/terms`, `/cookies` | Policies |
 | Admin | `/admin`, `/admin/analytics`, `/admin/consult`, `/admin/feedback`, `/admin/models`, `/admin/models/new`, `/admin/audit`, `/admin/login` | Aggregate statistics; **Analytics** (visitors, visits, page views, returning visitors, new accounts and guests, startups, activation; visitors per day; funnels for Home sign-up, code sign-in and guests with drop-off per step; sources, campaigns, landing pages; countries, devices, browsers, systems, ages; pillars opened and published, circle use, code health, account pages; 7/30/90 days); **Consult requests** (with status); **Feedback** (tallies, NPS, comments); the AI model registry (empty state, add-a-model workflow, pillar × tier assignments); audit log. Admins sign in with **email and password**: the email must be in `ADMIN_EMAILS`, and the password is checked against `ADMIN_PASSWORD_HASH` (scrypt; the password itself is never stored). A wrong email or password gives the same message, and repeated failures are throttled |
 
 **Home onboarding — four short steps on one card:**
 
-1. **"What should we call you?"** — first name and age (5–110; all ages may use BluSlate).
+1. **"What should we call you?"** — the first name only (v2.9: age isn't asked; all ages may use BluSlate).
 2. **"Where are you starting?"** — New idea · Existing startup · Just one tool (the entry paths in §2.1).
-3. **The one input that path needs** — an idea in one line (or "Help me discover") plus city and country; or startup name, stage and industry; or the tool to open (with country).
-4. **"Save your startup"** — email, then the 6-digit code. **"Open my city"** signs in, creates the startup (via `/startups/new`, which saves the browser draft) and lands the founder in their city with the right pillar highlighted. Signed-in founders see only steps 2 and 3 ("Step 1 of 2"); a first sign-in by code asks name and age on `/welcome` first.
+3. **The one input that path needs** — an idea in one line (or "Help me discover"); or startup name, stage and industry; or the tool to open. No city or country (v2.9): the launch market is asked in Customer Discovery and Market Research. Until it's chosen, `Startup.geography` is empty and the currency is INR.
+4. **"Save your startup"** — email, then the 6-digit code, or **Continue as guest** below it (email only; the name is known). **"Start building"** creates the startup (via `/startups/new`, which saves the browser draft) and opens it in a step: the chosen tool, or Problem Discovery. Signed-in founders see only steps 2 and 3 ("Step 1 of 2"); a first sign-in by code asks the first name on `/welcome` first.
 
 **Home's circle (decision 0011):** a **Start** button in the centre and **Try this pillar** on each card open the onboarding card beside the circle (`placement="circle"`). Both cards read one store (`lib/onboarding-store.ts`), so answers carry over. Try presets the one-tool path with that pillar; a founder with a startup goes straight to that pillar in their latest startup. An eighth stop, **Pitch**, sits after step 7: the Founder Pack, and investors and incubators coming soon.
 
@@ -1184,7 +1199,7 @@ The draft is kept in the browser while the founder types. `POST /api/startups` n
 
 **Product analytics (decision 0011):** first-party only. The browser sends events to `POST /api/events` (page views, onboarding steps and starting point, code requested/verified/failed, guest started, startup created, circle views/tries/start, demo plays, account-page actions); the server records pillar publishes. Stored per event: name, a random visitor ID (local storage `bluslate.vid`), a session ID (session storage), the account ID once signed in, the path without ids or query, the referring site, UTM tags, device/browser/OS read from the user agent, and country/region from Vercel's headers. Never stored: IP address, full user agent, or anything typed. Not recorded at all for people under 18, browsers sending Do Not Track, automated browsers and bots; anyone can turn it off on the Cookies page. Events are deleted after 13 months. Signed-in visitors see "Welcome back, *name*" and a "Continue" card on Home.
 
-**Guests (decision 0010):** below the code form on `/signin`, **Continue as guest** asks for a first name and an email. It creates a `User` with `isGuest = true`, `name`, and the typed email in `guestEmail` (never in `email`: it isn't verified and can't sign anyone in), plus an Auth.js database session cookie for this browser. Guests also give their age. They land on Home's onboarding (two steps; the name is known) or on the `callbackUrl`. In production one IP may start 10 guest workspaces per hour. Guests see a notice in My startups and the city, and their profile shows the email they gave. When a guest signs in with a code in the same browser (the guest email is pre-filled), a signed httpOnly cookie moves their startups into the verified account and the guest is removed. Startups only ever move *into* the account whose email was just verified.
+**Guests (decision 0010):** below the code form on `/signin`, **Continue as guest** asks for a first name and an email. It creates a `User` with `isGuest = true`, `name`, and the typed email in `guestEmail` (never in `email`: it isn't verified and can't sign anyone in), plus an Auth.js database session cookie for this browser. They land on Home's onboarding (two steps; the name is known) or on the `callbackUrl`. In production one IP may start 10 guest workspaces per hour. Guests see a notice in My startups and in every step, and their profile shows the email they gave. When a guest signs in with a code in the same browser (the guest email is pre-filled), a signed httpOnly cookie moves their startups into the verified account and the guest is removed. Startups only ever move *into* the account whose email was just verified.
 
 **About page sections:** what BluSlate is · who it is for · the seven pillars · how a journey works (time, simulated market, Founder Pack) · how AI is used and what it never does · real vs simulated labels · privacy (ideas are private by default) · part of the YOPPI ecosystem · contact.
 
@@ -1192,18 +1207,18 @@ The draft is kept in the browser while the founder types. `POST /api/startups` n
 
 ```
 +------------------------------------------------------------------------------------------+
-| Startup name - Sandbox - Saved                           Levers   Founder Pack   Share   |
+| < Startup name                       Skip this step >|   [Passport (1)(2)(3)(4)(5)(6)(7) 2/7] |
 +--------------------------+----------------------------------------+----------------------+
-| CITY HUBS                | 4 PRODUCT DESIGN [Work] [Evid] [Pub]   | AI RAIL              |
-| * 1 Problem Discovery    |                                        | Ask why              |
-| * 2 Customer Discovery   | ! May be outdated: segment changed     | Research & suggest   |
-| ~ 3 Market Research      | +- Your decision ------------------+   | Reality Check        |
-| ! 4 Product Design       | | MVP scope: features above line   |   | Next best action     |
-|   5 Operations Setup     | +----------------------------------+   | Toolbox              |
-|   6 Go-to-Market Plan    | +- Suggested by AI - - - - - - - - +   |                      |
-|   7 Launch & Growth      | : Add a feature for uncovered need :   |                      |
-|                          | +- - - - - - - - - - - - - - - - - +   |                      |
-| Founder Pack             | [I'll decide] [Guide me] [Research]    |                      |
+| YOUR STEPS               | 4 PRODUCT DESIGN                       | GOALS  (o) 3 of 7    |
+| (v) 1 Problem Disc.  6/6 |                                        | (v) Value prop       |
+| (v) 2 Customer Disc. 7/7 | ! May be outdated: segment changed     | ( ) MVP features     |
+| (o) 3 Market Res.    4/7 | +- Your decision ------------------+   | PUBLISH              |
+| (o) 4 Product Design 3/7 | | MVP scope: features above line   |   | AI HELPERS           |
+| ( ) 5 Operations     0/7 | +----------------------------------+   |                      |
+| ( ) 6 Go-to-Market   0/8 | +- Suggested by AI - - - - - - - - +   |                      |
+| ( ) 7 Launch & Grow. 0/6 | : Add a feature for uncovered need :   |                      |
+| ------------------------ | +- - - - - - - - - - - - - - - - - +   |                      |
+| (o) 8 Pitch docs     2/5 | [< Market Research]  [Skip: Operations >]                     |
 +--------------------------+----------------------------------------+----------------------+
 | || > >>  Day 143 - Month 5 - 12 Apr 2027 | Cash Burn Runway KPI | 2 alerts               |
 +------------------------------------------------------------------------------------------+
@@ -1211,24 +1226,27 @@ The draft is kept in the browser while the founder types. `POST /api/startups` n
 
 | Area | Purpose |
 | --- | --- |
-| Top bar | Startup name, mode (Sandbox / Actuals), save state, Levers, Founder Pack, Share, account |
-| Left rail — City hubs | Seven pillars with status (`*` approved, `~` draft, `!` needs review or may be outdated, blank = not started) |
+| Top bar | Startup name (back to My startups), the step's title and question, **Skip this step**, and the **Passport**: one stamp per step, clickable, each opening its step; a step is stamped (green) when all its goals are complete, amber while some are |
+| Left rail — Your steps | Always visible: the seven pillars, then **8 Pitch docs**, each with goals met / total and a progress mark: grey empty circle (none), amber half circle (some), green tick (all). For Pitch docs the count is documents generated. The current step updates live as goals are met |
 | Centre — Workspace | The pillar's canvas, with tabs **Work · Evidence · Publish** |
-| Right — Goals and AI | The pillar's live **Goals** (each shows "—" until it can be calculated, then its value and label), **Publish**, and the **AI helpers** (ask why, research options, Reality Check, Founder Toolbox; placeholders in v1) |
+| Right — Goals and AI | The pillar's live **Goals** ("x of y complete" with a bar; each goal ticked green when complete, grey circle when not; "—" until it can be calculated, then its value and label), **Publish**, and the **AI helpers** (ask why, research options, Reality Check, Founder Toolbox; placeholders in v1) |
+| Bottom of the centre | Back to the previous step, and **Skip** (or **Next**, once the step is complete) to the next one |
 | Bottom — Time strip | Simulated date, play controls, cash, burn, runway, a key metric, alerts — always visible once a scenario exists |
 
 #### 6.2 City view (inside the app)
 
-A 2D city map with seven hubs (not a 3D world), each showing status and its next best action, plus a Founder Pack tile. On wide screens the hubs sit on a road; on phones they form a vertical route. Each hub is the pillar's slate drawing (§6.5) and opens its pillar. The city metaphor is for navigation only; it must load fast and never block work.
+*Removed in v2.9 (decision 0012).* The step list and the Passport (§6.1) replace the city map; `/startups/[id]` opens the right step directly.
 
 #### 6.3 Standard pillar workspace
 
-The frame is shared, so founders learn it once: city hubs on the left, the pillar's screen in the centre, Goals, Publish and AI helpers on the right. **The screen itself is unique to each pillar** (v2.5, decision 0006), designed around what that pillar serves:
+The frame is shared, so founders learn it once: the step list on the left, the Passport at the top right, the pillar's screen in the centre, Goals, Publish and AI helpers on the right. **The screen itself is unique to each pillar** (v2.5, decision 0006), designed around what that pillar serves:
 
 - **Numbered steps** in the pillar's natural order. Inputs are mostly structured (ratings, chips, choices, numbers, small cards), not long text.
 - **Works alone.** Approved upstream entities pre-fill fields, marked "From <pillar>". Without them the pillar asks for what it needs.
-- **Live Goals** on the right: the pillar's key outputs (for example TAM / SAM / SOM, unit cost, runway). Each shows "—" until it can be calculated, then its value, formula hint and evidence label.
-- **Report out** at the end: a headline and labelled key lines, with Copy. The Founder Pack report collects all seven.
+- **Live Goals** on the right: the pillar's key outputs (for example TAM / SAM / SOM, unit cost, runway). Each shows "—" until it can be calculated, then its value, formula hint and evidence label. Every goal has an explicit complete rule (`Goal.done`, v2.9). Outcome measures such as margin or runway are complete once worked out, and their note says whether they meet the aim.
+- **Shared facts** (v2.9): a fact several steps ask about is answered once and copied into linked fields. Each pillar's workspace declares the facts it is the source of and the ones it takes in (`SharedFacts` in `packages/contracts`). A linked field follows its source while it is empty or still says what the source said; once the founder edits it, it is theirs. The target market ("Where will you launch?") is stored once on the startup and shown in Customer Discovery and Market Research. This copies working state only; Twin entities still change only by publishing.
+- **Report out** at the end: a headline and labelled key lines, with Copy. Pitch docs build on them.
+- **Back / Skip / Next** at the end, and **Skip this step** in the header: any step can be skipped and returned to.
 - **Autosave** to the pillar's workspace. **Publish** shows every entity it will create or update, with its label; approval publishes them through the Twin.
 - **AI slots** sit where the AI would act, as dashed "AI · coming soon" cards, until AI is switched on.
 
@@ -1243,6 +1261,20 @@ The frame is shared, so founders learn it once: city hubs on the left, the pilla
 | 7 Launch & Growth | Scenario · starting numbers · levers · control room | Runway, break-even month, customers, revenue, lowest cash, end cash (SYNTHETIC) |
 
 Later versions add the **Evidence** view (sources, assumptions, calculations, contradictions, gaps and refresh actions) and per-entity Approve, Edit or Reject.
+
+**Pitch docs (step 8, v2.9, decision 0012).** `/startups/[id]/pack` lists five documents, each built from the pillars it uses:
+
+| Document | Format | Uses |
+| --- | --- | --- |
+| One-page summary | PDF (A4) | All seven steps |
+| Pitch deck | PDF (16:9 slides: title, one per step, next steps) | All seven steps |
+| Business plan | PDF (A4, every Report out line and goal with its label) | All seven steps |
+| Business Model Canvas | PDF (A4 landscape, nine boxes from the steps' entities) | Customer Discovery, Product Design, Operations Setup, Go-to-Market Plan |
+| Financial model | XLSX (assumptions, costs, unit economics and projection; totals are formulas) | Market Research, Operations Setup, Go-to-Market Plan, Launch & Growth |
+
+- **Generate and download.** Each row has **Generate** (then **Generate again**) and **Download**, and **Generate all** sits at the top. Download is disabled until the document is generated. After that it always serves the last generated snapshot (`PitchDoc`), rendered on request, until the founder generates it again.
+- **Sections follow the work.** Anyone can generate at any time. A section exists only for a step with work in it; steps with nothing in them are listed as "not included yet", and open goals are listed as still open.
+- **Gaps.** When a document's steps aren't all complete, a dialog asks whether to **fill the gaps with AI predictions** (a complete document) or **use only what's completed**. Predictions come from `core.pitch-fill` through the gateway (prose only, no numbers, G3). They are labelled SYNTHETIC and boxed "AI prediction · not your data", never shown as the founder's work. The financial model never uses AI. Until a model is connected, the AI choice is visible but disabled, with the reason.
 
 #### 6.4 Signature visuals
 
@@ -1672,11 +1704,13 @@ model AiCall {
 
 | Table or field | Purpose |
 | --- | --- |
-| `User`, `Account`, `Session`, `VerificationToken` | Auth.js. `VerificationToken.token` holds the hash of a 6-digit sign-in code. `User.email` is optional (guests have none); `User.isGuest` marks guest workspaces, and `User.guestEmail` holds the unverified email a guest typed; `User.age` is the age given at sign-up |
+| `User`, `Account`, `Session`, `VerificationToken` | Auth.js. `VerificationToken.token` holds the hash of a 6-digit sign-in code. `User.email` is optional (guests have none); `User.isGuest` marks guest workspaces, and `User.guestEmail` holds the unverified email a guest typed; `User.age` is the age given at sign-up before v2.9 (no longer asked) |
 | `IdeaNote`, `FriendRequest`, `ConsultRequest`, `Feedback` | The account pages (decision 0011): idea memos; friend requests by email (pending/accepted/declined); consult requests (status new/contacted/closed, `emailedAt`); feedback answers |
 | `AnalyticsEvent` | First-party product analytics (decision 0011): no IP address, no full user agent, nothing typed; deleted after 13 months |
 | `RateLimit` | Fixed-window counters for sign-in codes (requests per email and IP, wrong codes per email), in Postgres so limits hold across serverless instances |
 | `Startup.entryPath`, `Startup.onboarding` | The onboarding answers, kept as the founder typed them (not Twin entities) |
+| `Startup.marketCountry`, `Startup.marketRegion` (v2.9) | The launch market chosen in Customer Discovery or Market Research; `geography` and `currency` follow it. Null until chosen |
+| `PitchDoc` (v2.9) | One generated pitch document per startup and kind (`summary`, `deck`, `plan`, `canvas`, `financials`): a frozen JSON snapshot, and whether AI predictions filled gaps. Downloads render it |
 | `Draft` | Unpublished work, editable; publishing turns it into the next `Entity` version and deletes it |
 | `StaleMark` | Append-only "may be outdated" marks for a specific entity version; a newer version clears it |
 | `PillarWorkspace` (v2.5) | Each pillar's autosaved working state (one row per startup and pillar) and the map from workspace items to published logical ids. Not Twin history |

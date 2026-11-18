@@ -1,5 +1,6 @@
 import { z } from "zod";
 import {
+  follow,
   formatMoney,
   known,
   type Goal,
@@ -122,6 +123,23 @@ export const runGrowWorkspace: PillarWorkspaceDef<RunGrowState> = {
     "Suggest a what-if",
   ],
 
+  shared: {
+    read: (s) => ({
+      ...(known(s.price) ? { price: s.price } : {}),
+      ...(known(s.variableCost) ? { variableCost: s.variableCost } : {}),
+      ...(known(s.fixedMonthly) ? { fixedMonthly: s.fixedMonthly } : {}),
+    }),
+    write: (s, next, prev) => ({
+      ...s,
+      price: follow(s.price, next.price, prev.price),
+      variableCost: follow(s.variableCost, next.variableCost, prev.variableCost),
+      fixedMonthly: follow(s.fixedMonthly, next.fixedMonthly, prev.fixedMonthly),
+      marketingBudget: follow(s.marketingBudget, next.marketingBudget, prev.marketingBudget),
+      cac: follow(s.cac, next.cac, prev.cac),
+      marketCap: follow(s.marketCap, next.marketCustomers, prev.marketCustomers),
+    }),
+  },
+
   initial(ctx) {
     const s = runGrowStateSchema.parse({});
     const u = ctx.upstream;
@@ -167,9 +185,13 @@ export const runGrowWorkspace: PillarWorkspaceDef<RunGrowState> = {
             ? `Cash runs out in month ${o.runOut}`
             : `Lasts all ${s.horizon} months`
           : null,
-        detail: o ? undefined : `Needs ${missing.join(", ")}`,
+        detail: o
+          ? o.runOut
+            ? "Plan funding before then"
+            : undefined
+          : `Needs ${missing.join(", ")}`,
         evidence: "SYNTHETIC",
-        done: o ? o.runOut === null : false,
+        done: Boolean(o),
       },
       {
         id: "breakeven",
@@ -177,19 +199,21 @@ export const runGrowWorkspace: PillarWorkspaceDef<RunGrowState> = {
         value: o ? (o.breakEven ? `Month ${o.breakEven}` : "Not within horizon") : null,
         detail: "First month revenue ≥ costs",
         evidence: "SYNTHETIC",
-        done: Boolean(o?.breakEven),
+        done: Boolean(o),
       },
       {
         id: "customers",
         title: `Customers at month ${s.horizon}`,
         value: o ? Math.round(o.last.customers).toLocaleString("en-IN") : null,
         evidence: "SYNTHETIC",
+        done: Boolean(o),
       },
       {
         id: "revenue",
         title: "Monthly revenue at the end",
         value: o ? formatMoney(o.last.revenue, cur) : null,
         evidence: "SYNTHETIC",
+        done: Boolean(o),
       },
       {
         id: "lowest",
@@ -197,12 +221,14 @@ export const runGrowWorkspace: PillarWorkspaceDef<RunGrowState> = {
         value: o ? formatMoney(o.lowest.cash, cur) : null,
         detail: o ? `Month ${o.lowest.month}` : "How much funding you'd need",
         evidence: "SYNTHETIC",
+        done: Boolean(o),
       },
       {
         id: "cash",
         title: `Cash at month ${s.horizon}`,
         value: o ? formatMoney(o.last.cash, cur) : null,
         evidence: "SYNTHETIC",
+        done: Boolean(o),
       },
     ];
     return goals;

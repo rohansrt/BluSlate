@@ -1,6 +1,8 @@
 import { z } from "zod";
 import {
   ARCHETYPES,
+  follow,
+  followList,
   known,
   type Goal,
   type PillarWorkspaceDef,
@@ -146,6 +148,37 @@ export const buildWorkspace: PillarWorkspaceDef<BuildState> = {
     "Estimate effort",
   ],
 
+  shared: {
+    read: (s) => ({
+      ...(s.forWho.trim() ? { segment: s.forWho.trim() } : {}),
+      ...(s.category.trim() ? { category: s.category.trim() } : {}),
+      ...(s.benefit.trim() ? { benefit: s.benefit.trim() } : {}),
+      ...(s.unlike.trim() ? { alternative: s.unlike.trim() } : {}),
+    }),
+    write: (s, next, prev) => {
+      const statements = followList(
+        s.needs.map((n) => n.statement),
+        next.needs,
+        prev.needs,
+      ).slice(0, 12);
+      const byText = new Map(s.needs.map((n) => [n.statement.trim().toLowerCase(), n] as const));
+      return {
+        ...s,
+        forWho: follow(s.forWho, next.segment?.slice(0, 140), prev.segment?.slice(0, 140)),
+        category: follow(s.category, next.category?.slice(0, 80), prev.category?.slice(0, 80)),
+        benefit: follow(s.benefit, next.benefit?.slice(0, 160), prev.benefit?.slice(0, 160)),
+        unlike: follow(s.unlike, next.alternative?.slice(0, 80), prev.alternative?.slice(0, 80)),
+        needs: statements.map(
+          (statement, i) =>
+            byText.get(statement.trim().toLowerCase()) ?? {
+              id: `need-${i + 1}-${statement.length}`,
+              statement: statement.slice(0, 160),
+            },
+        ),
+      };
+    },
+  },
+
   initial(ctx) {
     const s = buildStateSchema.parse({});
     s.needs = (ctx.upstream.Need ?? [])
@@ -180,12 +213,15 @@ export const buildWorkspace: PillarWorkspaceDef<BuildState> = {
         title: "MVP features",
         value: s.features.length ? `${m.inScope.length} of ${s.features.length}` : null,
         detail: "Above the MVP line",
+        done: m.inScope.length > 0,
       },
       {
         id: "effort",
         title: "MVP effort",
         value: m.inScope.length ? `${m.effort} person-weeks` : null,
+        detail: "Effort of the features in the MVP",
         evidence: "ASSUMED",
+        done: m.inScope.length > 0 && m.effort > 0,
       },
       {
         id: "weeks",
@@ -193,6 +229,7 @@ export const buildWorkspace: PillarWorkspaceDef<BuildState> = {
         value: m.weeks === null ? null : `${m.weeks} weeks`,
         detail: "Effort ÷ team size",
         evidence: "ESTIMATE",
+        done: m.weeks !== null,
       },
       {
         id: "coverage",
@@ -207,6 +244,7 @@ export const buildWorkspace: PillarWorkspaceDef<BuildState> = {
         value: top && top.score !== null ? `${top.f.name || "Untitled"} · ${top.score}` : null,
         detail: "Reach × impact × confidence ÷ effort",
         evidence: "ESTIMATE",
+        done: Boolean(top && top.score !== null),
       },
       {
         id: "model",
@@ -221,6 +259,7 @@ export const buildWorkspace: PillarWorkspaceDef<BuildState> = {
                 .join(" · ")
             : null,
         detail: s.billing ? `Billed ${s.billing}` : "Archetype and how it earns",
+        done: Boolean(s.archetype && s.revenueType),
       },
     ];
     return goals;

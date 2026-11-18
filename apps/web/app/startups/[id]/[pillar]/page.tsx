@@ -1,13 +1,12 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import type { PillarStatus } from "@bluslate/twin";
 import { PillarShell } from "@/components/pillar-shell/pillar-shell";
 import { PillarWorkbench } from "@/components/pillar-shell/pillar-workbench";
-import { PILLAR_IDS, isPillarId, pillarInfo, type PillarId } from "@/lib/pillars";
+import { docsProgress } from "@/lib/pitch-docs";
+import { isPillarId, pillarInfo } from "@/lib/pillars";
 import { requireUser } from "@/lib/require-user";
 import { getStartupForUser } from "@/lib/startups";
-import { twin } from "@/lib/twin";
-import { loadWorkspace } from "@/lib/workspace";
+import { journeyProgress, loadWorkspace } from "@/lib/workspace";
 
 type Params = { id: string; pillar: string };
 
@@ -27,20 +26,21 @@ export default async function PillarPage({ params }: { params: Promise<Params> }
   const startup = await getStartupForUser(id, user.id);
   if (!startup) notFound();
 
-  const [workspace, statuses] = await Promise.all([
+  const [workspace, journey, docs] = await Promise.all([
     loadWorkspace(startup, pillar),
-    twin.statuses(startup.id),
+    journeyProgress(startup),
+    docsProgress(startup.id),
   ]);
-  const hubStatuses = Object.fromEntries(
-    PILLAR_IDS.map((p) => [p, statuses.pillars[p].status]),
-  ) as Record<PillarId, PillarStatus>;
   const info = pillarInfo(pillar);
 
   return (
     <PillarShell
+      key={pillar}
       startup={{ id: startup.id, name: startup.name }}
-      active={info}
-      statuses={hubStatuses}
+      isGuest={user.isGuest}
+      active={pillar}
+      progress={journey.progress}
+      docs={docs}
     >
       <PillarWorkbench
         startupId={startup.id}
@@ -49,6 +49,7 @@ export default async function PillarPage({ params }: { params: Promise<Params> }
         initialState={workspace.state}
         ctx={workspace.ctx}
         everPublished={Object.keys(workspace.published).length > 0}
+        market={{ country: startup.marketCountry, region: startup.marketRegion }}
       />
     </PillarShell>
   );

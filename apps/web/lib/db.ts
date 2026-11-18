@@ -3,7 +3,12 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@/lib/generated/prisma/client";
 
 // One client per server process; reused across hot reloads in development.
-const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
+// After `prisma generate` (e.g. a new migration) the client class changes, so
+// a fresh client is made rather than reusing one built from the old schema.
+// Keyed by class: route handlers and pages can each load their own copy.
+const globalForPrisma = globalThis as unknown as {
+  prismaClients?: Map<typeof PrismaClient, PrismaClient>;
+};
 
 function createClient(): PrismaClient {
   const connectionString = process.env.DATABASE_URL;
@@ -13,6 +18,15 @@ function createClient(): PrismaClient {
   return new PrismaClient({ adapter: new PrismaPg({ connectionString }) });
 }
 
-export const prisma = globalForPrisma.prisma ?? createClient();
+function devClient(): PrismaClient {
+  const clients = (globalForPrisma.prismaClients ??= new Map());
+  let client = clients.get(PrismaClient);
+  if (!client) {
+    client = createClient();
+    clients.set(PrismaClient, client);
+  }
+  return client;
+}
 
-if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
+export const prisma: PrismaClient =
+  process.env.NODE_ENV === "production" ? createClient() : devClient();

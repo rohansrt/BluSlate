@@ -13,10 +13,7 @@ test.describe("Seven-step circle", () => {
     await page.getByTestId("circle-start").click();
     const circleCard = page.getByTestId("onboarding-card-circle");
     await expect(circleCard).toBeVisible();
-    // The same draft: the name typed in the hero card is already there.
-    await expect(circleCard.getByLabel("Your first name")).toHaveValue("Kabir");
-    await circleCard.getByLabel("Your age").fill("19");
-    await circleCard.getByRole("button", { name: "Continue" }).click();
+    // The same draft: the name typed in the hero card is known, so it moves on to step 2.
     await expect(circleCard.getByTestId("onboarding-step-title")).toHaveText(
       "Where are you starting?",
     );
@@ -29,7 +26,6 @@ test.describe("Seven-step circle", () => {
     await page.getByTestId("step-brief").getByRole("button", { name: "Try this pillar" }).click();
     const circleCard = page.getByTestId("onboarding-card-circle");
     await circleCard.getByLabel("Your first name").fill("Kabir");
-    await circleCard.getByLabel("Your age").fill("19");
     await circleCard.getByRole("button", { name: "Continue" }).click();
     await expect(circleCard.getByLabel("I just want one tool")).toBeChecked();
     await circleCard.getByRole("button", { name: "Continue" }).click();

@@ -2,11 +2,12 @@
 
 import * as React from "react";
 import { Check, Copy, Plus, Sparkles, Target, X } from "lucide-react";
-import type { EvidenceLabel, Goal, ReportBlock } from "@bluslate/contracts";
+import { goalProgress, type EvidenceLabel, type Goal, type ReportBlock } from "@bluslate/contracts";
 import { cn } from "../cn";
 import { Button } from "./button";
 import { EvidenceBadge } from "./evidence-badge";
 import { Input } from "./input";
+import { PROGRESS_INFO, ProgressIcon } from "./progress";
 
 /*
  * Building blocks for pillar workspaces (decision 0006). Pillars compose these
@@ -392,39 +393,80 @@ export function RowList<T extends { id: string }>({
 
 /** The live goals column (right side of every pillar). */
 export function GoalsPanel({ goals, title = "Goals" }: { goals: Goal[]; title?: string }) {
-  const done = goals.filter((g) => g.value !== null).length;
+  const progress = goalProgress(goals);
+  const pct = progress.total ? Math.round((progress.met / progress.total) * 100) : 0;
   return (
     <section
       aria-label={title}
       className="rounded-xl border border-border bg-card p-4"
       data-testid="goals"
+      data-progress={progress.state}
     >
-      <div className="mb-3 flex items-center justify-between gap-2">
+      <div className="mb-2 flex items-center justify-between gap-2">
         <h2 className="flex items-center gap-1.5 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
           <Target className="size-4" aria-hidden /> {title}
         </h2>
-        <span className="text-xs text-muted-foreground">
-          {done} of {goals.length}
+        <span
+          className={cn(
+            "inline-flex items-center gap-1.5 text-xs font-semibold",
+            PROGRESS_INFO[progress.state].text,
+          )}
+          data-testid="goals-count"
+        >
+          <ProgressIcon state={progress.state} className="size-3.5" />
+          {progress.met} of {progress.total} complete
         </span>
       </div>
-      <ul className="space-y-3">
+      <div className="mb-4 h-1.5 overflow-hidden rounded-full bg-muted" aria-hidden>
+        <div
+          className={cn(
+            "h-full rounded-full transition-all",
+            progress.state === "complete" ? "bg-actual" : "bg-review",
+          )}
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+      <ul className="space-y-2">
         {goals.map((g) => (
-          <li key={g.id} data-goal={g.id} className="min-w-0">
-            <div className="flex items-start justify-between gap-2">
-              <span className="text-xs text-muted-foreground">{g.title}</span>
-              {g.value !== null && g.evidence && <EvidenceBadge label={g.evidence} />}
+          <li
+            key={g.id}
+            data-goal={g.id}
+            data-done={g.done ? "true" : "false"}
+            className={cn(
+              "min-w-0 rounded-lg border px-2.5 py-2 transition-colors",
+              g.done ? "border-actual/40 bg-actual-soft" : "border-transparent",
+            )}
+          >
+            <div className="flex items-start gap-2">
+              <ProgressIcon
+                state={g.done ? "complete" : "empty"}
+                className="mt-0.5"
+                title={g.done ? "Complete" : "Not complete yet"}
+              />
+              <div className="min-w-0 flex-1">
+                <div className="flex items-start justify-between gap-2">
+                  <span
+                    className={cn(
+                      "text-xs",
+                      g.done ? "font-semibold text-actual" : "text-muted-foreground",
+                    )}
+                  >
+                    {g.title}
+                  </span>
+                  {g.value !== null && g.evidence && <EvidenceBadge label={g.evidence} />}
+                </div>
+                <div
+                  className={cn(
+                    "mt-0.5 break-words text-base font-bold leading-tight",
+                    g.value === null && "text-muted-foreground/60",
+                  )}
+                  data-testid={`goal-${g.id}`}
+                >
+                  {g.value ?? "—"}
+                </div>
+                {g.detail && <p className="mt-0.5 text-xs text-muted-foreground">{g.detail}</p>}
+              </div>
             </div>
-            <div
-              className={cn(
-                "mt-0.5 flex items-center gap-1.5 break-words text-lg font-bold leading-tight",
-                g.value === null && "text-muted-foreground/60",
-              )}
-              data-testid={`goal-${g.id}`}
-            >
-              {g.done && <Check className="size-4 shrink-0 text-actual" aria-label="Target met" />}
-              {g.value ?? "—"}
-            </div>
-            {g.detail && <p className="mt-0.5 text-xs text-muted-foreground">{g.detail}</p>}
           </li>
         ))}
       </ul>

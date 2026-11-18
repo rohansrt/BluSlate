@@ -28,6 +28,7 @@ import {
   expectedReplies,
   needScore,
   type CustomersState,
+  outreachChannels,
 } from "../src/workspace";
 
 const STATUS_STYLE = {
@@ -144,13 +145,12 @@ export function CustomersScreen({ state: s, update, ctx }: PillarScreenProps<Cus
         title="Plan your outreach"
         hint="Nothing is sent from BluSlate. You contact people yourself."
       >
-        <Field label="Channels">
-          <ChipSelect
-            label="Outreach channels"
-            options={CHANNELS}
-            value={s.outreachChannels}
-            onChange={(outreachChannels) => set({ outreachChannels })}
-          />
+        <Field label="Channels" hint="Where you find each segment, from step 2.">
+          <p className="text-sm" data-testid="outreach-channels">
+            {outreachChannels(s).length
+              ? outreachChannels(s).join(" · ")
+              : "Pick “Where to find them” for a segment above."}
+          </p>
         </Field>
         <div className="grid gap-3 sm:grid-cols-3">
           <Field label="People to contact">

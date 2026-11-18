@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, ArrowRight, Lightbulb, Building2, Wrench, Loader2 } from "lucide-react";
 import { Button, Card, Input, Label, PillarIcon, Select, Textarea, cn } from "@bluslate/ui";
-import { COUNTRY_OPTIONS } from "@/lib/countries";
 import {
   EXISTING_STAGES,
   LIMITS,
@@ -23,9 +22,10 @@ import {
   type OnboardingState,
   type Step,
 } from "@/lib/onboarding-store";
-import { setNoTrack, track } from "@/lib/analytics/client";
+import { track } from "@/lib/analytics/client";
 import { PILLARS } from "@/lib/pillars";
 import { EmailCodeForm } from "@/components/auth/email-code-form";
+import { GuestForm } from "@/components/auth/guest-form";
 
 const PATHS: { id: EntryPathId; title: string; hint: string; icon: typeof Lightbulb }[] = [
   {
@@ -80,8 +80,8 @@ function useIsClient(): boolean {
 }
 
 /**
- * Visitors see four steps (name and age, starting point, details, save by
- * email code); signed-in founders see two (starting point, details).
+ * Visitors see four steps (name, starting point, details, save by email code
+ * or as a guest); signed-in founders see two (starting point, details).
  */
 function shownStep(step: Step, signedIn: boolean): { n: number; total: number } {
   return signedIn ? { n: Math.max(1, step - 1), total: 2 } : { n: step, total: 4 };
@@ -205,11 +205,6 @@ function OnboardingCardInner({
   const next = (e?: React.FormEvent) => {
     e?.preventDefault();
     if (step === 4 || !canContinue(step, draft)) return;
-    if (step === 1) {
-      // Under-18s are never tracked (docs/decisions/0011).
-      const age = Number(draft.age);
-      setNoTrack(Number.isFinite(age) && age < 18);
-    }
     if (step === 2 && draft.path) track("onboarding_path", { path: draft.path, where: placement });
     if (step === lastStep) saveStartup();
     else go((step + 1) as Step);
@@ -245,32 +240,17 @@ function OnboardingCardInner({
 
       {step === 1 && (
         <form onSubmit={next} className="mt-5 space-y-5">
-          <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_7rem]">
-            <div className="space-y-2">
-              <Label htmlFor={id("first-name")}>Your first name</Label>
-              <Input
-                id={id("first-name")}
-                name="firstName"
-                autoComplete="given-name"
-                maxLength={LIMITS.firstName}
-                value={draft.firstName ?? ""}
-                onChange={(e) => update({ firstName: e.target.value })}
-                placeholder="Riya"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor={id("age")}>Your age</Label>
-              <Input
-                id={id("age")}
-                name="age"
-                inputMode="numeric"
-                pattern="[0-9]*"
-                maxLength={3}
-                value={draft.age ?? ""}
-                onChange={(e) => update({ age: e.target.value.replace(/\D/g, "") })}
-                placeholder="20"
-              />
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor={id("first-name")}>Your first name</Label>
+            <Input
+              id={id("first-name")}
+              name="firstName"
+              autoComplete="given-name"
+              maxLength={LIMITS.firstName}
+              value={draft.firstName ?? ""}
+              onChange={(e) => update({ firstName: e.target.value })}
+              placeholder="Riya"
+            />
           </div>
           <StepActions canNext={canContinue(1, draft)} />
         </form>
@@ -329,7 +309,7 @@ function OnboardingCardInner({
             onBack={() => go(2)}
             canNext={canContinue(3, draft) && !saving}
             busy={saving}
-            label={signedIn ? "Open my city" : undefined}
+            label={signedIn ? "Start building" : undefined}
           />
         </form>
       )}
@@ -347,7 +327,7 @@ function OnboardingCardInner({
             where="onboarding"
             // After the code, /startups/new saves the draft kept in this browser.
             redirectTo="/startups/new"
-            verifyLabel="Open my city"
+            verifyLabel="Start building"
             onBack={() => go(3)}
             footer={
               <p className="text-xs leading-5 text-muted-foreground">
@@ -362,6 +342,16 @@ function OnboardingCardInner({
                 . Your idea stays private.
               </p>
             }
+          />
+          <div className="my-6 flex items-center gap-3 text-xs uppercase tracking-wider text-muted-foreground">
+            <span className="h-px flex-1 bg-border" /> or continue as a guest{" "}
+            <span className="h-px flex-1 bg-border" />
+          </div>
+          {/* A guest lands on /startups/new too, which saves this draft (decision 0012). */}
+          <GuestForm
+            redirectTo="/startups/new"
+            knownName={draft.firstName}
+            idPrefix={id("guest")}
           />
         </div>
       )}
@@ -419,47 +409,6 @@ type FieldProps = {
   /** Field ids are unique per card (Home can show two). */
   idp: (name: string) => string;
 };
-
-function PlaceFields({
-  draft,
-  update,
-  idp,
-  cityOptional = false,
-}: FieldProps & { cityOptional?: boolean }) {
-  return (
-    <div className="grid gap-4 sm:grid-cols-2">
-      <div className="space-y-2">
-        <Label htmlFor={idp("city")}>
-          City
-          {cityOptional && <span className="font-normal text-muted-foreground"> (optional)</span>}
-        </Label>
-        <Input
-          id={idp("city")}
-          autoComplete="address-level2"
-          maxLength={LIMITS.city}
-          value={draft.city ?? ""}
-          onChange={(e) => update({ city: e.target.value })}
-          placeholder="Pune"
-        />
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor={idp("country")}>Country</Label>
-        <Select
-          id={idp("country")}
-          autoComplete="country"
-          value={draft.country ?? "IN"}
-          onChange={(e) => update({ country: e.target.value })}
-        >
-          {COUNTRY_OPTIONS.map((c) => (
-            <option key={c.code} value={c.code}>
-              {c.name}
-            </option>
-          ))}
-        </Select>
-      </div>
-    </div>
-  );
-}
 
 function NewIdeaFields({ draft, update, idp }: FieldProps) {
   const discover = draft.newIdeaMode === "discover";
@@ -523,7 +472,6 @@ function NewIdeaFields({ draft, update, idp }: FieldProps) {
           </p>
         </div>
       )}
-      <PlaceFields draft={draft} update={update} idp={idp} />
     </>
   );
 }
@@ -570,7 +518,6 @@ function ExistingFields({ draft, update, idp }: FieldProps) {
           />
         </div>
       </div>
-      <PlaceFields draft={draft} update={update} idp={idp} />
     </>
   );
 }
@@ -611,7 +558,6 @@ function OneToolFields({ draft, update, idp }: FieldProps) {
           })}
         </div>
       </fieldset>
-      <PlaceFields draft={draft} update={update} idp={idp} cityOptional />
     </>
   );
 }

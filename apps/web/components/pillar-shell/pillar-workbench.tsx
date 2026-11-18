@@ -3,18 +3,26 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CheckCircle2, Loader2, Send } from "lucide-react";
-import type { WorkspaceContext } from "@bluslate/contracts";
+import { goalProgress, type WorkspaceContext } from "@bluslate/contracts";
 import { AiPlaceholder, Button, EvidenceBadge, GoalsPanel, ReportOut, cn } from "@bluslate/ui";
+import { LiveProgress, StepNav } from "@/components/journey/journey-frame";
+import { TargetMarketCard, type MarketValue } from "@/components/pillar-shell/target-market";
 import { PILLAR_SCREENS } from "@/lib/pillar-screens";
 import { PILLAR_WORKSPACES } from "@/lib/pillar-workspaces";
-import type { PillarId } from "@/lib/pillars";
+import { isPillarId, pillarInfo, type PillarId } from "@/lib/pillars";
 
 /**
  * The centre and right of every pillar page (decision 0006). The centre is the
  * pillar's own screen, ending with its Report out. The right is the live Goals
  * column, publishing, and the AI helpers (placeholders until AI is switched on).
- * Work is autosaved; nothing reaches other pillars until the founder publishes.
+ * Work is autosaved; nothing reaches other pillars' Twin data until the founder
+ * publishes. Shared answers (decision 0012) are copied into the linked fields
+ * of other steps when they're saved, and the target market is one answer
+ * shown in Customer Discovery and Market Research.
  */
+
+/** The steps that ask where the startup will launch (decision 0012). */
+const ASKS_MARKET = new Set<PillarId>(["customers", "market"]);
 
 type SaveState = "saved" | "saving" | "dirty" | "error";
 
@@ -23,8 +31,9 @@ export function PillarWorkbench({
   pillar,
   pillarName,
   initialState,
-  ctx,
+  ctx: initialCtx,
   everPublished,
+  market: initialMarket,
 }: {
   startupId: string;
   pillar: PillarId;
@@ -32,15 +41,19 @@ export function PillarWorkbench({
   initialState: unknown;
   ctx: WorkspaceContext;
   everPublished: boolean;
+  market: MarketValue;
 }) {
   const router = useRouter();
   const def = PILLAR_WORKSPACES[pillar];
   const Screen = PILLAR_SCREENS[pillar];
   const [state, setState] = useState<unknown>(initialState);
+  const [ctx, setCtx] = useState<WorkspaceContext>(initialCtx);
+  const [market, setMarket] = useState<MarketValue>(initialMarket);
   const [save, setSave] = useState<SaveState>("saved");
   const [reviewing, setReviewing] = useState(false);
   const [publishing, setPublishing] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
+  const [linked, setLinked] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const latest = useRef(state);
@@ -61,6 +74,11 @@ export function PillarWorkbench({
         body: JSON.stringify({ data: latest.current }),
       });
       setSave(res.ok ? "saved" : "error");
+      if (res.ok) {
+        const body = (await res.json().catch(() => ({}))) as { linked?: string[] };
+        if (body.linked?.length)
+          setLinked(body.linked.filter(isPillarId).map((p) => pillarInfo(p).name));
+      }
       return res.ok;
     } catch {
       setSave("error");
@@ -94,7 +112,23 @@ export function PillarWorkbench({
     return () => window.removeEventListener("beforeunload", warn);
   }, [flush]);
 
+  // Moving to another step within the app: save what's pending first.
+  useEffect(
+    () => () => {
+      if (!timer.current) return;
+      clearTimeout(timer.current);
+      void fetch(base, {
+        method: "PUT",
+        keepalive: true,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ data: latest.current }),
+      });
+    },
+    [base],
+  );
+
   const goals = useMemo(() => def.goals(state, ctx), [def, state, ctx]);
+  const progress = useMemo(() => goalProgress(goals), [goals]);
   const report = useMemo(() => def.report(state, ctx), [def, state, ctx]);
   const entities = useMemo(() => def.entities(state, ctx), [def, state, ctx]);
 
@@ -133,14 +167,37 @@ export function PillarWorkbench({
               <Loader2 className="size-3 animate-spin" aria-hidden /> Saving…
             </span>
           )}
-          {save === "saved" && "All changes saved"}
+          {save === "saved" &&
+            (linked.length ? (
+              <span title={`Also filled in: ${linked.join(", ")}`}>
+                All changes saved · also filled in{" "}
+                {linked.length <= 2 ? linked.join(" and ") : `${linked.length} other steps`}
+              </span>
+            ) : (
+              "All changes saved"
+            ))}
           {save === "dirty" && "Unsaved changes"}
           {save === "error" && (
             <span className="text-danger">Couldn&apos;t save. Your answers are still here.</span>
           )}
         </div>
+        <LiveProgress pillar={pillar} progress={progress} />
+        {ASKS_MARKET.has(pillar) && (
+          <TargetMarketCard
+            startupId={startupId}
+            value={market}
+            onSaved={(m) => {
+              setMarket({ country: m.country, region: m.region });
+              setCtx((c) => ({
+                ...c,
+                startup: { ...c.startup, geography: m.geography, currency: m.currency },
+              }));
+            }}
+          />
+        )}
         <Screen state={state} update={update} ctx={ctx} />
         <ReportOut title={pillarName} block={report} />
+        <StepNav />
       </div>
 
       <aside className="min-w-0 space-y-4 lg:sticky lg:top-4 lg:self-start">

@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { codeFor, onboardAsRiya, signInByEmail, uniqueEmail } from "./helpers";
+import { codeFor, onboardAsRiya, signInByEmail, startupIdOf, uniqueEmail } from "./helpers";
 
 /**
  * Admin sign-in uses a password, which is never stored in the repo. CI sets a
@@ -20,21 +20,19 @@ test.describe("Accounts", () => {
     await expect(page.getByRole("button", { name: "Email me a code" })).toBeVisible();
     const guest = page.getByTestId("guest-form");
     await guest.getByLabel("Your first name").fill("Asha");
-    await guest.getByLabel("Your age").fill("22");
     await guest.getByLabel("Your email").fill(email);
     await guest.getByRole("button", { name: "Continue as guest" }).click();
 
-    // Home's onboarding already knows the name and age, so it has two steps.
+    // Home's onboarding already knows the name, so it has two steps.
     await expect(page).toHaveURL(/\/$/, { timeout: 20_000 });
     const card = page.getByTestId("onboarding-card");
     await expect(card.getByText("Step 1 of 2")).toBeVisible();
     await card.getByText("I have a new idea").click();
     await card.getByRole("button", { name: "Continue" }).click();
     await card.getByLabel("Your idea in one sentence").fill("Tiffin delivery for hostels");
-    await card.getByLabel("City").fill("Indore");
-    await card.getByRole("button", { name: "Open my city" }).click();
-    await expect(page).toHaveURL(/\/startups\/(?!new$)[a-z0-9]+$/, { timeout: 30_000 });
-    await expect(page.getByTestId("city-title")).toHaveText("Asha's idea");
+    await card.getByRole("button", { name: "Start building" }).click();
+    await expect(page).toHaveURL(/\/startups\/[a-z0-9]+\/discover$/, { timeout: 30_000 });
+    await expect(page.getByRole("link", { name: /Asha's idea/ }).first()).toBeVisible();
     await expect(page.getByText("This is a guest workspace")).toBeVisible();
 
     await page.goto("/profile");
@@ -48,7 +46,9 @@ test.describe("Accounts", () => {
     await page.getByRole("button", { name: "Email me a code" }).click();
     await page.getByLabel(/6.digit code/).fill(await codeFor(email));
     await page.getByRole("button", { name: "Sign in" }).click();
-    await expect(page.getByTestId("city-title")).toHaveText("Asha's idea", { timeout: 20_000 });
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("1 · Problem Discovery", {
+      timeout: 20_000,
+    });
     await expect(page.getByText("This is a guest workspace")).toHaveCount(0);
     await page.goto("/profile");
     await expect(page.getByTestId("profile-email")).toContainText(email);
@@ -70,7 +70,7 @@ test.describe("Accounts", () => {
 
   test("an owner can delete a startup and everything in it", async ({ page }) => {
     await onboardAsRiya(page);
-    const startupId = new URL(page.url()).pathname.split("/").pop()!;
+    const startupId = startupIdOf(page);
     await page.goto("/startups");
     await page.getByRole("button", { name: "Delete Riya's idea" }).click();
     await page.getByRole("button", { name: "Delete forever" }).click();

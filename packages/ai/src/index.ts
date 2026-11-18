@@ -18,3 +18,4 @@ export {
   type ResolvedModel,
 } from "./gateway";
 export { explainTask, CORE_TASKS } from "./tasks/core";
+export { pitchFillTask, CANVAS_BOXES } from "./tasks/pitch";

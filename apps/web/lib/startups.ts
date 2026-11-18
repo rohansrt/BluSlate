@@ -1,4 +1,5 @@
 import "server-only";
+import { countryByCode } from "@/lib/countries";
 import { prisma } from "@/lib/db";
 
 /**
@@ -30,6 +31,8 @@ export async function getStartupForUser(id: string, userId: string) {
       stage: true,
       geography: true,
       currency: true,
+      marketCountry: true,
+      marketRegion: true,
       entryPath: true,
       onboarding: true,
       createdAt: true,
@@ -44,6 +47,32 @@ export async function renameStartupForOwner(id: string, userId: string, name: st
     data: { name },
   });
   return count === 1;
+}
+
+/**
+ * Set the market the founder wants to launch in (decision 0012). Customer
+ * Discovery and Market Research both show it; it is stored once, here, and
+ * geography and currency follow it. Any member can change it.
+ */
+export async function setStartupMarket(
+  id: string,
+  userId: string,
+  market: { country: string; region: string },
+) {
+  const found = countryByCode(market.country);
+  if (!found) return null;
+  const region = market.region.trim().slice(0, 80);
+  const geography = region ? `${region}, ${found.name}` : found.name;
+  const { count } = await prisma.startup.updateMany({
+    where: { id, members: { some: { userId } } },
+    data: {
+      marketCountry: found.code,
+      marketRegion: region || null,
+      geography,
+      currency: found.currency,
+    },
+  });
+  return count === 1 ? { geography, currency: found.currency } : null;
 }
 
 export const ENTRY_PATH_LABEL = {

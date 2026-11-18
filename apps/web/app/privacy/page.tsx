@@ -39,11 +39,11 @@ const sections: LegalSection[] = [
         <h3>Information you give us</h3>
         <ul>
           <li>
-            <strong>Account details:</strong> the first name and age you tell us, and the email
-            address you sign in with. Your startups are linked to your account, so you can open them
-            on any device. If you continue as a guest, we keep the first name and email you give us
-            (we don&apos;t check the email) so we know who used BluSlate, and your startups are
-            linked to a private session in your browser.
+            <strong>Account details:</strong> the first name you tell us (and your age, if you gave
+            it when we used to ask), and the email address you sign in with. Your startups are
+            linked to your account, so you can open them on any device. If you continue as a guest,
+            we keep the first name and email you give us (we don&apos;t check the email) so we know
+            who used BluSlate, and your startups are linked to a private session in your browser.
           </li>
           <li>
             <strong>Your startup content:</strong> your idea, onboarding answers, decisions, notes,
@@ -306,7 +306,7 @@ const sections: LegalSection[] = [
       <>
         <p>
           BluSlate is for founders of every age: it is a practice simulator, with nothing
-          age-restricted in it. We ask your age when you sign up.
+          age-restricted in it. We don&apos;t ask your age.
         </p>
         <p>
           If you are under 18, please use BluSlate with your parent or guardian&apos;s knowledge.

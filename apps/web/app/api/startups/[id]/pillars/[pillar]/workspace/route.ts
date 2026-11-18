@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { fail, requirePillar } from "@/lib/api";
+import { prisma } from "@/lib/db";
 import { saveWorkspace } from "@/lib/workspace";
 
 type Params = { params: Promise<{ id: string; pillar: string }> };
@@ -20,7 +21,13 @@ export async function PUT(request: Request, { params }: Params) {
     return fail(400, "Couldn't read that.");
   }
   const data = (body as { data?: unknown } | null)?.data;
-  const result = await saveWorkspace(id, ctx.pillar, data);
+  const startup = await prisma.startup.findUnique({
+    where: { id },
+    select: { id: true, name: true, geography: true, currency: true, onboarding: true },
+  });
+  if (!startup) return fail(404, "Startup not found.");
+  const result = await saveWorkspace(startup, ctx.pillar, data);
   if (!result.ok) return fail(422, "Some answers couldn't be saved.", { issues: result.issues });
-  return NextResponse.json({ updatedAt: result.updatedAt });
+  // `linked`: other steps whose linked fields were filled in from this one.
+  return NextResponse.json({ updatedAt: result.updatedAt, linked: result.linked });
 }

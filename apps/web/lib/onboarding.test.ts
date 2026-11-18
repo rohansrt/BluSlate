@@ -12,24 +12,34 @@ const riyaIdea: OnboardingDraft = {
   path: "new-idea",
   newIdeaMode: "idea",
   idea: "Cheaper e-bike rentals for students",
-  city: "Pune",
-  country: "IN",
 };
 
 describe("onboarding: new idea", () => {
-  it("creates a startup named after the founder, in their city, in local currency", () => {
+  it("creates a startup named after the founder, with no market chosen yet", () => {
     const parsed = parseDraft(riyaIdea);
     expect(parsed.success).toBe(true);
     if (!parsed.success) return;
-    const startup = toStartupCreate(parsed.data);
-    expect(startup).toMatchObject({
+    expect(toStartupCreate(parsed.data)).toMatchObject({
       name: "Riya's idea",
       stage: "idea",
       businessType: null,
-      geography: "Pune, India",
+      // The market is chosen later, in Customer Discovery or Market Research (decision 0012).
+      geography: "",
       currency: "INR",
+      marketCountry: null,
       entryPath: "NEW_IDEA",
       highlightPillar: "discover",
+    });
+  });
+
+  it("still honours a country saved by an older version of the card", () => {
+    const parsed = parseDraft({ ...riyaIdea, city: "Pune", country: "GB" });
+    expect(parsed.success).toBe(true);
+    if (!parsed.success) return;
+    expect(toStartupCreate(parsed.data)).toMatchObject({
+      geography: "Pune, United Kingdom",
+      currency: "GBP",
+      marketCountry: "GB",
     });
   });
 
@@ -51,9 +61,8 @@ describe("onboarding: new idea", () => {
     expect(parsed.success).toBe(true);
   });
 
-  it("rejects a missing idea, city or unknown country", () => {
+  it("rejects a missing idea or an unknown country", () => {
     expect(parseDraft({ ...riyaIdea, idea: "" }).success).toBe(false);
-    expect(parseDraft({ ...riyaIdea, city: " " }).success).toBe(false);
     expect(parseDraft({ ...riyaIdea, country: "XX" }).success).toBe(false);
   });
 
@@ -69,8 +78,6 @@ describe("onboarding: existing startup", () => {
     startupName: "ChaiCart",
     stage: "launched",
     industry: "Food and beverage",
-    city: "Bengaluru",
-    country: "IN",
   };
 
   it("uses the startup's own name and stage", () => {
@@ -80,7 +87,7 @@ describe("onboarding: existing startup", () => {
     expect(toStartupCreate(parsed.data)).toMatchObject({
       name: "ChaiCart",
       stage: "launched",
-      geography: "Bengaluru, India",
+      geography: "",
       currency: "INR",
       entryPath: "EXISTING",
       highlightPillar: null,
@@ -93,42 +100,28 @@ describe("onboarding: existing startup", () => {
 });
 
 describe("onboarding: just one tool", () => {
-  it("highlights the chosen pillar and works without a city", () => {
-    const parsed = parseDraft({
-      firstName: "Sam",
-      path: "one-tool",
-      tool: "market",
-      country: "GB",
-    });
+  it("highlights the chosen pillar", () => {
+    const parsed = parseDraft({ firstName: "Sam", path: "one-tool", tool: "market" });
     expect(parsed.success).toBe(true);
     if (!parsed.success) return;
     expect(toStartupCreate(parsed.data)).toMatchObject({
       name: "Sam's Market Research workspace",
       stage: "unspecified",
-      geography: "United Kingdom",
-      currency: "GBP",
       entryPath: "ONE_TOOL",
       highlightPillar: "market",
     });
   });
 
   it("rejects a tool that is not one of the seven pillars", () => {
-    expect(
-      parseDraft({ firstName: "Sam", path: "one-tool", tool: "crm", country: "GB" }).success,
-    ).toBe(false);
+    expect(parseDraft({ firstName: "Sam", path: "one-tool", tool: "crm" }).success).toBe(false);
   });
 });
 
 describe("onboarding: step gating", () => {
-  it("step 1 needs a first name and an age (any age from 5)", () => {
+  it("step 1 needs only a first name (no age, decision 0012)", () => {
     expect(canContinue(1, {})).toBe(false);
-    expect(canContinue(1, { firstName: "   ", age: "20" })).toBe(false);
-    expect(canContinue(1, { firstName: "Riya" })).toBe(false);
-    expect(canContinue(1, { firstName: "Riya", age: "" })).toBe(false);
-    expect(canContinue(1, { firstName: "Riya", age: "4" })).toBe(false);
-    expect(canContinue(1, { firstName: "Riya", age: "20" })).toBe(true);
-    // Under-18s may use BluSlate (docs/decisions/0011).
-    expect(canContinue(1, { firstName: "Riya", age: "14" })).toBe(true);
+    expect(canContinue(1, { firstName: "   " })).toBe(false);
+    expect(canContinue(1, { firstName: "Riya" })).toBe(true);
   });
 
   it("step 2 needs one of the three paths", () => {
@@ -136,8 +129,8 @@ describe("onboarding: step gating", () => {
     expect(canContinue(2, { firstName: "Riya", path: "existing" })).toBe(true);
   });
 
-  it("step 3 needs everything the chosen path requires", () => {
-    expect(canContinue(3, { ...riyaIdea, city: undefined })).toBe(false);
+  it("step 3 needs everything the chosen path requires, but no place", () => {
+    expect(canContinue(3, { ...riyaIdea, idea: undefined })).toBe(false);
     expect(canContinue(3, riyaIdea)).toBe(true);
   });
 
@@ -146,7 +139,7 @@ describe("onboarding: step gating", () => {
       onboardingSchema.safeParse({
         path: "one-tool",
         firstName: "x".repeat(61),
-        details: { tool: "build", country: "IN" },
+        details: { tool: "build" },
       }).success,
     ).toBe(false);
   });

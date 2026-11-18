@@ -5,12 +5,13 @@ import {
   completeWelcome,
   enterEmailCode,
   expectNoSidewaysScroll,
+  onboardAsGuest,
   onboardAsRiya,
   uniqueEmail,
 } from "./helpers";
 
 test.describe("Home onboarding and sign-in with an email code (S1 exit gate)", () => {
-  test("a new founder completes onboarding, signs up with a code and lands in an empty city", async ({
+  test("a new founder completes onboarding, signs up with a code and lands straight in step 1", async ({
     page,
   }) => {
     await page.goto("/");
@@ -23,19 +24,23 @@ test.describe("Home onboarding and sign-in with an email code (S1 exit gate)", (
     await expect(header.getByRole("link", { name: "Sign up" })).toHaveCount(0);
 
     await onboardAsRiya(page);
-    await expect(page.getByTestId("city-title")).toHaveText("Riya's idea");
-    await expect(page.getByText("Pune, India")).toBeVisible();
-    await expect(page.getByText("Cheaper e-bike rentals for students")).toBeVisible();
+    // No city overview first (decision 0012): straight into Problem Discovery.
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("1 · Problem Discovery");
+    await expect(page.getByRole("link", { name: /Riya's idea/ }).first()).toBeVisible();
+    await expect(page.getByLabel("Parked solution")).toHaveValue(
+      "Cheaper e-bike rentals for students",
+    );
 
-    // An empty city: all seven hubs, none started, Discover suggested first.
-    // getByRole skips the hidden layout (map on desktop, route list on mobile).
-    const hubs = page.getByRole("list", { name: "City hubs" });
-    await expect(hubs).toHaveCount(1);
+    // Every step on the left, plus Pitch docs; nothing else has been started.
+    const rail = page.getByTestId("step-rail");
     for (const name of PILLAR_NAMES) {
-      await expect(hubs.getByText(name, { exact: true })).toBeVisible();
+      await expect(rail.getByText(name, { exact: false })).toBeVisible();
     }
-    await expect(hubs.getByText("Not started")).toHaveCount(6);
-    await expect(hubs.getByText("Start here")).toHaveCount(1);
+    await expect(page.getByTestId("rail-docs")).toBeVisible();
+    for (const id of ["customers", "market", "build", "setup", "gtm", "run-grow"]) {
+      await expect(page.getByTestId(`rail-${id}`)).toHaveAttribute("data-progress", "empty");
+    }
+    await expect(page.getByTestId("passport-count")).toHaveText("0/7");
     await expectNoSidewaysScroll(page);
 
     // The logo goes to Home, which still opens with the hook, plus a "continue" card.
@@ -61,7 +66,7 @@ test.describe("Home onboarding and sign-in with an email code (S1 exit gate)", (
     await otherPage.goto("/signin");
     await enterEmailCode(otherPage, email);
     await expect(otherPage).toHaveURL(cityUrl, { timeout: 20_000 });
-    await expect(otherPage.getByTestId("city-title")).toHaveText("Riya's idea");
+    await expect(otherPage.getByRole("heading", { level: 1 })).toHaveText("1 · Problem Discovery");
 
     // The device remembers the email for next time.
     // Retried: a dev-server reload while compiling can close the menu mid-click.
@@ -80,7 +85,7 @@ test.describe("Home onboarding and sign-in with an email code (S1 exit gate)", (
     await other.close();
   });
 
-  test("a new person who signs in first gives name and age, then starts a 2-step onboarding", async ({
+  test("a new person who signs in first gives a name (no age), then starts a 2-step onboarding", async ({
     page,
   }, testInfo) => {
     await page.goto("/signin");
@@ -88,7 +93,7 @@ test.describe("Home onboarding and sign-in with an email code (S1 exit gate)", (
     await expect(page.getByRole("heading", { name: "Welcome to BluSlate" })).toBeVisible({
       timeout: 20_000,
     });
-    await completeWelcome(page, "Meera", "15");
+    await completeWelcome(page, "Meera");
     await expect(page).toHaveURL(/\/$/, { timeout: 20_000 });
     const card = page.getByTestId("onboarding-card");
     await expect(page.getByTestId("onboarding-step-title")).toHaveText("Where are you starting?");
@@ -110,7 +115,7 @@ test.describe("Home onboarding and sign-in with an email code (S1 exit gate)", (
     ).toBeVisible();
     await page.getByLabel(/6.digit code/).fill(code);
     await page.getByRole("button", { name: "Sign in" }).click();
-    // A new account is asked for name and age first.
+    // A new account is asked for a name first.
     await expect(page).toHaveURL(/\/welcome$/, { timeout: 20_000 });
     await expect(page.getByRole("banner").getByRole("link", { name: "Sign in" })).toHaveCount(0);
   });
@@ -138,6 +143,14 @@ test.describe("Home onboarding and sign-in with an email code (S1 exit gate)", (
     expect((await guess(code)).headers().location).toContain("error=TooManyCodes");
   });
 
+  test("the last onboarding step offers guest as well as the email code", async ({
+    page,
+  }, testInfo) => {
+    await onboardAsGuest(page, uniqueEmail(`guest-save-${testInfo.project.name}`));
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("1 · Problem Discovery");
+    await expect(page.getByText("This is a guest workspace")).toBeVisible();
+  });
+
   test("private pages send signed-out visitors to sign in", async ({ page }) => {
     await page.goto("/startups");
     await expect(page).toHaveURL(/\/signin\?callbackUrl=%2Fstartups$/);
@@ -159,7 +172,7 @@ test.describe("Home onboarding and sign-in with an email code (S1 exit gate)", (
       data: {
         path: "new-idea",
         firstName: "Riya",
-        details: { mode: "idea", idea: "E-bikes", city: "Pune", country: "IN" },
+        details: { mode: "idea", idea: "E-bikes" },
       },
     });
     expect(res.status()).toBe(401);
