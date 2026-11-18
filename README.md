@@ -1,205 +1,68 @@
 # BluSlate
 
-BluSlate is an AI-powered startup intelligence and simulation platform that helps founders discover, validate, build, launch, and grow businesses through real-world research, interactive tools, and dynamic market simulations.
+A startup simulator: a founder takes an idea through seven pillars (**Problem Discovery → Customer Discovery → Market Research → Product Design → Operations Setup → Go-to-Market Plan → Launch & Growth**), tests it in a simulated market and exports a Founder Pack. Part of YOPPI. Contact: founder@yoppi.in.
 
-A founder takes an idea through seven pillars: **Problem Discovery → Customer Discovery → Market Research → Product Design → Operations Setup → Go-to-Market Plan → Launch & Growth**. They run it in a simulated market over time and export a Founder Pack. Part of the YOPPI ecosystem (contact: founder@yoppi.in).
+**Live (pilot):** https://bluslate.yoppi.in. Anyone can use it as a guest, no account needed.
 
-This README is the **handover file**. Give it to any new Claude session and it has everything:
+## Done
 
-1. **Part 1:** the project's current state and how to keep working on it.
-2. **Part 2:** the full master specification (v2.5), embedded word for word.
+- **Website and accounts:** Home, About, legal pages, SEO; guest workspaces (no sign-in needed), with optional email sign-up later.
+- **Shared core:** the Business Twin (drafts, approval-gated publishing, versions), the AI gateway and the admin AI model registry.
+- **All seven pillars, v1:** each has its own screen, autosaves, pre-fills from earlier pillars, shows live Goals (TAM/SAM/SOM, unit cost, runway…) and ends with a Report out. AI features are placeholders.
+- **Founder Pack report** at `/startups/[id]/pack` (print or save as PDF).
+- **Admin dashboard:** statistics, audit log, AI models.
+- **Hosting:** Vercel + Neon Postgres in Singapore. Every push to `main` deploys to production.
 
----
+## Remaining
 
-## Part 1 — Handover
+1. **PM review of pillars v1:** click through all seven pillars and the Founder Pack; list changes.
+2. **Sign off `pillars/01-discover/SPEC.md`** (answer its §16 open questions), then build each pillar's v2: Define → Build → Review.
+3. **Switch on in production when needed:** admin login, email sign-in (Resend) and AI (Anthropic key). Steps in `docs/DEPLOY.md`.
+4. **Before public launch:** legal review of Privacy/Terms/Cookies; rate-limit guest creation; delete inactive guests; rotate `AUTH_SECRET`; move to Vercel Pro (Hobby is non-commercial).
 
-### Start a new Claude session
+## Accounts and credentials
 
-Open this folder in VS Code with Claude Code (or attach this README to any Claude chat) and say:
+This repo is **public**: never commit real secrets. Production secrets live only in Vercel's environment variables.
 
-> Read `README.md` and `CLAUDE.md`. The README's Part 1 is the current state and Part 2 is the full spec (`docs/BLUSLATE_SPEC.md`). Check `docs/PROGRESS.md` and `docs/decisions/` for detail, then continue with the next step listed under "What's next". Show me your plan before building.
+| What | Where |
+| --- | --- |
+| Code | github.com/rohansrt/BluSlate (`main` only) |
+| Hosting | Vercel, team "JoyBoy's projects", project `blu-slate` |
+| Database | Neon `bluslate-db` (Singapore), managed from Vercel → Storage |
+| Domain DNS | Namecheap → yoppi.in → Advanced DNS (`bluslate` CNAME to Vercel) |
+| Production secrets | Vercel → `blu-slate` → Environment Variables (`AUTH_SECRET`, `DATABASE_URL`…) |
+| Production admin | Not set up yet (needs `ADMIN_EMAILS` + `ADMIN_PASSWORD_HASH` in Vercel) |
+| Local admin | http://localhost:3000/admin/login · `founder@yoppi.in` / `admin9897` (development only; works only with the hash in your `apps/web/.env.local`) |
 
-`CLAUDE.md` is loaded automatically in Claude Code. It mirrors Part A of the spec.
+## Run it locally
 
-### Rules that matter most
-
-- **The PM's instructions win over the spec.** When they differ: implement the instruction, write a decision record in `docs/decisions/`, and update `docs/BLUSLATE_SPEC.md` and `CLAUDE.md` in the same piece of work. Then run `pnpm docs:readme` so this README's embedded copy matches.
-- **Build in spec order** (Part C §10).
-  - Stage 1 structure is done.
-  - Each pillar then goes **Define → Build → Review**. Never build a pillar before the PM signs off its `pillars/<NN-id>/SPEC.md`.
-  - Show the plan before each step.
-- **Guardrails (§9) are non-negotiable:**
-  - Real data is never confused with simulated.
-  - AI never publishes; every publish needs the founder's approval.
-  - No real-world action happens without explicit approval.
-  - No invented numbers, sources, investors or suppliers.
-  - API keys never go in code or the database.
-- **When a step ends:**
-  1. Run `pnpm lint && pnpm typecheck && pnpm test` (plus `pnpm test:e2e` for UI changes).
-  2. Append to `docs/PROGRESS.md`.
-  3. Commit straight to `main`.
-
-### What's built (as of 17 November 2026)
-
-| Step | Status | What it delivered |
-| --- | --- | --- |
-| S1 Website and accounts | ✅ | Home, About, Privacy/Terms/Cookies, SEO files, Auth.js email magic links, My startups, the city |
-| S2 Pillar skeletons | ✅ | Seven `pillars/0N-*` packages (draft SPEC.md, module stub, placeholder screen, smoke test), pillar routes, import-boundary lint |
-| S3 Shared core | ✅ | Business Twin, AI gateway, entity schemas, input modes, Publish panel, live hub statuses, §7.4 API routes |
-| PM additions | ✅ | No sign-in needed (guest workspaces); Sign in / Sign up / Continue as guest; profile menu; delete a startup; Home with hook, hero and seven-step loop; admin dashboard with statistics, audit log and the plug-in **AI model registry**; clearer pillar names |
-| P1 Define | 📝 proposed | `pillars/01-discover/SPEC.md` rewritten in depth (dashboard, every question, formulas, fixture, 30 acceptance tests, open questions). Awaiting PM sign-off; it guides P1 v2 |
-| **Pillars v1 (all seven)** | ✅ | Decision 0006. Each pillar has its own screen with structured inputs, works alone, pre-fills from upstream, shows live **Goals** on the right (TAM/SAM/SOM, unit cost, runway…), ends with a **Report out**, autosaves, and publishes to the Twin with approval. AI is placeholders |
-| **Founder Pack report** | ✅ v1 | `/startups/[id]/pack`: every pillar's report out, status and goals; print or save as PDF. Other exports are placeholders |
-| **Hosting** | ✅ live (pilot) | Decision 0007. https://bluslate.yoppi.in on Vercel + Neon (Singapore). Vercel deploys every push to `main` and runs migrations first. Guests work; admin, email sign-in and AI are off until their env vars are set (`docs/DEPLOY.md`) |
-| Pillars v2, F1 exports, L1 | — | Not started |
-
-**Current behaviour, briefly:**
-
-- **Onboarding:** visitors onboard in three steps without an account; a guest workspace is created. They can sign up later and keep their startups.
-- **Pillars (v1):** each pillar page is its own set of numbered steps. Answers autosave to the pillar's workspace (`PillarWorkspace`). The right column shows live Goals, Publish and the AI helpers. "Review and publish" lists every entity it will create, and Approve publishes them through the Twin; unchanged ones are skipped.
-- **Upstream pre-fill:** a fresh workspace reads the approved entities the pillar may read (§3.1), so Customer Discovery starts from the published Problem, Go-to-Market from the costs, and so on. Used alone, each pillar asks for what it needs.
-- **AI:** every AI feature is a visible "AI · coming soon" placeholder in v1. The gateway and model registry from S3 are in place for when they're built.
-
-### Run it locally
-
-You need Node.js 22, pnpm (`corepack enable pnpm`) and Docker Desktop.
+Needs Node.js 22, pnpm (`corepack enable pnpm`) and Docker Desktop.
 
 ```bash
 pnpm install
-cp .env.example apps/web/.env.local    # then set AUTH_SECRET: openssl rand -base64 32
+cp .env.example apps/web/.env.local    # set AUTH_SECRET: openssl rand -base64 32
 docker compose up -d                   # Postgres 16
 pnpm db:migrate
 pnpm dev                               # http://localhost:3000
 ```
 
-In development no email is sent. Sign-in links are printed in the `pnpm dev` terminal and saved in `.dev-mail/<email>.json`.
+Sign-in emails aren't sent locally: links appear in the terminal and in `.dev-mail/`. Before committing: `pnpm lint && pnpm typecheck && pnpm test` (plus `pnpm test:e2e` for UI changes).
 
-**Admin:** open http://localhost:3000/admin/login and sign in with **email and password**.
+## More detail
 
-| Admin login (local development) | |
-| --- | --- |
-| Email | `founder@yoppi.in` |
-| Password | `admin9897` |
+- **`docs/HANDOVER.md`:** working rules, commands, env vars, code map, decisions, known limitations, gotchas.
+- **`docs/DEPLOY.md`:** production setup, env vars, rollback.
+- **`docs/PROGRESS.md`**, **`docs/decisions/`:** history and the reasons behind changes.
+- **`CLAUDE.md`:** rules Claude Code loads automatically.
 
-- **How it's checked:** the email must be listed in `ADMIN_EMAILS`. The password is checked against `ADMIN_PASSWORD_HASH` in `apps/web/.env.local`.
-- **Changing the password:** run `pnpm admin:password "new password"` and put the printed hash in `apps/web/.env.local`.
-- ⚠️ **This is a development password.** Set a different, strong one for production.
+**New Claude session?** Say: *"Read `README.md`, `CLAUDE.md` and `docs/HANDOVER.md`, then continue with the first item under Remaining. Show me your plan before building."*
 
-### Commands
+## Full specification
 
-| Command | What it does |
-| --- | --- |
-| `pnpm dev` | Web app on :3000 |
-| `pnpm lint` / `pnpm typecheck` | ESLint (incl. architecture boundaries) / TypeScript across all packages |
-| `pnpm test` | Vitest unit tests (Twin, gateway, contracts, pillar smoke, UI, boundaries, README sync) |
-| `pnpm test:e2e` | Playwright on desktop + mobile (starts or reuses `pnpm dev`) |
-| `pnpm build` | Production build |
-| `pnpm db:migrate` | Prisma migrate (dev) |
-| `pnpm docs:readme` | Refresh this README's embedded spec from `docs/BLUSLATE_SPEC.md` |
-| `pnpm admin:password "…"` | Print the hash to put in `ADMIN_PASSWORD_HASH` |
-| `pnpm worker`, `pnpm eval` | Stubs until later steps |
+The complete master spec (v2.5) is embedded below for Claude sessions; it's generated from `docs/BLUSLATE_SPEC.md` by `pnpm docs:readme`.
 
-### Deploying
-
-Production is https://bluslate.yoppi.in on Vercel (project `blu-slate`). Pushing to `main` deploys it: `scripts/vercel-build.sh` applies migrations to the Neon database, then builds. CI runs on GitHub separately, so check it's green. One-time setup, env vars, rollback: `docs/DEPLOY.md`.
-
-### Environment (`apps/web/.env.local`, never committed)
-
-| Variable | Purpose |
-| --- | --- |
-| `DATABASE_URL` | Postgres (docker-compose locally) |
-| `AUTH_SECRET` | Auth.js secret |
-| `NEXT_PUBLIC_SITE_URL` | Canonical URL, sitemap, Open Graph |
-| `ADMIN_EMAILS` | Comma-separated emails allowed into `/admin` |
-| `ADMIN_PASSWORD_HASH` | Admin sign-in password as a scrypt hash (`pnpm admin:password`). Never the password itself |
-| `ANTHROPIC_API_KEY` | The app's own Claude key. Models are chosen in `/admin/models`, which refers to this variable by name |
-| `AI_DAILY_COST_CAP_USD` | Optional per-startup daily AI spend cap |
-| `AUTH_RESEND_KEY`, `EMAIL_FROM` | Production sign-in email (Resend, verified domain) |
-| `NEXT_PUBLIC_REQUIRE_SIGN_IN` | `true` restores email sign-in as onboarding step 4 |
-
-### Where things live
-
-```
-apps/web/                 Next.js 16 app (App Router)
-  app/                    pages: / about privacy terms cookies signin profile
-                          startups/[id] (city) and startups/[id]/[pillar]
-                          admin (overview, models, models/new, audit, login)
-                          api/startups/... (§7.4 routes)
-  components/             header, profile menu, onboarding card, home (hero art, steps loop),
-                          journey map (city), pillar shell + workspace, admin
-  lib/                    db, auth actions, guest + guest-merge, twin (+ Postgres store),
-                          ai (+ model registry resolver), admin (+ stats, actions), pillar registry
-pillars/0N-<id>/          one package per pillar: SPEC.md, src/workspace.ts (state, calculators,
-                          goals, report out, entities), src/{module,starter,ai-tasks}.ts,
-                          ui/index.tsx (the pillar's screen), tests/
-packages/contracts        pillar metadata, entity types + Zod schemas, PillarModule, PillarStarter
-packages/twin             Business Twin: drafts, approval-gated publish, versions, decisions,
-                          dependencies, staleness, statuses, proposals, snapshots, assumptions
-packages/ai               AI gateway: ai.run / ai.stream, tasks, envelope, checks, pricing,
-                          model catalogue, ModelResolver
-packages/ui               design tokens, components, slate drawings, workbench pieces (Goals panel,
-                          Dots, chips, number fields, row lists, charts, Report out, AI placeholder)
-packages/sim-kernel, reports   placeholders (P7, F1)
-prisma/                   schema + migrations
-tests/e2e, tests/architecture  Playwright; import-boundary and README-sync tests
-docs/                     BLUSLATE_SPEC.md (source of truth), PM review PDF (v2.3, outdated),
-                          PROGRESS.md, DEPLOY.md, decisions/0001–0007, brand/
-```
-
-**Key mechanics:**
-
-- **Business Twin:** `Entity` rows are immutable published versions. `Draft` is the editable workspace and `StaleMark` holds the "may be outdated" marks. Statuses are computed.
-- **Single writer:** only the owning pillar publishes a type. Enforced in `packages/twin` and by ESLint (pillars never import each other; `packages/ai` can't import the Twin).
-- **Model choice:** `AiModelAssignment` holds the pillar's tier first, then the default. Keys are read from env by `*_API_KEY` name.
-- **Guests:**
-  - A `User` with `isGuest = true` plus an Auth.js database session.
-  - On sign-up, a signed cookie moves a guest's startups into the verified account, in the same browser only.
-
-### Decisions so far (`docs/decisions/`)
-
-- **0001:** S1 schema additions, onboarding details, legal pages (they need a lawyer's review before launch).
-- **0002:** no sign-in for now; guest workspaces.
-- **0003:** Twin workspace tables, each pillar's first question, AI gateway details.
-- **0004:** accounts and profile menu, guest sign-up, deleting startups, the admin dashboard, the AI model registry, new pillar names.
-- **0005:** admin sign-in with email and password (a hash in env, failed attempts throttled).
-- **0006:** v1 of all seven pillars at once: own screens, live Goals, Report out, the Founder Pack report, AI as placeholders, the `PillarWorkspace` table.
-- **0007:** production on Vercel (Singapore) with Neon, at `bluslate.yoppi.in`; Vercel deploys every push to `main` and runs migrations first.
-
-### Open issues
-
-- **Production extras:** admin needs `ADMIN_EMAILS` and a new `ADMIN_PASSWORD_HASH`; email sign-in needs Resend (`AUTH_RESEND_KEY`, `EMAIL_FROM`). See `docs/DEPLOY.md`.
-- **AI is off until set up:** add a model at `/admin/models` and set `ANTHROPIC_API_KEY`.
-- **Before public launch:**
-  - a legal review of Privacy, Terms and Cookies;
-  - rate limiting on guest creation;
-  - a retention rule for inactive guests.
-  - rotate the production `AUTH_SECRET` (the pilot value was shared in a chat), then redeploy; everyone is signed out once;
-  - move to Vercel Pro (Hobby is non-commercial only).
-- **Launch & Growth:** its `Scenario` exists as both an entity and a table; decide in P7.
-- **Unbuilt parts:** the Evidence view, the time strip, the full simulation kernel (P7 v1 uses a simple monthly model), and the Founder Pack's pitch, workbook, canvas and funding exports.
-- **Removing published items:** deleting a row from a workspace doesn't retire its last published entity (v1 limitation, decision 0006).
-- **PDF:** `docs/BluSlate_PM_Review.pdf` is still v2.3.
-
-### Gotchas
-
-- The Docker CLI is at `/Applications/Docker.app/Contents/Resources/bin/docker`. Start the app with `open -a Docker`.
-- pnpm 12 refuses very fresh releases (minimum release age). Pick a slightly older version; don't add exemptions.
-- After a Prisma migration, **restart `pnpm dev`**: the dev server keeps the old client cached.
-- End-to-end tests share the local database. Admin model tests run on desktop only and clean up after themselves.
-- The admin end-to-end test needs the password: `E2E_ADMIN_EMAIL=founder@yoppi.in E2E_ADMIN_PASSWORD='…' pnpm test:e2e`. It's skipped otherwise; CI uses its own test-only admin.
-- Next.js expands `$NAME` inside `.env` values. Avoid `$` in env values, which is why password hashes use `:`.
-
-### What's next
-
-1. **PM review of pillars v1.** Click through all seven pillars and the Founder Pack report, and list what to change.
-2. **Sign off `pillars/01-discover/SPEC.md`**, answering its §16 open questions. It's the plan for P1 v2: the dashboard, Help me discover, an observation log, and readiness.
-3. **Then pillar by pillar (v2):** Define → Build → Review, deepening each pillar from its v1, and switching AI slots on once a model and key are set.
-
-**Adding to a pillar:** change `pillars/<NN-id>/src/workspace.ts` (schema with defaults, `goals`, `report`, `entities`) and `ui/index.tsx`. Keep new state fields defaulted, so saved workspaces still parse.
-
----
-
-## Part 2 — Master specification (v2.4)
+<details>
+<summary>Show the full specification</summary>
 
 <!-- SPEC:START (generated from docs/BLUSLATE_SPEC.md by `pnpm docs:readme`; do not edit here) -->
 
@@ -2480,3 +2343,5 @@ BluSlate applies these methods in original interactive workflows; it never repro
 *Final thesis: BluSlate is a living, editable startup workspace — independent modules with research-backed methods, linked by evidence and decisions, supported by AI, and tested through a transparent simulation of possible futures.*
 
 <!-- SPEC:END -->
+
+</details>
