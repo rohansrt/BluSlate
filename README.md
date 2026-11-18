@@ -173,6 +173,8 @@ docs/                     BLUSLATE_SPEC.md (source of truth), PM review PDF (v2.
   - a legal review of Privacy, Terms and Cookies;
   - rate limiting on guest creation;
   - a retention rule for inactive guests.
+  - rotate the production `AUTH_SECRET` (the pilot value was shared in a chat), then redeploy; everyone is signed out once;
+  - move to Vercel Pro (Hobby is non-commercial only).
 - **Launch & Growth:** its `Scenario` exists as both an entity and a table; decide in P7.
 - **Unbuilt parts:** the Evidence view, the time strip, the full simulation kernel (P7 v1 uses a simple monthly model), and the Founder Pack's pitch, workbook, canvas and funding exports.
 - **Removing published items:** deleting a row from a workspace doesn't retire its last published entity (v1 limitation, decision 0006).
