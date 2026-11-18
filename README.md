@@ -50,7 +50,7 @@ Open this folder in VS Code with Claude Code (or attach this README to any Claud
 | P1 Define | 📝 proposed | `pillars/01-discover/SPEC.md` rewritten in depth (dashboard, every question, formulas, fixture, 30 acceptance tests, open questions). Awaiting PM sign-off; it guides P1 v2 |
 | **Pillars v1 (all seven)** | ✅ | Decision 0006. Each pillar has its own screen with structured inputs, works alone, pre-fills from upstream, shows live **Goals** on the right (TAM/SAM/SOM, unit cost, runway…), ends with a **Report out**, autosaves, and publishes to the Twin with approval. AI is placeholders |
 | **Founder Pack report** | ✅ v1 | `/startups/[id]/pack`: every pillar's report out, status and goals; print or save as PDF. Other exports are placeholders |
-| **Hosting** | ⚙️ set up | Decision 0007. `bluslate.yoppi.in` on Vercel + Neon (Singapore). Vercel deploys every push to `main` and runs migrations first. Goes live once the one-time setup in `docs/DEPLOY.md` is done |
+| **Hosting** | ✅ live (pilot) | Decision 0007. https://bluslate.yoppi.in on Vercel + Neon (Singapore). Vercel deploys every push to `main` and runs migrations first. Guests work; admin, email sign-in and AI are off until their env vars are set (`docs/DEPLOY.md`) |
 | Pillars v2, F1 exports, L1 | — | Not started |
 
 **Current behaviour, briefly:**
@@ -167,7 +167,7 @@ docs/                     BLUSLATE_SPEC.md (source of truth), PM review PDF (v2.
 
 ### Open issues
 
-- **Going live:** finish the one-time setup in `docs/DEPLOY.md` (Neon in Vercel Storage, `AUTH_SECRET`, the domain and its Namecheap CNAME). Email sign-in in production also needs Resend (`AUTH_RESEND_KEY`, `EMAIL_FROM`).
+- **Production extras:** admin needs `ADMIN_EMAILS` and a new `ADMIN_PASSWORD_HASH`; email sign-in needs Resend (`AUTH_RESEND_KEY`, `EMAIL_FROM`). See `docs/DEPLOY.md`.
 - **AI is off until set up:** add a model at `/admin/models` and set `ANTHROPIC_API_KEY`.
 - **Before public launch:**
   - a legal review of Privacy, Terms and Cookies;

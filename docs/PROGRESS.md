@@ -332,3 +332,5 @@ The PM added the custom domain and asked to make the site live. GitHub Pages can
   A local `vercel build --prod` with `VERCEL_ENV=production` installed with pnpm 12.21.0, applied migrations ("No pending migrations") and built.
 
 - **Region: Singapore, not Mumbai.** Neon offers no Mumbai region, so the database was created in Singapore (`aws-ap-southeast-1`), and `apps/web/vercel.json` now runs the functions in Singapore (`sin1`) as well, so queries don't cross between cities. Decision 0007, `docs/DEPLOY.md` and the README updated.
+
+- **Live (pilot), 18 November 2026.** A duplicate Vercel import (`blu-slate-pf3t`) was deleted; the project is `blu-slate`, with the Neon database `bluslate-db` and the domain. `AUTH_SECRET` is set (a pilot value; rotate it before launch). Against https://bluslate.yoppi.in, the public-page and guest onboarding end-to-end tests pass (the full onboarding test needs a longer timeout over the network). The email sign-in test was skipped: production has no Resend key yet.

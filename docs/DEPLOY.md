@@ -12,9 +12,9 @@ BluSlate is a server app with a database, so it can't run on GitHub Pages (stati
 
 1. **Import** `rohansrt/BluSlate` in Vercel with Root Directory `apps/web`, then click Deploy. The first build fails without a database; that's expected. *(Done.)*
 2. **Database:** in the project, open **Storage → Create Database → Neon**. Choose the Free plan and the **Singapore (aws-ap-southeast-1)** region (Neon has no Mumbai region). Leave **Auth** and **Realtime** off: BluSlate has its own sign-in. Connect it to all environments. *(Done.)* This adds `DATABASE_URL` and `DATABASE_URL_UNPOOLED`.
-3. **Secret:** go to **Settings → Environment Variables** and add `AUTH_SECRET`. Make the value with `openssl rand -base64 32`.
-4. **Redeploy:** open **Deployments**, click the latest deployment's **⋯** menu and choose **Redeploy**.
-5. **Domain:**
+3. **Secret:** open the project's **Environment Variables** page (project menu, not Settings) and add `AUTH_SECRET` as a Secret. Make the value with `openssl rand -base64 32`. *(Done.)*
+4. **Redeploy:** open **Deployments**, click the latest deployment's **⋯** menu and choose **Redeploy**. *(Done.)*
+5. **Domain:** *(1 and 2 done.)*
    1. In Vercel, add `bluslate.yoppi.in` under **Settings → Domains**. Vercel shows a CNAME value for it.
    2. In **Namecheap**, open **Domain List → yoppi.in → Manage → Advanced DNS**. Change the CNAME for host `bluslate` from `rohansrt.github.io.` to that value. Leave the other records alone.
    3. In **GitHub → BluSlate → Settings → Pages**, remove the custom domain.
